@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model applications {
+  id                    Int         @id @default(autoincrement())
+  job_id                Int?
+  candidate_id          Int?
+  match_technical_score Float?
+  match_soft_score      Float?
+  match_culture_score   Float?
+  overall_score         Float?
+  ai_feedback           Json?
+  status                String?     @default("applied") @db.VarChar(50)
+  created_at            DateTime?   @default(now()) @db.Timestamp(6)
+  updated_at            DateTime?   @default(now()) @db.Timestamp(6)
+  candidates            candidates? @relation(fields: [candidate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  jobs                  jobs?       @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  notes                 notes[]
+
+  @@unique([job_id, candidate_id], map: "applications_job_id_candidate_id_idx")
+  @@index([ai_feedback], map: "idx_applications_ai_feedback", type: Gin)
+}
+
+model candidate_attributes {
+  candidate_id      Int
+  attribute_id      Int
+  global_attributes global_attributes @relation(fields: [attribute_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  candidates        candidates        @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([candidate_id, attribute_id])
+  @@index([candidate_id], map: "idx_candidate_attributes_candidate_id")
+}
+
+model candidates {
+  id                      Int                           @id @default(autoincrement())
+  profile_picture         String?
+  name                    String?                       @db.VarChar(100)
+  lastname                String?                       @db.VarChar(100)
+  email                   String                        @unique @db.VarChar(255)
+  password                String?                       @db.VarChar(255)
+  dni                     String?                       @db.VarChar(50)
+  phone                   String?                       @db.VarChar(50)
+  country                 String?                       @db.VarChar(100)
+  state                   String?                       @db.VarChar(100)
+  city                    String?                       @db.VarChar(100)
+  address                 String?
+  cv_file_url             String?
+  summary                 String?
+  summary_embedding       Unsupported("vector")?
+  dress_code              dress_code_enum?              @default(none)
+  collaboration_style     colaboration_style_enum?      @default(flexible)
+  work_pace               work_pace_enum?               @default(moderate)
+  level_of_autonomy       level_of_autonomy_enum?       @default(medium)
+  dealing_with_management dealing_with_management_enum? @default(none)
+  level_of_monitoring     level_of_monitoring_enum?     @default(medium)
+  behavioral_ans_1        String?
+  behavioral_ans_2        String?
+  contact_page            String?                       @db.VarChar(255)
+  created_at              DateTime?                     @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?                     @default(now()) @db.Timestamp(6)
+  applications            applications[]
+  candidate_attributes    candidate_attributes[]
+
+  @@index([email], map: "idx_candidates_email")
+  @@index([summary_embedding], map: "idx_candidates_summary_embedding")
+}
+
+model companies {
+  id                      Int                           @id @default(autoincrement())
+  name                    String                        @db.VarChar(255)
+  logo_url                String?
+  description             String?
+  mision                  String?
+  dress_code              dress_code_enum?              @default(none)
+  colaboration_style      colaboration_style_enum?      @default(flexible)
+  work_pace               work_pace_enum?               @default(moderate)
+  level_of_autonomy       level_of_autonomy_enum?       @default(medium)
+  dealing_with_management dealing_with_management_enum? @default(none)
+  level_of_monitoring     level_of_monitoring_enum?     @default(medium)
+  address                 String?                       @db.VarChar(255)
+  city                    String?                       @db.VarChar(100)
+  state                   String?                       @db.VarChar(100)
+  country                 String?                       @db.VarChar(100)
+  contact_email           String?                       @db.VarChar(255)
+  created_at              DateTime?                     @default(now()) @db.Timestamp(6)
+  updated_at              DateTime?                     @default(now()) @db.Timestamp(6)
+  company_attributes      company_attributes[]
+  jobs                    jobs[]
+  user_admin              user_admin[]
+}
+
+model company_attributes {
+  id                Int                @id @default(autoincrement())
+  attribute_id      Int?
+  company_id        Int?
+  global_attributes global_attributes? @relation(fields: [attribute_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  companies         companies?         @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model global_attributes {
+  id                   Int                    @id @default(autoincrement())
+  name                 String                 @unique @db.VarChar(255)
+  type                 attribute_type_enum?   @default(hard_skill)
+  embedding            Unsupported("vector")?
+  candidate_attributes candidate_attributes[]
+  company_attributes   company_attributes[]
+  job_attributes       job_attributes[]
+
+  @@index([embedding], map: "idx_global_attributes")
+}
+
+model job_attributes {
+  job_id            Int
+  attribute_id      Int
+  is_mandatory      Boolean?          @default(false)
+  global_attributes global_attributes @relation(fields: [attribute_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jobs              jobs              @relation(fields: [job_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([job_id, attribute_id])
+  @@index([job_id], map: "idx_job_attributes_job_id")
+}
+
+model job_categories {
+  id   Int     @id @default(autoincrement())
+  name String? @db.VarChar(255)
+  jobs jobs[]
+}
+
+model jobs {
+  id                Int                    @id @default(autoincrement())
+  company_id        Int?
+  category_id       Int?
+  title             String                 @db.VarChar(255)
+  description       String
+  summary           String?
+  summary_embedding Unsupported("vector")?
+  status            job_status_enum?       @default(draft)
+  address           String?                @db.VarChar(255)
+  city              String?                @db.VarChar(100)
+  state             String?                @db.VarChar(100)
+  workplace_type    workplace_enum?
+  employment_type   employment_enum?
+  position          String?                @db.VarChar(100)
+  salary            String?                @db.VarChar(100)
+  weight_technical  Float?                 @default(0.4)
+  weight_soft       Float?                 @default(0.3)
+  weight_culture    Float?                 @default(0.3)
+  created_at        DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?              @default(now()) @db.Timestamp(6)
+  applications      applications[]
+  job_attributes    job_attributes[]
+  job_categories    job_categories?        @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  companies         companies?             @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([summary_embedding], map: "idx_jobs_summary_embedding")
+}
+
+model notes {
+  id             Int           @id @default(autoincrement())
+  application_id Int?
+  recruiter_id   Int?
+  text           String
+  created_at     DateTime?     @default(now()) @db.Timestamp(6)
+  applications   applications? @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user_admin     user_admin?   @relation(fields: [recruiter_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user_admin {
+  id              Int        @id @default(autoincrement())
+  company_id      Int?
+  profile_picture String?
+  name            String?    @db.VarChar(100)
+  lastname        String?    @db.VarChar(100)
+  email           String     @unique @db.VarChar(255)
+  password        String     @db.VarChar(255)
+  dni             String?    @db.VarChar(50)
+  phone           String?    @db.VarChar(50)
+  role            String?    @db.VarChar(50)
+  country         String?    @db.VarChar(100)
+  state           String?    @db.VarChar(100)
+  city            String?    @db.VarChar(100)
+  address         String?
+  created_at      DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at      DateTime?  @default(now()) @db.Timestamp(6)
+  notes           notes[]
+  companies       companies? @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+enum attribute_type_enum {
+  hard_skill
+  soft_skill
+  value
+}
+
+enum colaboration_style_enum {
+  independent
+  team_oriented @map("team-oriented")
+  flexible
+}
+
+enum dealing_with_management_enum {
+  structured
+  flexible
+  none
+}
+
+enum dress_code_enum {
+  formal
+  business_casual
+  casual
+  none
+}
+
+enum employment_enum {
+  full_time
+  part_time
+  contract
+  internship
+}
+
+enum job_status_enum {
+  draft
+  published
+  closed
+  archived
+}
+
+enum level_of_autonomy_enum {
+  low
+  medium
+  high
+}
+
+enum level_of_monitoring_enum {
+  low
+  medium
+  high
+}
+
+enum work_pace_enum {
+  slow
+  moderate
+  fast
+}
+
+enum workplace_enum {
+  remote
+  onsite
+  hybrid
+}
