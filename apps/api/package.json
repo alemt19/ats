@@ -7,14 +7,19 @@
         "build": "nest build",
         "start": "node dist/main.js",
         "lint": "eslint . --max-warnings 0",
-        "check-types": "tsc --noEmit"
+        "check-types": "tsc --noEmit",
+        "prisma:generate": "prisma generate"
     },
     "dependencies": {
         "@nestjs/common": "11.0.1",
         "@nestjs/core": "11.0.1",
         "@nestjs/platform-express": "11.0.1",
+        "@nestjs/swagger": "11.2.6",
+        "@prisma/adapter-pg": "7.3.0",
+        "@prisma/client": "7.3.0",
         "@repo/schema": "workspace:*",
         "nestjs-zod": "5.1.1",
+        "pg": "8.18.0",
         "reflect-metadata": "0.2.2",
         "rxjs": "7.8.1",
         "zod": "4.3.6"
@@ -25,7 +30,10 @@
         "@repo/typescript-config": "workspace:*",
         "@types/express": "5.0.0",
         "@types/node": "22.15.3",
+        "@types/pg": "8.16.0",
+        "dotenv": "17.2.4",
         "eslint": "9.39.1",
+        "prisma": "7.3.0",
         "ts-node": "10.9.2",
         "typescript": "5.9.2"
     }
