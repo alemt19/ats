@@ -1,21 +1,6 @@
 {
   "extends": "@repo/typescript-config/nextjs.json",
   "compilerOptions": {
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "types": [
-      "node",
-      "react",
-      "react-dom"
-    ],
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
     "baseUrl": ".",
     "paths": {
       "react": [
