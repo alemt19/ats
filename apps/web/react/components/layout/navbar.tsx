@@ -204,7 +204,7 @@ export default function Navbar({
 								</DropdownMenuLabel>
 								<DropdownMenuSeparator />
 								<DropdownMenuItem asChild>
-									<Link href="/perfil" className="cursor-pointer">
+									<Link href="/mi-perfil" className="cursor-pointer">
 										<User className="mr-2 size-4" />
 										<span>Mi perfil</span>
 									</Link>
