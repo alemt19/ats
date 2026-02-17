@@ -4,6 +4,16 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Environment variables
+
+Create `apps/web/.env.local` with:
+
+```bash
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=replace-with-a-long-random-secret
+BACKEND_API_URL=http://localhost:4000
+```
+
 First, run the development server:
 
 ```bash

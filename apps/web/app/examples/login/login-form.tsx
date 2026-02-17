@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { signIn } from "next-auth/react";
 import { loginSchema, type LoginInput } from "@repo/schema";
 
 export default function LoginForm() {
@@ -22,16 +23,36 @@ export default function LoginForm() {
     const onSubmit = async (values: LoginInput) => {
         setResult(null);
 
-        const response = await fetch("http://localhost:4000/auth/login", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json"
-            },
-            body: JSON.stringify(values)
+        const response = await signIn("credentials", {
+            email: values.email,
+            password: values.password,
+            redirect: false
         });
 
-        const payload = (await response.json()) as { data: unknown };
-        setResult(JSON.stringify(payload, null, 2));
+        if (response?.error) {
+            setResult(
+                JSON.stringify(
+                    {
+                        success: false,
+                        error: "Credenciales inválidas o backend no disponible"
+                    },
+                    null,
+                    2
+                )
+            );
+            return;
+        }
+
+        setResult(
+            JSON.stringify(
+                {
+                    success: true,
+                    message: "Sesión iniciada con NextAuth"
+                },
+                null,
+                2
+            )
+        );
     };
 
     return (
