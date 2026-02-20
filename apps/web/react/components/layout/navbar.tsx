@@ -48,45 +48,6 @@ export default function Navbar({
 		| null
 	>(null)
 
-	React.useEffect(() => {
-		if (companyName || logoSrc) {
-			return
-		}
-
-		const controller = new AbortController()
-
-		async function loadCompany() {
-			try {
-				const response = await fetch("https://dummyjson.com/products/1", {
-					signal: controller.signal,
-				})
-
-				if (!response.ok) {
-					return
-				}
-
-				const data = (await response.json()) as {
-					brand?: string
-					thumbnail?: string
-				}
-
-				if (data.brand && data.thumbnail) {
-					setCompany({ name: data.brand, logo: data.thumbnail })
-				}
-			} catch (error) {
-				if ((error as Error).name !== "AbortError") {
-					setCompany(null)
-				}
-			}
-		}
-
-		loadCompany()
-
-		return () => {
-			controller.abort()
-		}
-	}, [companyName, logoSrc])
-
 	const demoSession = React.useMemo(
 		() => ({
 			user: {
@@ -172,7 +133,7 @@ export default function Navbar({
 								))}
 								<SheetClose asChild>
 									<Button asChild className="mt-2 w-full bg-blue-700 hover:bg-blue-800">
-										<Link href="/ofertas">Postulate Ahora</Link>
+										<Link href="//ofertas">Postulate Ahora</Link>
 									</Button>
 								</SheetClose>
 							</div>

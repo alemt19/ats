@@ -3,6 +3,7 @@
 import * as React from "react"
 import { SessionProvider } from "next-auth/react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { Toaster } from "react/components/ui/sonner"
 
 type ProvidersProps = {
   children: React.ReactNode
@@ -22,7 +23,10 @@ export default function Providers({ children }: ProvidersProps) {
 
   return (
     <SessionProvider>
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      <QueryClientProvider client={queryClient}>
+        {children}
+        <Toaster richColors position="top-right" />
+      </QueryClientProvider>
     </SessionProvider>
   )
 }

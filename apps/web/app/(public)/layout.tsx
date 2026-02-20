@@ -1,12 +1,7 @@
-import NavbarClient from "./navbar-client"
+import PublicLayoutShell from "./public-layout-shell"
 
 export default function PublicLayout({ children }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <>
-      <NavbarClient />
-      <main>{children}</main>
-    </>
-  );
+  return <PublicLayoutShell>{children}</PublicLayoutShell>;
 }
