@@ -20,6 +20,9 @@ function getBreadcrumbLabel(pathname: string) {
     if (pathname === "/mi-perfil/mis-datos" || pathname === "/mi-perfil") {
         return "Mis datos"
     }
+    if (pathname === "/mi-perfil/postulaciones") {
+        return "Mis Postulaciones"
+    }
 
     return "Mis datos"
 }

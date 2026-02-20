@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut, useSession } from "next-auth/react"
-import { BriefcaseBusiness, LogOut, UserRound, UsersRound } from "lucide-react"
+import { BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Button } from "../ui/button"
@@ -38,6 +38,11 @@ const profileLinks = [
         href: "/mi-perfil/preferencias-culturales",
         icon: UsersRound,
     },
+    {
+        label: "Mis postulaciones",
+        href: "/mi-perfil/postulaciones",
+        icon: ClipboardList
+    }
 ]
 
 type SidebarClientProps = {
