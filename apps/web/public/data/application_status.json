@@ -1,0 +1,15 @@
+[
+    {   
+
+        "techical_name": "applied",
+        "display_name": "Postulado"
+    },
+    {
+        "techical_name": "contacted",
+        "display_name": "Contactado"
+    },
+    {
+        "techical_name": "rejected",
+        "display_name": "Rechazado"
+    }
+]

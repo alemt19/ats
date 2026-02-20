@@ -14,15 +14,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
-import { cn } from "react/lib/utils"
 import { usePostulacionesFilters } from "./postulaciones-shell"
 
-export type ApplicationStatus =
-  | "pending"
-  | "interview"
-  | "rejected"
-  | "accepted"
-  | "in_review"
+export type ApplicationStatus = string
+
+export type ApplicationStatusCatalogItem = {
+  technical_name: ApplicationStatus
+  display_name: string
+}
 
 export type JobApplication = {
   id: number
@@ -37,34 +36,26 @@ export type JobApplication = {
 
 type PostulacionesListProps = {
   applications: JobApplication[]
-}
-
-const statusLabels: Record<ApplicationStatus, string> = {
-  pending: "Pendiente",
-  interview: "Entrevista",
-  rejected: "Rechazado",
-  accepted: "Aceptado",
-  in_review: "En revision",
+  statusCatalog: ApplicationStatusCatalogItem[]
 }
 
 function getStatusBadgeVariant(status: ApplicationStatus) {
   switch (status) {
     case "rejected":
       return "destructive"
-    case "pending":
+    case "applied":
       return "outline"
-    case "interview":
+    case "contacted":
       return "default"
-    case "accepted":
-      return "secondary"
-    case "in_review":
-      return "outline"
     default:
       return "outline"
   }
 }
 
-export default function PostulacionesList({ applications }: PostulacionesListProps) {
+export default function PostulacionesList({
+  applications,
+  statusCatalog,
+}: PostulacionesListProps) {
   const {
     query,
     statusFilter,
@@ -94,11 +85,22 @@ export default function PostulacionesList({ applications }: PostulacionesListPro
     })
   }, [applications, categoryFilter, query, statusFilter])
 
+  const statusLabelMap = React.useMemo(
+    () =>
+      new Map(
+        statusCatalog.map((statusItem) => [
+          statusItem.technical_name,
+          statusItem.display_name,
+        ])
+      ),
+    [statusCatalog]
+  )
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="min-w-[180px]">
+          <SelectTrigger className="min-w-45">
             <SelectValue placeholder="Categoria" />
           </SelectTrigger>
           <SelectContent>
@@ -111,16 +113,16 @@ export default function PostulacionesList({ applications }: PostulacionesListPro
         </Select>
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="min-w-[180px]">
+          <SelectTrigger className="min-w-45">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            <SelectItem value="pending">Pendiente</SelectItem>
-            <SelectItem value="in_review">En revision</SelectItem>
-            <SelectItem value="interview">Entrevista</SelectItem>
-            <SelectItem value="accepted">Aceptado</SelectItem>
-            <SelectItem value="rejected">Rechazado</SelectItem>
+            {statusCatalog.map((statusItem) => (
+              <SelectItem key={statusItem.technical_name} value={statusItem.technical_name}>
+                {statusItem.display_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -165,12 +167,8 @@ export default function PostulacionesList({ applications }: PostulacionesListPro
               <CardFooter className="items-center justify-between gap-3 pt-2">
                 <Badge
                   variant={getStatusBadgeVariant(application.status)}
-                  className={cn(
-                    application.status === "accepted" &&
-                      "bg-emerald-500 text-white hover:bg-emerald-600"
-                  )}
                 >
-                  {statusLabels[application.status]}
+                  {statusLabelMap.get(application.status) ?? application.status}
                 </Badge>
 
                 <Button asChild size="sm" variant="outline">

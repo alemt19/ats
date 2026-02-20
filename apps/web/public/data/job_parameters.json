@@ -1,0 +1,42 @@
+[
+    {
+        "technical_name": "workplace_type",
+        "display_name": "Modalidad de trabajo",
+        "values": [
+            {
+                "technical_name": "onsite",
+                "display_name": "Presencial"
+            },
+            {
+                "technical_name": "remote",
+                "display_name": "Remoto"
+            },
+            {
+                "technical_name": "hybrid",
+                "display_name": "Híbrido"
+            }
+        ]
+    },
+    {
+        "technical_name": "employment_type",
+        "display_name": "Tipo de empleo",
+        "values": [
+            {
+                "technical_name": "full_time",
+                "display_name": "Tiempo completo"
+            },
+            {
+                "technical_name": "part_time",
+                "display_name": "Medio tiempo"
+            },
+            {
+                "technical_name": "contract",
+                "display_name": "Contrato"
+            },
+            {
+                "technical_name": "internship",
+                "display_name": "Pasantía"
+            }
+        ]
+    }
+]

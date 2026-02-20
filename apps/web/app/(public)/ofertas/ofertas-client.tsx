@@ -58,12 +58,11 @@ import { Skeleton } from "react/components/ui/skeleton"
 import { cn } from "react/lib/utils"
 
 import {
-  type EmploymentType,
   type JobOffer,
+  type JobParameterOption,
   type OffersCatalogsResponse,
   type OffersQueryParams,
   type OffersResponse,
-  type WorkplaceType,
   normalizeOffersQuery,
 } from "./offers-types"
 
@@ -75,20 +74,7 @@ type OfertasClientProps = {
 
 const PAGE_SIZE = 10
 
-const workplaceLabel: Record<WorkplaceType, string> = {
-  remote: "Remoto",
-  onsite: "Presencial",
-  hybrid: "Híbrido",
-}
-
-const employmentLabel: Record<EmploymentType, string> = {
-  full_time: "Tiempo completo",
-  part_time: "Medio tiempo",
-  contract: "Contrato",
-  internship: "Pasantía",
-}
-
-function workplaceBadgeVariant(type: WorkplaceType) {
+function workplaceBadgeVariant(type: string) {
   switch (type) {
     case "remote":
       return "default"
@@ -101,7 +87,7 @@ function workplaceBadgeVariant(type: WorkplaceType) {
   }
 }
 
-function employmentBadgeVariant(type: EmploymentType) {
+function employmentBadgeVariant(type: string) {
   switch (type) {
     case "full_time":
       return "default"
@@ -157,6 +143,8 @@ function FiltersPanel({
   onWorkplaceTypeChange,
   onEmploymentTypeChange,
   onCityChange,
+  workplaceTypeOptions,
+  employmentTypeOptions,
 }: {
   category: string
   workplaceType: string
@@ -168,6 +156,8 @@ function FiltersPanel({
   onWorkplaceTypeChange: (value: string) => void
   onEmploymentTypeChange: (value: string) => void
   onCityChange: (value: string) => void
+  workplaceTypeOptions: JobParameterOption[]
+  employmentTypeOptions: JobParameterOption[]
 }) {
   const [cityOpen, setCityOpen] = React.useState(false)
 
@@ -197,9 +187,11 @@ function FiltersPanel({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="remote">Remoto</SelectItem>
-            <SelectItem value="onsite">Presencial</SelectItem>
-            <SelectItem value="hybrid">Híbrido</SelectItem>
+            {workplaceTypeOptions.map((option) => (
+              <SelectItem key={option.technical_name} value={option.technical_name}>
+                {option.display_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -212,10 +204,11 @@ function FiltersPanel({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="full_time">Tiempo completo</SelectItem>
-            <SelectItem value="part_time">Medio tiempo</SelectItem>
-            <SelectItem value="contract">Contrato</SelectItem>
-            <SelectItem value="internship">Pasantía</SelectItem>
+            {employmentTypeOptions.map((option) => (
+              <SelectItem key={option.technical_name} value={option.technical_name}>
+                {option.display_name}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
@@ -384,12 +377,39 @@ export default function OfertasClient({
     staleTime: 5 * 60 * 1000,
   })
 
+  const categoriesCatalog = catalogsData?.categories ?? []
+  const citiesCatalog = catalogsData?.cities ?? []
+  const workplaceTypesCatalog = catalogsData?.workplace_types ?? []
+  const employmentTypesCatalog = catalogsData?.employment_types ?? []
+
   const categories = React.useMemo(
-    () => ["all", ...catalogsData.categories],
-    [catalogsData.categories]
+    () => ["all", ...categoriesCatalog],
+    [categoriesCatalog]
   )
 
-  const cities = React.useMemo(() => ["all", ...catalogsData.cities], [catalogsData.cities])
+  const cities = React.useMemo(() => ["all", ...citiesCatalog], [citiesCatalog])
+
+  const workplaceTypeLabelMap = React.useMemo(
+    () =>
+      new Map(
+        workplaceTypesCatalog.map((option) => [
+          option.technical_name,
+          option.display_name,
+        ])
+      ),
+    [workplaceTypesCatalog]
+  )
+
+  const employmentTypeLabelMap = React.useMemo(
+    () =>
+      new Map(
+        employmentTypesCatalog.map((option) => [
+          option.technical_name,
+          option.display_name,
+        ])
+      ),
+    [employmentTypesCatalog]
+  )
 
   const totalPages = Math.max(1, Math.ceil(data.total / data.pageSize))
   const pages = React.useMemo(
@@ -419,6 +439,8 @@ export default function OfertasClient({
             onWorkplaceTypeChange={(value) => updateUrl({ workplace_type: value }, true)}
             onEmploymentTypeChange={(value) => updateUrl({ employment_type: value }, true)}
             onCityChange={(value) => updateUrl({ city: value }, true)}
+            workplaceTypeOptions={workplaceTypesCatalog}
+            employmentTypeOptions={employmentTypesCatalog}
           />
         </aside>
 
@@ -452,6 +474,8 @@ export default function OfertasClient({
                         updateUrl({ employment_type: value }, true)
                       }
                       onCityChange={(value) => updateUrl({ city: value }, true)}
+                      workplaceTypeOptions={workplaceTypesCatalog}
+                      employmentTypeOptions={employmentTypesCatalog}
                     />
                   </div>
                 </SheetContent>
@@ -529,10 +553,10 @@ export default function OfertasClient({
 
                       <div className="flex flex-wrap gap-2">
                         <Badge variant={workplaceBadgeVariant(offer.workplace_type)}>
-                          {workplaceLabel[offer.workplace_type]}
+                          {workplaceTypeLabelMap.get(offer.workplace_type) ?? offer.workplace_type}
                         </Badge>
                         <Badge variant={employmentBadgeVariant(offer.employment_type)}>
-                          {employmentLabel[offer.employment_type]}
+                          {employmentTypeLabelMap.get(offer.employment_type) ?? offer.employment_type}
                         </Badge>
                       </div>
                     </CardContent>

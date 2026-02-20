@@ -157,6 +157,6 @@ export async function getOffersServer(queryInput?:
   }
 
   await new Promise((resolve) => setTimeout(resolve, 350))
-  const allOffers = await readJsonFile<JobOffer[]>("job_offers.json")
+  const allOffers = await readJsonFile<JobOffer[]>("job_offers_dummy.json")
   return applyFallbackFiltering(allOffers, query)
 }

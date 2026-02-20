@@ -13,6 +13,11 @@ export type JobOffer = {
   employment_type: EmploymentType
 }
 
+export type JobParameterOption = {
+  technical_name: string
+  display_name: string
+}
+
 export type OffersQueryParams = {
   title: string
   category: string
@@ -33,6 +38,8 @@ export type OffersResponse = {
 export type OffersCatalogsResponse = {
   categories: string[]
   cities: string[]
+  workplace_types: JobParameterOption[]
+  employment_types: JobParameterOption[]
 }
 
 const DEFAULT_PAGE = 1

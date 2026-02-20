@@ -1,9 +1,37 @@
 import { Suspense } from "react"
+import path from "node:path"
+import { readFile } from "node:fs/promises"
 
 import { auth } from "../../../auth"
-import PostulacionesList, { type JobApplication } from "./postulaciones-list"
+import PostulacionesList, {
+	type ApplicationStatusCatalogItem,
+	type JobApplication,
+} from "./postulaciones-list"
 import PostulacionesShell from "./postulaciones-shell"
 import PostulacionesSkeleton from "./postulaciones-skeleton"
+
+type RawStatusCatalogItem = {
+	technical_name?: string
+	techical_name?: string
+	display_name: string
+}
+
+async function readJsonFile<T>(relativePath: string): Promise<T> {
+	const fullPath = path.join(process.cwd(), "public", "data", relativePath)
+	const fileContents = await readFile(fullPath, "utf-8")
+	return JSON.parse(fileContents) as T
+}
+
+function normalizeStatusCatalog(
+	rawCatalog: RawStatusCatalogItem[]
+): ApplicationStatusCatalogItem[] {
+	return rawCatalog
+		.map((item) => ({
+			technical_name: item.technical_name ?? item.techical_name ?? "",
+			display_name: item.display_name,
+		}))
+		.filter((item) => item.technical_name.length > 0)
+}
 
 const applicationsDummy: JobApplication[] = [
 	{
@@ -14,7 +42,7 @@ const applicationsDummy: JobApplication[] = [
 		state: "Distrito Capital",
 		position: "Programador",
 		salary: 700,
-		status: "pending",
+		status: "applied",
 	},
 	{
 		id: 2,
@@ -24,7 +52,7 @@ const applicationsDummy: JobApplication[] = [
 		state: "Carabobo",
 		position: "Analista",
 		salary: 600,
-		status: "interview",
+		status: "contacted",
 	},
 	{
 		id: 3,
@@ -44,7 +72,7 @@ const applicationsDummy: JobApplication[] = [
 		state: "Aragua",
 		position: "Product Manager",
 		salary: 1200,
-		status: "accepted",
+		status: "applied",
 	},
 	{
 		id: 5,
@@ -54,7 +82,7 @@ const applicationsDummy: JobApplication[] = [
 		state: "Lara",
 		position: "Analista",
 		salary: 900,
-		status: "in_review",
+		status: "contacted",
 	},
 ]
 
@@ -90,9 +118,19 @@ async function PostulacionesData() {
 	const userId = session?.user?.id ?? "user_123"
 	const accessToken = session?.accessToken
 
-	const applications = await fetchApplicationsServer(userId, accessToken)
+	const [applications, statusCatalogRaw] = await Promise.all([
+		fetchApplicationsServer(userId, accessToken),
+		readJsonFile<RawStatusCatalogItem[]>("application_status.json"),
+	])
 
-	return <PostulacionesList applications={applications} />
+	const statusCatalog = normalizeStatusCatalog(statusCatalogRaw)
+
+	return (
+		<PostulacionesList
+			applications={applications}
+			statusCatalog={statusCatalog}
+		/>
+	)
 }
 
 export default function PostulacionesPage() {
