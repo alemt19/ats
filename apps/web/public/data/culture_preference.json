@@ -1,0 +1,138 @@
+[
+    {
+        "technical_name": "dress_code",
+        "display_name": "Codigo de vestimenta",
+        "values": [
+            {
+                "technical_name": "casual",
+                "display_name": "Casual",
+                "description": "Vestimenta libre orientada a la comodidad diaria. Se permiten jeans, camisetas (franelas), zapatos deportivos y estilos personales"
+            },
+            {
+                "technical_name": "semi_formal",
+                "display_name": "Semi formal",
+                "description": "Un equilibrio entre profesionalismo y comodidad. Se espera ropa presentable como pantalones de tela o chinos (caquis), camisas de botones, blusas elegantes y zapatos casuales o mocasines. No requiere traje completo ni corbata, pero excluye la ropa deportiva."
+            },
+            {
+                "technical_name": "formal",
+                "display_name": "Formal",
+                "description": "Vestimenta tradicional, sobria y de alto protocolo. Requiere el uso de traje completo, corbata, trajes sastre, vestidos formales y zapatos de vestir. Proyecta máxima formalidad."
+            }
+        ]
+    }, 
+    {
+        "technical_name": "collaboration_style",
+        "display_name": "Estilo de colaboración",
+        "values": [
+            {
+                "technical_name": "individual",
+                "display_name": "Individual",
+                "description": "Cada persona trabaja en sus tareas de forma independiente. La colaboración es puntual y acotada."
+            },
+            {
+                "technical_name": "mixed",
+                "display_name": "Mixto",
+                "description": "Se combina tiempo de trabajo individual con instancias de colaboración en equipo."
+            },
+            {
+                "technical_name": "highly_collaborative",
+                "display_name": "Altamente Colaborativo",
+                "description": "La mayoría del trabajo se hace en equipo, con reuniones frecuentes y dependencia mutua."
+            }
+        ]
+    }, 
+    {
+        "technical_name": "work_pace",
+        "display_name": "Ritmo de trabajo",
+        "values": [
+            {
+                "technical_name": "slow",
+                "display_name": "Pausado",
+                "description": "Ambiente tranquilo, sin presiones de tiempo. Los proyectos tienen plazos holgados, se prioriza la calidad sobre la velocidad. No se espera que se trabaje fuera de horario."
+            },
+            {
+                "technical_name": "moderate",
+                "display_name": "Moderado",
+                "description": "Ritmo equilibrado. Hay momentos de mayor carga y otros más tranquilos. Los plazos son razonables y se gestionan con anticipación. Ocasionalmente puede haber semanas intensas, pero no es la norma."
+            },
+            {
+                "technical_name": "accelerated",
+                "display_name": "Acelerado",
+                "description": "Dinámica rápida y exigente. Los proyectos se mueven con agilidad, hay entregas frecuentes y se valora la velocidad de ejecución. Es común gestionar múltiples tareas simultáneas y adaptarse a cambios sobre la marcha."
+            }
+        ]
+    }, 
+    {
+        "technical_name": "level_of_autonomy",
+        "display_name": "Nivel de autonomía",
+        "values": [
+            {
+                "technical_name": "high_control",
+                "display_name": "Alto control",
+                "description": "Los métodos, procesos y pasos a seguir están predefinidos por la jefatura o la organización. La persona debe ajustarse a procedimientos establecidos sin margen para modificar la forma de trabajar."
+            },
+            {
+                "technical_name": "balanced",
+                "display_name": "Equilibrado",
+                "description": "Hay libertad para proponer y elegir métodos, siempre dentro de ciertos lineamientos o buenas prácticas definidas. La persona puede organizar su trabajo mientras cumpla los objetivos."
+            },
+            {
+                "technical_name": "total_freedom",
+                "display_name": "Total libertad",
+                "description": "La persona decide completamente cómo abordar su trabajo: qué métodos usar, qué herramientas emplear y cómo organizar sus tareas. Solo importa que el valor prometido sea entregado."
+            }
+        ]
+    }, 
+    {
+        "technical_name": "dealing_with_management",
+        "display_name": "Trato con la Jefatura",
+        "values": [
+            {
+                "technical_name": "strictly_professional",
+                "display_name": "Estrictamente profesional",
+                "description": "La relación es estrictamente profesional. Solo se habla de trabajo. Trato formal, con distancia. No hay espacio para temas personales ni confianza más allá de lo laboral."
+            },
+            {
+                "technical_name": "friendly_and_approachable",
+                "display_name": "Cordial y accesible",
+                "description": "Hay confianza para hablar de temas personales, bromear. Se valora a la persona, no solo al empleado. La jerarquía existe pero no impide la cercanía."
+            },
+            {
+                "technical_name": "nearby",
+                "display_name": "Cercano",
+                "description": "Los jefes son \"uno más del equipo\". Hay amistad genuina, se juntan fuera del horario laboral, y existe un vínculo afectivo real."
+            }
+        ]
+    },
+    {
+        "technical_name": "level_of_monitoring",
+        "display_name": "Nivel de supervisión",
+        "values": [
+            {
+                "technical_name": "daily_monitoring",
+                "display_name": "Seguimiento diario",
+                "description": "Revisión de tareas cada día. Reuniones matutinas o reportes de cierre y supervisión constante de cada actividad."
+            },
+            {
+                "technical_name": "frequent_monitoring",
+                "display_name": "Seguimiento Frecuente (2-3 veces por semana)",
+                "description": "Revisiones 2-3 veces por semana. El jefe pregunta avances y da lineamientos."
+            },
+            {
+                "technical_name": "weekly_goals",
+                "display_name": "Objetivos semanales",
+                "description": "Se planifica la semana. Reunión inicial para definir metas y una reunión de cierre para evaluar."
+            },
+            {
+                "technical_name": "biweekly_goals",
+                "display_name": "Objetivos quincenales",
+                "description": "Se requieren reportes cada 15 días. Se definen objetivos a mediano plazo y se revisan en conjunto."
+            },
+            {
+                "technical_name": "total_trust",
+                "display_name": "Total confianza",
+                "description": "Sin seguimiento programado. Se evalúa por resultados. Libertad absoluta para organizar el trabajo."
+            }
+        ]
+    }
+]
