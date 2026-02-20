@@ -32,7 +32,7 @@ export default function PublicPage() {
                                 Unete a un proceso de seleccion justo e innovador que valora tus habilidades reales
                             </p>
                             <Button asChild className="bg-blue-700 hover:bg-blue-800">
-                                <Link href="/#postulate">Postulate Ahora</Link>
+                                <Link href="/ofertas">Postulate Ahora</Link>
                             </Button>
                         </div>
                     </div>

@@ -8,6 +8,12 @@ import PreferenciasCulturalesForm, {
 
 type UserPreferencesResponse = Record<string, string>
 
+function isPreferencesEnvelope(
+    value: unknown
+): value is { preferences?: Record<string, string> } {
+    return typeof value === "object" && value !== null && "preferences" in value
+}
+
 async function readJsonFile<T>(relativePath: string): Promise<T> {
     const fullPath = path.join(process.cwd(), "public", "data", relativePath)
     const fileContents = await readFile(fullPath, "utf-8")
@@ -31,15 +37,13 @@ async function fetchCulturePreferencesServer(
         })
 
         if (response.ok) {
-            const payload = (await response.json()) as
-                | { preferences?: Record<string, string> }
-                | Record<string, string>
+            const payload = (await response.json()) as unknown
 
-            if ("preferences" in payload) {
+            if (isPreferencesEnvelope(payload)) {
                 return payload.preferences ?? {}
             }
 
-            return payload
+            return (payload ?? {}) as UserPreferencesResponse
         }
     } catch {
         // Fallback to mock data while backend endpoint is not implemented.

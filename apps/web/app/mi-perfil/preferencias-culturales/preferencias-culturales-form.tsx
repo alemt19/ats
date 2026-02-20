@@ -117,7 +117,7 @@ export default function PreferenciasCulturalesForm({
                         </FormLabel>
                         <FormControl>
                           <RadioGroup
-                            value={field.value}
+                            value={typeof field.value === "string" ? field.value : ""}
                             onValueChange={field.onChange}
                             className="grid gap-4 sm:grid-cols-2"
                           >

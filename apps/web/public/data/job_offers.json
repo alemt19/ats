@@ -1,0 +1,134 @@
+[
+  {
+    "id": 1,
+    "title": "Desarrollador Full-Stack",
+    "category": "Tecnologia",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "position": "Programador",
+    "salary": 700,
+    "workplace_type": "remote",
+    "employment_type": "full_time"
+  },
+  {
+    "id": 2,
+    "title": "Especialista en Marketing Digital",
+    "category": "Marketing",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "position": "Analista",
+    "salary": 600,
+    "workplace_type": "hybrid",
+    "employment_type": "contract"
+  },
+  {
+    "id": 3,
+    "title": "Gerente de Ventas",
+    "category": "Comercial",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "position": "Lider de area",
+    "salary": 1500,
+    "workplace_type": "onsite",
+    "employment_type": "full_time"
+  },
+  {
+    "id": 4,
+    "title": "Analista de Datos",
+    "category": "Datos",
+    "city": "Barquisimeto",
+    "state": "Lara",
+    "position": "Analista",
+    "salary": 900,
+    "workplace_type": "remote",
+    "employment_type": "part_time"
+  },
+  {
+    "id": 5,
+    "title": "Diseñador UI/UX",
+    "category": "Diseno",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "position": "Disenador",
+    "salary": 850,
+    "workplace_type": "hybrid",
+    "employment_type": "full_time"
+  },
+  {
+    "id": 6,
+    "title": "Asistente Administrativo",
+    "category": "Administracion",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "position": "Asistente",
+    "salary": 500,
+    "workplace_type": "onsite",
+    "employment_type": "full_time"
+  },
+  {
+    "id": 7,
+    "title": "QA Automation Engineer",
+    "category": "Tecnologia",
+    "city": "Maracay",
+    "state": "Aragua",
+    "position": "QA Engineer",
+    "salary": 1000,
+    "workplace_type": "remote",
+    "employment_type": "contract"
+  },
+  {
+    "id": 8,
+    "title": "Pasante de Recursos Humanos",
+    "category": "Recursos Humanos",
+    "city": "Caracas",
+    "state": "Distrito Capital",
+    "position": "Pasante",
+    "salary": 300,
+    "workplace_type": "onsite",
+    "employment_type": "internship"
+  },
+  {
+    "id": 9,
+    "title": "Soporte Tecnico",
+    "category": "Tecnologia",
+    "city": "Maracaibo",
+    "state": "Zulia",
+    "position": "Tecnico",
+    "salary": 650,
+    "workplace_type": "onsite",
+    "employment_type": "part_time"
+  },
+  {
+    "id": 10,
+    "title": "Project Manager",
+    "category": "Tecnologia",
+    "city": "Puerto La Cruz",
+    "state": "Anzoategui",
+    "position": "Project Manager",
+    "salary": 1400,
+    "workplace_type": "hybrid",
+    "employment_type": "full_time"
+  },
+  {
+    "id": 11,
+    "title": "Content Creator",
+    "category": "Marketing",
+    "city": "Maturin",
+    "state": "Monagas",
+    "position": "Creador de contenido",
+    "salary": 550,
+    "workplace_type": "remote",
+    "employment_type": "contract"
+  },
+  {
+    "id": 12,
+    "title": "Contador Senior",
+    "category": "Finanzas",
+    "city": "Valencia",
+    "state": "Carabobo",
+    "position": "Contador",
+    "salary": 1100,
+    "workplace_type": "onsite",
+    "employment_type": "full_time"
+  }
+]

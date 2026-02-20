@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../react/components/ui/card"
+import Link from "next/link"
 
 type JobOffer = {
   id: number
@@ -116,8 +117,9 @@ export default async function LatestOffersSection() {
         </div>
 
         <div className="mt-8 flex justify-center">
-          <Button variant="outline" className="cursor-pointer px-8">
-            Buscar mas ofertas
+          <Button variant="outline" className="cursor-pointer px-8" >
+            
+            <Link href="/ofertas">Buscar mas ofertas</Link>
           </Button>
         </div>
       </div>

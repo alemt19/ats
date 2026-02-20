@@ -1,14 +1,11 @@
-// import Navbar from '@/components/Navbar';
-// import Footer from '@/components/Footer';
-
-import Navbar from "react/components/layout/navbar";
+import NavbarClient from "./navbar-client"
 
 export default function PublicLayout({ children }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
     <>
-      <Navbar />
+      <NavbarClient />
       <main>{children}</main>
     </>
   );

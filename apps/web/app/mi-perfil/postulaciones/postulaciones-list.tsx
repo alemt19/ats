@@ -139,9 +139,6 @@ export default function PostulacionesList({ applications }: PostulacionesListPro
                 <h2 className="text-xl font-semibold text-neutral-800">
                   {application.title}
                 </h2>
-                <p className="text-sm font-medium text-neutral-600">
-                  {application.position}
-                </p>
               </CardHeader>
 
               <CardContent className="space-y-2">
