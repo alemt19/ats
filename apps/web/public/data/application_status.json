@@ -1,6 +1,5 @@
 [
     {   
-
         "techical_name": "applied",
         "display_name": "Postulado"
     },
@@ -11,5 +10,9 @@
     {
         "techical_name": "rejected",
         "display_name": "Rechazado"
+    },
+    {
+        "techical_name": "hired",
+        "display_name": "Contratado"
     }
 ]
