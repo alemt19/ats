@@ -42,7 +42,6 @@ const authResult: NextAuthResult = NextAuth({
             password: credentials.password,
           }),
         })
-
         if (!response.ok) {
           return null
         }
