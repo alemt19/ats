@@ -58,8 +58,8 @@ export default function Navbar({
 		[]
 	)
 
-	const effectiveSession = session ?? demoSession
-	const user = effectiveSession?.user
+	// const user = session?.user ?? demoSession.user
+	const user = session?.user
 	const resolvedCompanyName = companyName ?? company?.name ?? "Ats"
 	const resolvedLogoSrc = logoSrc ?? company?.logo
 	const navItems = [
@@ -69,7 +69,7 @@ export default function Navbar({
 	]
 
 	return (
-		<nav className="sticky top-0 z-50 border-b border-neutral-200 bg-background/95 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/80">
+		<nav className="sticky top-0 z-50 border-b border-neutral-200 bg-background/95 shadow-sm backdrop-blur supports-backdrop-filter:bg-background/80">
 			<div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-4 sm:px-6">
 				<Link href="/" className="flex items-center gap-3">
 					{resolvedLogoSrc ? (
@@ -140,12 +140,12 @@ export default function Navbar({
 						</SheetContent>
 					</Sheet>
 
-					{user && (
+					{user ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild className="cursor-pointer">
 								<Button variant="ghost" className="h-9 rounded-full px-2">
 									<Avatar className="h-8 w-8">
-										<AvatarImage src={user.image ?? undefined} alt={user.name ?? "Usuario"} />
+										<AvatarImage src={user.image ?? undefined} alt={user.name ?? undefined} />
 										<AvatarFallback>
 											{(user.name ?? "U").slice(0, 2).toUpperCase()}
 										</AvatarFallback>
@@ -157,9 +157,9 @@ export default function Navbar({
 							<DropdownMenuContent className="w-56" align="end" forceMount>
 								<DropdownMenuLabel className="font-normal">
 									<div className="flex flex-col space-y-1">
-										<p className="text-sm font-medium leading-none">{user.name}</p>
+										<p className="text-sm font-medium leading-none">{user.name ?? "Usuario"}</p>
 										<p className="text-xs leading-none text-muted-foreground">
-											{user.name || "usuario@ejemplo.com"}
+											{session?.user?.email || "usuario@ejemplo.com"}
 										</p>
 									</div>
 								</DropdownMenuLabel>
@@ -180,6 +180,10 @@ export default function Navbar({
 								</DropdownMenuItem>
 							</DropdownMenuContent>
 						</DropdownMenu>
+					) : (
+						<Button asChild>
+							<Link href="/login">Iniciar sesión</Link>
+						</Button>
 					)}
 				</div>
 			</div>

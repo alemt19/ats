@@ -189,10 +189,10 @@ export default function LoginPage() {
 
 	return (
 		<main className="flex min-h-screen items-center justify-center bg-neutral-100 p-4 md:p-6">
-			<Card className="mx-auto w-full max-w-3xl overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl md:flex md:flex-row md:items-stretch gap-0">
+			<Card className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl md:flex md:flex-row md:items-stretch gap-0">
 				<div
 					className="relative hidden overflow-hidden md:block md:h-full md:shrink-0 md:self-stretch"
-					style={{ minWidth: "350px" }}
+					style={{ minWidth: "395px" }}
 				>
 					<div aria-hidden className="h-full" style={{ aspectRatio: "1000 / 1500" }} />
 						<Image
@@ -292,7 +292,7 @@ export default function LoginPage() {
 										/>
 
 										<div className="flex justify-end">
-											<Link href="#" className="text-sm font-medium text-primary hover:underline">
+											<Link href="/recover-password" className="text-sm font-medium text-primary hover:underline">
 												¿Olvidaste tu contraseña?
 											</Link>
 										</div>
