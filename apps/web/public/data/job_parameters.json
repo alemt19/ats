@@ -38,5 +38,27 @@
                 "display_name": "Pasantía"
             }
         ]
+    },
+    {
+        "technical_name": "status",
+        "display_name": "Estado",
+        "values": [
+            {
+                "technical_name": "draft",
+                "display_name": "Borrador"
+            },
+            {
+                "technical_name": "published",
+                "display_name": "Publicado"
+            },
+            {
+                "technical_name": "closed",
+                "display_name": "Cerrado"
+            },
+            {
+                "technical_name": "archived",
+                "display_name": "Archivado"
+            }
+        ]
     }
 ]
