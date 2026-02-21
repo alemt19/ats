@@ -7,6 +7,7 @@ import { BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from 
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Button } from "../ui/button"
+import { useCompany } from "react/contexts/company-context"
 import {
     Sidebar,
     SidebarContent,
@@ -52,12 +53,13 @@ type SidebarClientProps = {
 export default function SidebarClient({ children }: SidebarClientProps) {
     const pathname = usePathname()
     const { data: session } = useSession()
+    const { company } = useCompany()
 
     const userName = session?.user?.name ?? "Carla Lopez"
     const userEmail = session?.user?.email ?? "carla.lopez@ejemplo.com"
     const userImage = session?.user?.image ?? "https://i.pravatar.cc/100?img=32"
-    const resolvedCompanyName = "Acme Corp"
-    const resolvedLogoSrc = "https://i.pravatar.cc/100?img=1"
+    const resolvedCompanyName = company?.name ?? "Acme Corp"
+    const resolvedLogoSrc = company?.logo ?? "https://i.pravatar.cc/100?img=1"
 
     return (
         <SidebarProvider>
