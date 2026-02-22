@@ -39,3 +39,7 @@ export const CreateCompanySchema = CompanySchema.omit({
 });
 
 export const UpdateCompanySchema = CreateCompanySchema.partial();
+
+export type Company = z.infer<typeof CompanySchema>;
+export type CreateCompanyData = z.infer<typeof CreateCompanySchema>;
+export type UpdateCompanyData = z.infer<typeof UpdateCompanySchema>;

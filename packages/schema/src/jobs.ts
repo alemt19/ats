@@ -33,3 +33,7 @@ export const CreateJobSchema = JobSchema.omit({
 });
 
 export const UpdateJobSchema = CreateJobSchema.partial();
+
+export type Job = z.infer<typeof JobSchema>;
+export type CreateJobData = z.infer<typeof CreateJobSchema>;
+export type UpdateJobData = z.infer<typeof UpdateJobSchema>;

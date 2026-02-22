@@ -47,3 +47,7 @@ export const CreateCandidateSchema = CandidateSchema.omit({
 });
 
 export const UpdateCandidateSchema = CreateCandidateSchema.partial();
+
+export type Candidate = z.infer<typeof CandidateSchema>;
+export type CreateCandidateData = z.infer<typeof CreateCandidateSchema>;
+export type UpdateCandidateData = z.infer<typeof UpdateCandidateSchema>;

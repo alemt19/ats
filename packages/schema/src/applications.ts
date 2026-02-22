@@ -24,3 +24,7 @@ export const CreateApplicationSchema = ApplicationSchema.omit({
 });
 
 export const UpdateApplicationSchema = CreateApplicationSchema.partial();
+
+export type Application = z.infer<typeof ApplicationSchema>;
+export type CreateApplicationData = z.infer<typeof CreateApplicationSchema>;
+export type UpdateApplicationData = z.infer<typeof UpdateApplicationSchema>;
