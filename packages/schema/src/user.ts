@@ -8,5 +8,3 @@ export const userProfileSchema = z.object({
 	displayName: z.string().min(2).max(60),
 	avatarUrl: z.string().url().nullable().optional(),
 });
-
-export type UserProfile = z.infer<typeof userProfileSchema>;
