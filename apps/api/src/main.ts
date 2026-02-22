@@ -25,7 +25,6 @@ async function bootstrap() {
 	app.useGlobalInterceptors(new ResponseInterceptor());
 	app.useGlobalFilters(new HttpExceptionFilter());
 
-	if (process.env.NODE_ENV !== 'production') {
 		const config = new DocumentBuilder()
 			.setTitle('ATS API')
 			.setDescription('ATS service documentation')
@@ -35,7 +34,6 @@ async function bootstrap() {
 
 		const document = SwaggerModule.createDocument(app, config);
 		SwaggerModule.setup('api/docs', app, document);
-	}
 
 	await app.listen(process.env.PORT ?? 4000);
 }
