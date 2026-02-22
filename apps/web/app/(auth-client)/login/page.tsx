@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { loginSchema, type LoginInput } from "@repo/schema"
+import { loginSchema } from "@repo/schema"
 import { Eye, EyeOff } from "lucide-react"
 import { signIn } from "next-auth/react"
 import * as React from "react"
@@ -44,6 +44,7 @@ const registerSchema = z
 	})
 
 type RegisterInput = z.infer<typeof registerSchema>
+type LoginInput = z.infer<typeof loginSchema>
 
 function createSafeZodResolver<TFieldValues extends FieldValues>(
 	schema: z.ZodType<TFieldValues>

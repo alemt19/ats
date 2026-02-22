@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
-import { loginSchema, type LoginInput } from "@repo/schema";
+import { loginSchema } from "@repo/schema";
+import { z } from "zod";
+
+type LoginInput = z.infer<typeof loginSchema>;
 
 export default function LoginForm() {
     const [result, setResult] = useState<string | null>(null);
