@@ -32,16 +32,7 @@ export type CrearOfertaCatalogs = {
   softSkillOptions: string[]
 }
 
-type CrearOfertaFormProps = {
-  catalogs: CrearOfertaCatalogs
-}
-
-type SkillsSuggestionPayload = {
-  technical_skills: string[]
-  soft_skills: string[]
-}
-
-type CrearOfertaFormValues = {
+export type CrearOfertaFormValues = {
   title: string
   description: string
   status: string
@@ -58,6 +49,22 @@ type CrearOfertaFormValues = {
   category: string
   soft_skills: string[]
   technical_skills: string[]
+}
+
+type CrearOfertaFormProps = {
+  catalogs: CrearOfertaCatalogs
+  initialValues?: Partial<CrearOfertaFormValues>
+  pageTitle?: string
+  pageDescription?: string
+  showPageHeader?: boolean
+  offerCardTitle?: string
+  submitLabel?: string
+  onSubmitValues?: (values: CrearOfertaFormValues) => void
+}
+
+type SkillsSuggestionPayload = {
+  technical_skills: string[]
+  soft_skills: string[]
 }
 
 type MultiDatalistFieldProps = {
@@ -258,32 +265,51 @@ function MultiDatalistField({
   )
 }
 
-export default function CrearOfertaForm({ catalogs }: CrearOfertaFormProps) {
+export default function CrearOfertaForm({
+  catalogs,
+  initialValues,
+  pageTitle = "Crear oferta de trabajo",
+  pageDescription =
+    "Completa los datos principales de la vacante y luego agrega habilidades blandas y técnicas.",
+  showPageHeader = true,
+  offerCardTitle = "Datos de la oferta",
+  submitLabel = "Crear oferta",
+  onSubmitValues,
+}: CrearOfertaFormProps) {
   const { statuses, workplaceTypes, employmentTypes, categories, fixedLocation, cityOptions } = catalogs
 
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = React.useState(false)
   const [suggestions, setSuggestions] = React.useState<SkillsSuggestionPayload | null>(null)
 
+  const defaultValues = React.useMemo<CrearOfertaFormValues>(
+    () => ({
+      title: initialValues?.title ?? "",
+      description: initialValues?.description ?? "",
+      status: initialValues?.status ?? statuses[0]?.technical_name ?? "draft",
+      city: initialValues?.city ?? cityOptions[0] ?? "",
+      address: initialValues?.address ?? "",
+      state: initialValues?.state ?? fixedLocation.state,
+      workplace_type: initialValues?.workplace_type ?? workplaceTypes[0]?.technical_name ?? "onsite",
+      employment_type: initialValues?.employment_type ?? employmentTypes[0]?.technical_name ?? "full_time",
+      position: initialValues?.position ?? "",
+      salary: initialValues?.salary ?? "",
+      weight_technical: initialValues?.weight_technical ?? "",
+      weight_soft: initialValues?.weight_soft ?? "",
+      weight_culture: initialValues?.weight_culture ?? "",
+      category: initialValues?.category ?? categories[0] ?? "",
+      soft_skills: initialValues?.soft_skills ?? [],
+      technical_skills: initialValues?.technical_skills ?? [],
+    }),
+    [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, statuses, workplaceTypes]
+  )
+
   const form = useForm<CrearOfertaFormValues>({
-    defaultValues: {
-      title: "",
-      description: "",
-      status: statuses[0]?.technical_name ?? "draft",
-      city: cityOptions[0] ?? "",
-      address: "",
-      state: fixedLocation.state,
-      workplace_type: workplaceTypes[0]?.technical_name ?? "onsite",
-      employment_type: employmentTypes[0]?.technical_name ?? "full_time",
-      position: "",
-      salary: "",
-      weight_technical: "",
-      weight_soft: "",
-      weight_culture: "",
-      category: categories[0] ?? "",
-      soft_skills: [],
-      technical_skills: [],
-    },
+    defaultValues,
   })
+
+  React.useEffect(() => {
+    form.reset(defaultValues)
+  }, [defaultValues, form])
 
   const title = form.watch("title")
   const description = form.watch("description")
@@ -387,6 +413,11 @@ export default function CrearOfertaForm({ catalogs }: CrearOfertaFormProps) {
   }, [description, position, title])
 
   const onSubmit = (values: CrearOfertaFormValues) => {
+    if (onSubmitValues) {
+      onSubmitValues(values)
+      return
+    }
+
     console.log("Payload crear oferta:", {
       ...values,
       salary: Number(values.salary),
@@ -398,18 +429,18 @@ export default function CrearOfertaForm({ catalogs }: CrearOfertaFormProps) {
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Crear oferta de trabajo</h1>
-        <p className="text-sm text-muted-foreground">
-          Completa los datos principales de la vacante y luego agrega habilidades blandas y técnicas.
-        </p>
-      </div>
+      {showPageHeader ? (
+        <div>
+          <h1 className="text-2xl font-semibold">{pageTitle}</h1>
+          <p className="text-sm text-muted-foreground">{pageDescription}</p>
+        </div>
+      ) : null}
 
       <Form {...form}>
         <form className="space-y-6" onSubmit={form.handleSubmit(onSubmit)}>
           <Card>
             <CardHeader>
-              <CardTitle>Datos de la oferta</CardTitle>
+              <CardTitle>{offerCardTitle}</CardTitle>
               <CardDescription>
                 Estos campos representan la información general y ponderaciones de evaluación del puesto.
               </CardDescription>
@@ -797,7 +828,7 @@ export default function CrearOfertaForm({ catalogs }: CrearOfertaFormProps) {
           </Card>
 
           <CardFooter className="justify-end px-0">
-            <Button type="submit">Crear oferta</Button>
+            <Button type="submit">{submitLabel}</Button>
           </CardFooter>
         </form>
       </Form>

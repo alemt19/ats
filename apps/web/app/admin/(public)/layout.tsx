@@ -99,6 +99,15 @@ function getAdminBreadcrumbItems(pathname: string) {
 		]
 	}
 
+	const offerDetailMatch = pathname.match(/^\/admin\/ofertas\/([^/]+)/)
+
+	if (offerDetailMatch && offerDetailMatch[1]) {
+		return [
+			{ label: "Ofertas", href: "/admin/ofertas" },
+			{ label: offerDetailMatch[1] },
+		]
+	}
+
 	return [{ label: getAdminBreadcrumbLabel(pathname) }]
 }
 

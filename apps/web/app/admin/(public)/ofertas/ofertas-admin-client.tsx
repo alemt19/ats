@@ -551,7 +551,7 @@ export default function OfertasAdminClient({
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/ofertas/${offer.id}`} aria-label={`Ver oferta ${offer.title}`}>
+                        <Link href={`/admin/ofertas/${offer.id}`} aria-label={`Ver oferta ${offer.title}`}>
                           <Eye className="size-4" />
                         </Link>
                       </Button>
