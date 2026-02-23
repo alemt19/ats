@@ -1,0 +1,22 @@
+[
+  {
+    "keywords": ["react", "frontend", "ui", "ux"],
+    "technical_skills": ["React", "Next.js", "TypeScript", "Testing Library"],
+    "soft_skills": ["Comunicación", "Trabajo en equipo", "Atención al detalle"]
+  },
+  {
+    "keywords": ["backend", "api", "nest", "microservicios"],
+    "technical_skills": ["Node.js", "NestJS", "PostgreSQL", "Docker"],
+    "soft_skills": ["Resolución de problemas", "Pensamiento crítico", "Colaboración"]
+  },
+  {
+    "keywords": ["data", "analisis", "bi", "python"],
+    "technical_skills": ["Python", "SQL", "Power BI", "ETL"],
+    "soft_skills": ["Pensamiento analítico", "Comunicación", "Organización"]
+  },
+  {
+    "keywords": ["default"],
+    "technical_skills": ["TypeScript", "Node.js", "Git"],
+    "soft_skills": ["Comunicación", "Trabajo en equipo", "Adaptabilidad"]
+  }
+]

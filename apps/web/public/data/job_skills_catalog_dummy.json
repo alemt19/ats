@@ -1,0 +1,24 @@
+{
+  "technical_skills": [
+    "TypeScript",
+    "JavaScript",
+    "React",
+    "Next.js",
+    "Node.js",
+    "NestJS",
+    "PostgreSQL",
+    "Docker",
+    "AWS",
+    "Git"
+  ],
+  "soft_skills": [
+    "Comunicación",
+    "Trabajo en equipo",
+    "Liderazgo",
+    "Resolución de problemas",
+    "Pensamiento crítico",
+    "Adaptabilidad",
+    "Gestión del tiempo",
+    "Orientación a resultados"
+  ]
+}

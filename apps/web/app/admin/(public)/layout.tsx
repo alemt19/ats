@@ -91,6 +91,17 @@ function getAdminBreadcrumbLabel(pathname: string) {
 	return "Dashboard"
 }
 
+function getAdminBreadcrumbItems(pathname: string) {
+	if (pathname.startsWith("/admin/ofertas/crear")) {
+		return [
+			{ label: "Ofertas", href: "/admin/ofertas" },
+			{ label: "Crear" },
+		]
+	}
+
+	return [{ label: getAdminBreadcrumbLabel(pathname) }]
+}
+
 type AdminSessionUser = {
 	name?: string | null
 	lastname?: string | null
@@ -118,7 +129,7 @@ export default function AdminPublicLayout({
 
 	const companyName = company?.name ?? "ATS"
 	const companyLogo = company?.logo
-	const currentPage = getAdminBreadcrumbLabel(pathname)
+	const breadcrumbItems = getAdminBreadcrumbItems(pathname)
 
 	return (
 		<SidebarProvider>
@@ -194,10 +205,22 @@ export default function AdminPublicLayout({
 							<BreadcrumbItem>
 								<BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
 							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							<BreadcrumbItem>
-								<BreadcrumbPage>{currentPage}</BreadcrumbPage>
-							</BreadcrumbItem>
+							{breadcrumbItems.map((item, index) => {
+								const isLast = index === breadcrumbItems.length - 1
+
+								return (
+									<div key={`${item.label}-${index}`} className="contents">
+										<BreadcrumbSeparator />
+										<BreadcrumbItem>
+											{!isLast && item.href ? (
+												<BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+											) : (
+												<BreadcrumbPage>{item.label}</BreadcrumbPage>
+											)}
+										</BreadcrumbItem>
+									</div>
+								)
+							})}
 						</BreadcrumbList>
 					</Breadcrumb>
 				</header>

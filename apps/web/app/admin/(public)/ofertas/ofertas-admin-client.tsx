@@ -456,9 +456,11 @@ export default function OfertasAdminClient({
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold tracking-tight">Gestión de Ofertas de Empleo</h1>
-        <Button className="sm:w-auto">
-          <Plus className="mr-2 size-4" />
-          Crear Nueva Oferta
+        <Button asChild className="sm:w-auto">
+          <Link href="/admin/ofertas/crear">
+            <Plus className="mr-2 size-4" />
+            Crear Nueva Oferta
+          </Link>
         </Button>
       </div>
 
