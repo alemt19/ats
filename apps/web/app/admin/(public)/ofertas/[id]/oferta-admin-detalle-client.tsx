@@ -470,7 +470,7 @@ export default function OfertaAdminDetalleClient({
   )
 
   return (
-    <section className="mx-auto w-full max-w-7xl space-y-6">
+    <section className="mx-auto w-full space-y-6">
       <div className="space-y-2">
         <h1 className="text-4xl font-bold tracking-tight">{offer.title}</h1>
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
@@ -479,7 +479,7 @@ export default function OfertaAdminDetalleClient({
         </div>
       </div>
 
-      <Tabs defaultValue="detalles" className="space-y-4">
+      <Tabs defaultValue="detalles" className="space-y-6">
         <TabsList variant="line" className="w-full justify-start border-b px-0 pb-0">
           <TabsTrigger value="detalles">Detalles de la Oferta</TabsTrigger>
           <TabsTrigger value="candidatos" className="gap-2">
