@@ -38,6 +38,7 @@ export type AdminOfferCandidate = {
   technical_score: number
   soft_score: number
   culture_score: number
+  final_score: number
   status: string
 }
 
@@ -49,6 +50,8 @@ export type AdminOfferCandidatesQueryParams = {
   soft_max: number
   culture_min: number
   culture_max: number
+  final_min: number
+  final_max: number
   status: string
   page: number
   pageSize: number
@@ -83,6 +86,8 @@ export function normalizeAdminOfferCandidatesQuery(
   const softMax = Math.max(0, Math.min(100, toNumber(query?.soft_max, 100)))
   const cultureMin = Math.max(0, Math.min(100, toNumber(query?.culture_min, 0)))
   const cultureMax = Math.max(0, Math.min(100, toNumber(query?.culture_max, 100)))
+  const finalMin = Math.max(0, Math.min(100, toNumber(query?.final_min, 0)))
+  const finalMax = Math.max(0, Math.min(100, toNumber(query?.final_max, 100)))
 
   const pageValue = toNumber(query?.page, DEFAULT_PAGE)
   const pageSizeValue = toNumber(query?.pageSize, DEFAULT_PAGE_SIZE)
@@ -95,6 +100,8 @@ export function normalizeAdminOfferCandidatesQuery(
     soft_max: Math.max(softMin, softMax),
     culture_min: Math.min(cultureMin, cultureMax),
     culture_max: Math.max(cultureMin, cultureMax),
+    final_min: Math.min(finalMin, finalMax),
+    final_max: Math.max(finalMin, finalMax),
     status: String(query?.status ?? "all").trim() || "all",
     page: pageValue > 0 ? pageValue : DEFAULT_PAGE,
     pageSize: pageSizeValue > 0 ? pageSizeValue : DEFAULT_PAGE_SIZE,

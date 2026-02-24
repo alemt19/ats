@@ -140,6 +140,9 @@ function CandidateRowsSkeleton({ rows = 6 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-6 w-24" />
           </TableCell>
+          <TableCell>
+            <Skeleton className="h-2 w-32" />
+          </TableCell>
           <TableCell className="text-right">
             <Skeleton className="ml-auto h-8 w-8" />
           </TableCell>
@@ -167,6 +170,7 @@ function ScoreFilterPanel({
   onTechnicalRangeChange,
   onSoftRangeChange,
   onCultureRangeChange,
+  onFinalRangeChange,
   onStatusChange,
   onClear,
 }: {
@@ -175,6 +179,7 @@ function ScoreFilterPanel({
   onTechnicalRangeChange: (range: [number, number]) => void
   onSoftRangeChange: (range: [number, number]) => void
   onCultureRangeChange: (range: [number, number]) => void
+  onFinalRangeChange: (range: [number, number]) => void
   onStatusChange: (value: string) => void
   onClear: () => void
 }) {
@@ -187,6 +192,7 @@ function ScoreFilterPanel({
     query.culture_min,
     query.culture_max,
   ])
+  const [finalRange, setFinalRange] = React.useState<[number, number]>([query.final_min, query.final_max])
 
   React.useEffect(() => {
     setTechnicalRange([query.technical_min, query.technical_max])
@@ -199,6 +205,10 @@ function ScoreFilterPanel({
   React.useEffect(() => {
     setCultureRange([query.culture_min, query.culture_max])
   }, [query.culture_max, query.culture_min])
+
+  React.useEffect(() => {
+    setFinalRange([query.final_min, query.final_max])
+  }, [query.final_max, query.final_min])
 
   return (
     <div className="space-y-5">
@@ -251,6 +261,22 @@ function ScoreFilterPanel({
       </div>
 
       <div className="space-y-2">
+        <Label>Puntuación final</Label>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={finalRange}
+          onValueChange={(value) => setFinalRange([value[0] ?? 0, value[1] ?? 100])}
+          onValueCommit={(value) => onFinalRangeChange([value[0] ?? 0, value[1] ?? 100])}
+        />
+        <div className="text-muted-foreground flex justify-between text-xs">
+          <span>{finalRange[0]}%</span>
+          <span>{finalRange[1]}%</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
         <Label>Estado</Label>
         <Select value={query.status} onValueChange={onStatusChange}>
           <SelectTrigger className="w-full">
@@ -298,6 +324,8 @@ export default function OfertaAdminDetalleClient({
         soft_max: searchParams.get("soft_max") ?? initialCandidatesQuery.soft_max,
         culture_min: searchParams.get("culture_min") ?? initialCandidatesQuery.culture_min,
         culture_max: searchParams.get("culture_max") ?? initialCandidatesQuery.culture_max,
+        final_min: searchParams.get("final_min") ?? initialCandidatesQuery.final_min,
+        final_max: searchParams.get("final_max") ?? initialCandidatesQuery.final_max,
         status: searchParams.get("status") ?? initialCandidatesQuery.status,
         page: searchParams.get("page") ?? String(initialCandidatesQuery.page),
         pageSize: searchParams.get("pageSize") ?? String(initialCandidatesQuery.pageSize),
@@ -321,6 +349,8 @@ export default function OfertaAdminDetalleClient({
         soft_max: updates.soft_max ?? query.soft_max,
         culture_min: updates.culture_min ?? query.culture_min,
         culture_max: updates.culture_max ?? query.culture_max,
+        final_min: updates.final_min ?? query.final_min,
+        final_max: updates.final_max ?? query.final_max,
         status: updates.status ?? query.status,
         page: resetPage ? 1 : (updates.page ?? query.page),
         pageSize: updates.pageSize ?? query.pageSize,
@@ -334,6 +364,8 @@ export default function OfertaAdminDetalleClient({
       if (next.soft_max !== 100) nextParams.set("soft_max", String(next.soft_max))
       if (next.culture_min !== 0) nextParams.set("culture_min", String(next.culture_min))
       if (next.culture_max !== 100) nextParams.set("culture_max", String(next.culture_max))
+      if (next.final_min !== 0) nextParams.set("final_min", String(next.final_min))
+      if (next.final_max !== 100) nextParams.set("final_max", String(next.final_max))
       if (next.status !== "all") nextParams.set("status", next.status)
       if (next.page !== 1) nextParams.set("page", String(next.page))
       if (next.pageSize !== initialCandidatesQuery.pageSize) {
@@ -367,6 +399,8 @@ export default function OfertaAdminDetalleClient({
       query.soft_max,
       query.culture_min,
       query.culture_max,
+      query.final_min,
+      query.final_max,
       query.status,
       query.page,
       query.pageSize,
@@ -385,6 +419,8 @@ export default function OfertaAdminDetalleClient({
       params.set("soft_max", String(query.soft_max))
       params.set("culture_min", String(query.culture_min))
       params.set("culture_max", String(query.culture_max))
+      params.set("final_min", String(query.final_min))
+      params.set("final_max", String(query.final_max))
       if (query.status !== "all") params.set("status", query.status)
       params.set("page", String(query.page))
       params.set("pageSize", String(query.pageSize))
@@ -410,6 +446,8 @@ export default function OfertaAdminDetalleClient({
         soft_max: query.soft_max,
         culture_min: query.culture_min,
         culture_max: query.culture_max,
+        final_min: query.final_min,
+        final_max: query.final_max,
         status: query.status,
         page: query.page,
         pageSize: query.pageSize,
@@ -526,6 +564,9 @@ export default function OfertaAdminDetalleClient({
                   onCultureRangeChange={(range) =>
                     updateUrl({ culture_min: range[0], culture_max: range[1] }, true)
                   }
+                  onFinalRangeChange={(range) =>
+                    updateUrl({ final_min: range[0], final_max: range[1] }, true)
+                  }
                   onStatusChange={(value) => updateUrl({ status: value }, true)}
                   onClear={() =>
                     updateUrl(
@@ -536,6 +577,8 @@ export default function OfertaAdminDetalleClient({
                         soft_max: 100,
                         culture_min: 0,
                         culture_max: 100,
+                        final_min: 0,
+                        final_max: 100,
                         status: "all",
                         search: "",
                       },
@@ -585,6 +628,9 @@ export default function OfertaAdminDetalleClient({
                             onCultureRangeChange={(range) =>
                               updateUrl({ culture_min: range[0], culture_max: range[1] }, true)
                             }
+                            onFinalRangeChange={(range) =>
+                              updateUrl({ final_min: range[0], final_max: range[1] }, true)
+                            }
                             onStatusChange={(value) => updateUrl({ status: value }, true)}
                             onClear={() =>
                               updateUrl(
@@ -595,6 +641,8 @@ export default function OfertaAdminDetalleClient({
                                   soft_max: 100,
                                   culture_min: 0,
                                   culture_max: 100,
+                                  final_min: 0,
+                                  final_max: 100,
                                   status: "all",
                                   search: "",
                                 },
@@ -620,13 +668,14 @@ export default function OfertaAdminDetalleClient({
 
               <CardContent className="space-y-4">
                 <div className="w-full overflow-x-auto">
-                  <Table className="min-w-245">
+                  <Table className="min-w-280">
                     <TableHeader>
                       <TableRow>
                         <TableHead>Candidato</TableHead>
                         <TableHead>Puntuación técnica</TableHead>
                         <TableHead>Puntuación blanda</TableHead>
                         <TableHead>Alineación cultural</TableHead>
+                        <TableHead>Puntuación final</TableHead>
                         <TableHead>Estado</TableHead>
                         <TableHead className="w-20 text-right">Acciones</TableHead>
                       </TableRow>
@@ -665,6 +714,13 @@ export default function OfertaAdminDetalleClient({
                                 />
                                 <p className="text-muted-foreground text-xs">{candidate.culture_score}%</p>
                               </TableCell>
+                              <TableCell className="space-y-1.5">
+                                <Progress
+                                  value={candidate.final_score}
+                                  className={cn("h-2 w-36", getProgressColorClass(candidate.final_score))}
+                                />
+                                <p className="text-muted-foreground text-xs">{candidate.final_score}%</p>
+                              </TableCell>
                               <TableCell>
                                 <Badge variant={candidateStatusBadgeVariant(candidate.status)}>
                                   {statusLabel}
@@ -686,7 +742,7 @@ export default function OfertaAdminDetalleClient({
 
                       {!tableLoading && !candidates.length ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
+                          <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
                             No se encontraron candidatos con los filtros seleccionados.
                           </TableCell>
                         </TableRow>

@@ -57,6 +57,10 @@ function buildPublishedAtById(offerId: number) {
   return date.toISOString()
 }
 
+function calculateFinalScore(technical: number, soft: number, culture: number) {
+  return Math.round((technical + soft + culture) / 3)
+}
+
 function buildAdminOfferDetail(dummy: JobOfferDummy): AdminOfferDetail {
   const statuses = ["published", "draft", "closed", "archived"]
 
@@ -119,18 +123,30 @@ function buildCandidatesBase(offerId: number): AdminOfferCandidate[] {
       technical_score: Math.min(100, technicalScore),
       soft_score: Math.min(100, softScore),
       culture_score: Math.min(100, cultureScore),
+      final_score: calculateFinalScore(
+        Math.min(100, technicalScore),
+        Math.min(100, softScore),
+        Math.min(100, cultureScore)
+      ),
       status: statuses[index % statuses.length] ?? "applied",
     }
   })
 }
 
 function remapCandidatesForRefresh(candidates: AdminOfferCandidate[]) {
-  return candidates.map((candidate, index) => ({
-    ...candidate,
-    technical_score: Math.max(0, Math.min(100, candidate.technical_score + (index % 2 === 0 ? 4 : -3))),
-    soft_score: Math.max(0, Math.min(100, candidate.soft_score + (index % 3 === 0 ? 5 : -2))),
-    culture_score: Math.max(0, Math.min(100, candidate.culture_score + (index % 4 === 0 ? 3 : -1))),
-  }))
+  return candidates.map((candidate, index) => {
+    const technicalScore = Math.max(0, Math.min(100, candidate.technical_score + (index % 2 === 0 ? 4 : -3)))
+    const softScore = Math.max(0, Math.min(100, candidate.soft_score + (index % 3 === 0 ? 5 : -2)))
+    const cultureScore = Math.max(0, Math.min(100, candidate.culture_score + (index % 4 === 0 ? 3 : -1)))
+
+    return {
+      ...candidate,
+      technical_score: technicalScore,
+      soft_score: softScore,
+      culture_score: cultureScore,
+      final_score: calculateFinalScore(technicalScore, softScore, cultureScore),
+    }
+  })
 }
 
 function applyCandidateFilters(
@@ -150,9 +166,10 @@ function applyCandidateFilters(
     const cultureMatch =
       candidate.culture_score >= query.culture_min &&
       candidate.culture_score <= query.culture_max
+    const finalMatch = candidate.final_score >= query.final_min && candidate.final_score <= query.final_max
     const statusMatch = query.status === "all" ? true : candidate.status === query.status
 
-    return searchMatch && technicalMatch && softMatch && cultureMatch && statusMatch
+    return searchMatch && technicalMatch && softMatch && cultureMatch && finalMatch && statusMatch
   })
 
   const total = filtered.length

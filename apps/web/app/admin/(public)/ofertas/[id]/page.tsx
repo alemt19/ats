@@ -170,6 +170,12 @@ export default async function AdminOfertaDetallePage({
     culture_max: Array.isArray(resolvedSearchParams?.culture_max)
       ? resolvedSearchParams?.culture_max[0]
       : resolvedSearchParams?.culture_max,
+    final_min: Array.isArray(resolvedSearchParams?.final_min)
+      ? resolvedSearchParams?.final_min[0]
+      : resolvedSearchParams?.final_min,
+    final_max: Array.isArray(resolvedSearchParams?.final_max)
+      ? resolvedSearchParams?.final_max[0]
+      : resolvedSearchParams?.final_max,
     status: Array.isArray(resolvedSearchParams?.status)
       ? resolvedSearchParams?.status[0]
       : resolvedSearchParams?.status,

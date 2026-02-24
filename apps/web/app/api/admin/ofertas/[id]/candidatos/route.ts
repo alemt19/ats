@@ -26,6 +26,8 @@ export async function GET(
     soft_max: url.searchParams.get("soft_max") ?? undefined,
     culture_min: url.searchParams.get("culture_min") ?? undefined,
     culture_max: url.searchParams.get("culture_max") ?? undefined,
+    final_min: url.searchParams.get("final_min") ?? undefined,
+    final_max: url.searchParams.get("final_max") ?? undefined,
     status: url.searchParams.get("status") ?? undefined,
     page: url.searchParams.get("page") ?? undefined,
     pageSize: url.searchParams.get("pageSize") ?? undefined,
