@@ -116,7 +116,7 @@ function buildCandidatesBase(offerId: number): AdminOfferCandidate[] {
     const cultureScore = 35 + ((offerId * 5 + index * 19) % 60)
 
     return {
-      application_id: `app_${offerId}_${index + 1}`,
+      application_id: offerId + `${index + 1}`,
       candidate_id: `cand_${offerId}_${index + 1}`,
       first_name: person[0],
       last_name: person[1],

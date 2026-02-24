@@ -1,0 +1,32 @@
+{
+  "candidate_id": 101,
+  "application_id": 9001,
+  "name": "Ana",
+  "lastname": "Pérez",
+  "profile_picture": "https://i.pravatar.cc/150?img=5",
+  "email": "ana.perez@email.com",
+  "phone": "+58 412 123 4567",
+  "contact_page": "https://portfolio.anaperez.dev",
+  "state": "Caracas",
+  "country": "Venezuela",
+  "offer_title": "Ingeniero de Software",
+  "ai_summary": "",
+  "application_status": "applied",
+  "technical_score": 88,
+  "soft_score": 81,
+  "culture_score": 85,
+  "technical_skills": ["Liderazgo", "React.js", "Gestión de Proyectos", "Node.js"],
+  "soft_skills": ["Comunicación", "Trabajo en equipo", "Resolución de problemas"],
+  "values": ["Responsabilidad", "Integridad", "Colaboración"],
+  "cultural_preferences": {
+    "dress_code": "semi_formal",
+    "collaboration_style": "mixed",
+    "work_pace": "moderate",
+    "level_of_autonomy": "balanced",
+    "dealing_with_management": "friendly_and_approachable",
+    "level_of_monitoring": "weekly_goals"
+  },
+  "cv_url": "https://herramientas.datos.gov.co/sites/default/files/2021-08/Pruebas_3.pdf",
+  "behavioral_ans_1": "En un proyecto con fechas ajustadas surgió un conflicto por prioridades. Organicé una reunión corta para alinear objetivos, definimos responsables claros y cerramos con un plan semanal. El equipo recuperó el ritmo y entregamos a tiempo.",
+  "behavioral_ans_2": "Subestimé el esfuerzo de una integración y eso retrasó una entrega. Lo comuniqué temprano, ajusté el plan con el equipo y documenté una checklist para estimaciones similares. Aprendí a validar supuestos antes de comprometer fechas."
+}

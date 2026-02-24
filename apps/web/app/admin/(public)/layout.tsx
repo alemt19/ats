@@ -99,6 +99,20 @@ function getAdminBreadcrumbItems(pathname: string) {
 		]
 	}
 
+	const candidateDetailMatch = pathname.match(/^\/admin\/ofertas\/([^/]+)\/candidatos\/([^/]+)/)
+
+	if (candidateDetailMatch && candidateDetailMatch[1] && candidateDetailMatch[2]) {
+		const offerId = candidateDetailMatch[1]
+		const candidateId = candidateDetailMatch[2]
+
+		return [
+			{ label: "Oferta", href: "/admin/ofertas" },
+			{ label: offerId, href: `/admin/ofertas/${offerId}` },
+			{ label: "Candidatos" },
+			{ label: candidateId },
+		]
+	}
+
 	const offerDetailMatch = pathname.match(/^\/admin\/ofertas\/([^/]+)/)
 
 	if (offerDetailMatch && offerDetailMatch[1]) {
