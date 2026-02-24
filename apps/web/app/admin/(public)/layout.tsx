@@ -10,6 +10,7 @@ import {
 	Settings,
 	UserRound,
 	LogOut,
+	ChevronRight,
 } from "lucide-react"
 
 import { useCompany } from "react/contexts/company-context"
@@ -24,6 +25,11 @@ import {
 } from "react/components/ui/breadcrumb"
 import { Button } from "react/components/ui/button"
 import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "react/components/ui/collapsible"
+import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -34,6 +40,9 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
 	SidebarProvider,
 	SidebarSeparator,
 	SidebarTrigger,
@@ -54,11 +63,6 @@ const adminLinks = [
 		label: "Reclutadores",
 		href: "/admin/reclutadores",
 		icon: Users,
-	},
-	{
-		label: "Configuración",
-		href: "/admin/configuracion",
-		icon: Settings,
 	},
 	{
 		label: "Mi perfil",
@@ -84,6 +88,14 @@ function getAdminBreadcrumbLabel(pathname: string) {
 		return "Configuración"
 	}
 
+	if (pathname.startsWith("/admin/configuracion/informacion-valores")) {
+		return "Información y Valores"
+	}
+
+	if (pathname.startsWith("/admin/configuracion/preferencias-culturales")) {
+		return "Preferencias Culturales"
+	}
+
 	if (pathname.startsWith("/admin/mi-perfil")) {
 		return "Mi perfil"
 	}
@@ -92,6 +104,20 @@ function getAdminBreadcrumbLabel(pathname: string) {
 }
 
 function getAdminBreadcrumbItems(pathname: string) {
+	if (pathname.startsWith("/admin/configuracion/informacion-valores")) {
+		return [
+			{ label: "Configuración" },
+			{ label: "Información y Valores" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/configuracion/preferencias-culturales")) {
+		return [
+			{ label: "Configuración" },
+			{ label: "Preferencias Culturales" },
+		]
+	}
+
 	if (pathname.startsWith("/admin/ofertas/crear")) {
 		return [
 			{ label: "Ofertas", href: "/admin/ofertas" },
@@ -153,6 +179,9 @@ export default function AdminPublicLayout({
 	const companyName = company?.name ?? "ATS"
 	const companyLogo = company?.logo
 	const breadcrumbItems = getAdminBreadcrumbItems(pathname)
+	const isConfigurationSection =
+		pathname.startsWith("/admin/configuracion/informacion-valores") ||
+		pathname.startsWith("/admin/configuracion/preferencias-culturales")
 
 	return (
 		<SidebarProvider>
@@ -190,6 +219,44 @@ export default function AdminPublicLayout({
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								))}
+
+								<Collapsible defaultOpen={isConfigurationSection} className="group/collapsible">
+									<SidebarMenuItem>
+										<CollapsibleTrigger asChild>
+											<SidebarMenuButton isActive={isConfigurationSection}>
+												<Settings />
+												<span>Configuración</span>
+												<ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+											</SidebarMenuButton>
+										</CollapsibleTrigger>
+
+										<CollapsibleContent>
+											<SidebarMenuSub>
+												<SidebarMenuSubItem>
+													<SidebarMenuSubButton
+														asChild
+														isActive={pathname.startsWith("/admin/configuracion/informacion-valores")}
+													>
+														<Link href="/admin/configuracion/informacion-valores">
+															<span>Información y Valores</span>
+														</Link>
+													</SidebarMenuSubButton>
+												</SidebarMenuSubItem>
+
+												<SidebarMenuSubItem>
+													<SidebarMenuSubButton
+														asChild
+														isActive={pathname.startsWith("/admin/configuracion/preferencias-culturales")}
+													>
+														<Link href="/admin/configuracion/preferencias-culturales">
+															<span>Preferencias Culturales</span>
+														</Link>
+													</SidebarMenuSubButton>
+												</SidebarMenuSubItem>
+											</SidebarMenuSub>
+										</CollapsibleContent>
+									</SidebarMenuItem>
+								</Collapsible>
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>
