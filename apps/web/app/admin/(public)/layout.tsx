@@ -145,10 +145,43 @@ function getAdminBreadcrumbItems(pathname: string) {
 		]
 	}
 
+	if (pathname.startsWith("/admin/reclutadores/crear/email-verification")) {
+		return [
+			{ label: "Reclutadores", href: "/admin/reclutadores" },
+			{ label: "Crear", href: "/admin/reclutadores/crear" },
+			{ label: "Verificación de correo" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/reclutadores/crear")) {
+		return [
+			{ label: "Reclutadores", href: "/admin/reclutadores" },
+			{ label: "Crear" },
+		]
+	}
+
 	if (pathname.startsWith("/admin/categorias/crear")) {
 		return [
 			{ label: "Categorias", href: "/admin/categorias" },
 			{ label: "Crear" },
+		]
+	}
+
+	const recruiterDetailMatch = pathname.match(/^\/admin\/reclutadores\/([^/]+)/)
+
+	if (recruiterDetailMatch && recruiterDetailMatch[1]) {
+		return [
+			{ label: "Reclutadores", href: "/admin/reclutadores" },
+			{ label: recruiterDetailMatch[1] },
+		]
+	}
+
+	const adminCandidateDetailMatch = pathname.match(/^\/admin\/candidatos\/([^/]+)/)
+
+	if (adminCandidateDetailMatch && adminCandidateDetailMatch[1]) {
+		return [
+			{ label: "Candidatos", href: "/admin/candidatos" },
+			{ label: adminCandidateDetailMatch[1] },
 		]
 	}
 
