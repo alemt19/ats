@@ -1,10 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, X } from "lucide-react"
+import { Camera, Sparkles, X } from "lucide-react"
 import { useForm } from "react-hook-form"
 
 import type { AdminCompanyConfigInitialData } from "../company-config-bootstrap"
+import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "react/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "react/components/ui/form"
@@ -230,6 +231,9 @@ export default function InformacionValoresForm({
 	cityOptions,
 	companyValueOptions,
 }: InformacionValoresFormProps) {
+	const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+	const [logoPreview, setLogoPreview] = React.useState<string>(initialData.logo || "")
+	const [logoFile, setLogoFile] = React.useState<File | null>(null)
 	const [isGeneratingSuggestions, setIsGeneratingSuggestions] = React.useState(false)
 	const [valueSuggestions, setValueSuggestions] = React.useState<string[]>([])
 
@@ -256,6 +260,11 @@ export default function InformacionValoresForm({
 	React.useEffect(() => {
 		form.reset(defaultValues)
 	}, [defaultValues, form])
+
+	React.useEffect(() => {
+		setLogoPreview(initialData.logo || "")
+		setLogoFile(null)
+	}, [initialData.logo])
 
 	const description = form.watch("description")
 	const mission = form.watch("mision")
@@ -294,21 +303,25 @@ export default function InformacionValoresForm({
 	}
 
 	const onSubmit = (values: InformacionValoresFormValues) => {
-		const payload = {
-			userId,
-			name: values.name,
-			logo: values.logo,
-			contact_email: values.contact_email,
-			country: values.country,
-			state: values.state,
-			city: values.city,
-			address: values.address,
-			description: values.description,
-			mision: values.mision,
-			values: values.values,
+		const payload = new FormData()
+
+		payload.append("userId", userId)
+		payload.append("name", values.name)
+		payload.append("logo", values.logo)
+		payload.append("contact_email", values.contact_email)
+		payload.append("country", values.country)
+		payload.append("state", values.state)
+		payload.append("city", values.city)
+		payload.append("address", values.address)
+		payload.append("description", values.description)
+		payload.append("mision", values.mision)
+		payload.append("values", JSON.stringify(values.values))
+
+		if (logoFile) {
+			payload.append("logo_file", logoFile)
 		}
 
-		console.log("Payload para backend:", payload)
+		console.log("Payload para backend (multipart/form-data):", payload)
 	}
 
 	return (
@@ -329,6 +342,41 @@ export default function InformacionValoresForm({
 						</CardHeader>
 
 						<CardContent className="space-y-4">
+							<div className="flex items-center gap-4 rounded-md border p-4">
+								<Avatar className="size-16">
+									<AvatarImage src={logoPreview} alt={form.watch("name") || "Logo empresa"} />
+									<AvatarFallback>
+										{(form.watch("name")?.slice(0, 2) || "EM").toUpperCase()}
+									</AvatarFallback>
+								</Avatar>
+
+								<div className="space-y-2">
+									<p className="font-medium">Logo de la empresa</p>
+									<Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+										<Camera className="mr-2 size-4" />
+										Cambiar logo
+									</Button>
+									<input
+										ref={fileInputRef}
+										type="file"
+										accept="image/*"
+										className="hidden"
+										onChange={(event) => {
+											const file = event.target.files?.[0]
+
+											if (!file) {
+												return
+											}
+
+											const localUrl = URL.createObjectURL(file)
+											setLogoPreview(localUrl)
+											setLogoFile(file)
+											form.setValue("logo", file.name, { shouldDirty: true })
+										}}
+									/>
+								</div>
+							</div>
+
 							<div className="grid gap-4 md:grid-cols-2">
 								<FormField
 									control={form.control}
@@ -344,19 +392,6 @@ export default function InformacionValoresForm({
 									)}
 								/>
 
-								<FormField
-									control={form.control}
-									name="logo"
-									render={({ field }) => (
-										<FormItem>
-											<FormLabel>Logo</FormLabel>
-											<FormControl>
-												<Input placeholder="URL del logo" {...field} />
-											</FormControl>
-											<FormMessage />
-										</FormItem>
-									)}
-								/>
 							</div>
 
 							<FormField
