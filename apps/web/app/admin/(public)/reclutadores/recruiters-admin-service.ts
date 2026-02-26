@@ -14,6 +14,7 @@ import {
 
 type RecruiterDummyRecord = {
   id?: unknown
+  profile_picture?: unknown
   name?: unknown
   lastname?: unknown
   email?: unknown
@@ -35,6 +36,7 @@ type RecruiterRoleDummy = {
 type CountryRecord = {
   id?: unknown
   name?: unknown
+  phonecode?: unknown
 }
 
 type StateRecord = {
@@ -58,6 +60,7 @@ function normalizeRecruiter(record: RecruiterDummyRecord, fallbackId: number, fa
   const name = typeof record.name === "string" ? record.name.trim() : ""
   const lastname = typeof record.lastname === "string" ? record.lastname.trim() : ""
   const email = typeof record.email === "string" ? record.email.trim() : ""
+  const profilePicture = typeof record.profile_picture === "string" ? record.profile_picture.trim() : ""
   const password = typeof record.password === "string" ? record.password.trim() : ""
   const dni = typeof record.dni === "string" ? record.dni.trim() : ""
   const phone = typeof record.phone === "string" ? record.phone.trim() : ""
@@ -71,6 +74,7 @@ function normalizeRecruiter(record: RecruiterDummyRecord, fallbackId: number, fa
 
   return {
     id: Number.isFinite(idValue) && idValue > 0 ? idValue : fallbackId,
+    profile_picture: profilePicture,
     name,
     lastname,
     email,
@@ -125,6 +129,13 @@ export async function getRecruitersCatalogsServer(): Promise<RecruitersCatalogsR
       ? String(country.id)
       : ""
 
+    const countryPhoneCode =
+      typeof country?.phonecode === "string" || typeof country?.phonecode === "number"
+        ? String(country.phonecode).trim()
+        : ""
+
+    const countryPhonePrefix = countryPhoneCode.length > 0 ? `+${countryPhoneCode}` : ""
+
     const states = Array.isArray(statesPayload) && Array.isArray(citiesPayload)
       ? statesPayload
           .map((state) => {
@@ -170,12 +181,14 @@ export async function getRecruitersCatalogsServer(): Promise<RecruitersCatalogsR
 
     return {
       country: fixedCountryName,
+      country_phone_prefix: countryPhonePrefix,
       roles,
       states,
     }
   } catch {
     return {
       country: "Venezuela",
+      country_phone_prefix: "+58",
       roles: [
         { technical_name: "head_of_recruiters", display_name: "Jefe de reclutadores" },
         { technical_name: "recruiter", display_name: "Reclutador" },
@@ -203,6 +216,7 @@ async function getAllRecruiters(): Promise<Recruiter[]> {
     return [
       {
         id: 1,
+        profile_picture: "https://i.pravatar.cc/150?img=18",
         name: "Mariana",
         lastname: "Pérez",
         email: "mariana.perez@talentoia.com",
@@ -272,12 +286,13 @@ export async function createRecruiterServer(payload: RecruiterPayload): Promise<
 
   return {
     id: nextId,
+    profile_picture: payload.profile_picture?.trim() || "",
     name: payload.name.trim(),
     lastname: payload.lastname.trim(),
     email: payload.email.trim(),
     password: payload.password.trim(),
     dni: payload.dni.trim(),
-    phone: payload.phone.trim(),
+    phone: `${(payload.phone_prefix ?? catalogs.country_phone_prefix).trim()} ${payload.phone.trim()}`.trim(),
     role: payload.role.trim(),
     country: catalogs.country,
     state: payload.state.trim(),
@@ -296,11 +311,12 @@ export async function updateRecruiterServer(recruiterId: number, payload: Recrui
 
   return {
     ...existing,
+    profile_picture: payload.profile_picture?.trim() ? payload.profile_picture.trim() : existing.profile_picture,
     name: payload.name.trim(),
     lastname: payload.lastname.trim(),
     password: payload.password.trim().length > 0 ? payload.password.trim() : existing.password,
     dni: payload.dni.trim(),
-    phone: payload.phone.trim(),
+    phone: `${(payload.phone_prefix ?? catalogs.country_phone_prefix).trim()} ${payload.phone.trim()}`.trim(),
     role: payload.role.trim(),
     country: catalogs.country,
     state: payload.state.trim(),

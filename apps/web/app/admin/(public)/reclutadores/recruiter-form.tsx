@@ -2,11 +2,12 @@
 
 import * as React from "react"
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { Loader2, Save } from "lucide-react"
+import { Camera, Loader2, Save } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
+import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import { Input } from "react/components/ui/input"
@@ -33,12 +34,14 @@ type RecruiterFormProps = {
 }
 
 type RecruiterFormValues = {
+  profile_picture: string
   name: string
   lastname: string
   email: string
   password: string
   dni: string
   phone: string
+  phone_prefix: string
   role: string
   country: string
   state: string
@@ -47,12 +50,14 @@ type RecruiterFormValues = {
 }
 
 const EMPTY_VALUES: RecruiterFormValues = {
+  profile_picture: "",
   name: "",
   lastname: "",
   email: "",
   password: "",
   dni: "",
   phone: "",
+  phone_prefix: "",
   role: "",
   country: "",
   state: "",
@@ -60,14 +65,41 @@ const EMPTY_VALUES: RecruiterFormValues = {
   address: "",
 }
 
-function valuesFromRecruiter(recruiter: Recruiter): RecruiterFormValues {
+function toInitials(name: string) {
+  return name
+    .split(" ")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((value) => value[0]?.toUpperCase() ?? "")
+    .join("")
+}
+
+function extractPhoneNumber(phone: string, prefix: string) {
+  const cleanPhone = phone.trim()
+  const cleanPrefix = prefix.trim()
+
+  if (!cleanPhone) {
+    return ""
+  }
+
+  if (cleanPrefix && cleanPhone.startsWith(cleanPrefix)) {
+    return cleanPhone.slice(cleanPrefix.length).replace(/\D/g, "")
+  }
+
+  return cleanPhone.replace(/\D/g, "")
+}
+
+function valuesFromRecruiter(recruiter: Recruiter, phonePrefix: string): RecruiterFormValues {
   return {
+    profile_picture: recruiter.profile_picture,
     name: recruiter.name,
     lastname: recruiter.lastname,
     email: recruiter.email,
     password: "",
     dni: recruiter.dni,
-    phone: recruiter.phone,
+    phone: extractPhoneNumber(recruiter.phone, phonePrefix),
+    phone_prefix: phonePrefix,
     role: recruiter.role,
     country: recruiter.country,
     state: recruiter.state,
@@ -78,6 +110,10 @@ function valuesFromRecruiter(recruiter: Recruiter): RecruiterFormValues {
 
 export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps) {
   const router = useRouter()
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+
+  const [avatarPreview, setAvatarPreview] = React.useState<string>("https://i.pravatar.cc/150?img=32")
+  const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
   const [values, setValues] = React.useState<RecruiterFormValues>(EMPTY_VALUES)
 
   const catalogsQuery = useQuery<RecruitersCatalogsResponse>({
@@ -124,6 +160,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
     if (mode === "create") {
       setValues((previous) => ({
         ...previous,
+        phone_prefix: catalogsQuery.data.country_phone_prefix,
         country: catalogsQuery.data.country,
         state: previous.state || firstState?.name || "",
         city: previous.city || firstCity,
@@ -138,27 +175,35 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       setValues(valuesFromRecruiter({
         ...detailQuery.data,
         country: catalogsQuery.data.country,
-      }))
+      }, catalogsQuery.data.country_phone_prefix))
       hasAppliedInitialValues.current = true
     }
   }, [catalogsQuery.data, detailQuery.data, mode])
+
+  React.useEffect(() => {
+    if (mode === "edit" && detailQuery.data) {
+      setAvatarPreview(detailQuery.data.profile_picture || "https://i.pravatar.cc/150?img=32")
+      return
+    }
+
+    if (mode === "create") {
+      setAvatarPreview("https://i.pravatar.cc/150?img=32")
+    }
+  }, [detailQuery.data, mode])
 
   const selectedState = React.useMemo(
     () => catalogsQuery.data?.states.find((state) => state.name === values.state),
     [catalogsQuery.data?.states, values.state]
   )
 
-  const mutation = useMutation<Recruiter, Error, RecruiterPayload>({
+  const mutation = useMutation<Recruiter, Error, FormData>({
     mutationFn: async (payload) => {
       const endpoint = mode === "create" ? "/api/admin/reclutadores" : `/api/admin/reclutadores/${recruiterId}`
       const method = mode === "create" ? "POST" : "PUT"
 
       const response = await fetch(endpoint, {
         method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+        body: payload,
       })
 
       if (!response.ok) {
@@ -247,19 +292,26 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       return
     }
 
-    mutation.mutate({
-      name: values.name,
-      lastname: values.lastname,
-      email: values.email,
-      password: values.password,
-      dni: values.dni,
-      phone: values.phone,
-      role: values.role,
-      country: values.country,
-      state: values.state,
-      city: values.city,
-      address: values.address,
-    })
+    const payload = new FormData()
+
+    payload.append("name", values.name)
+    payload.append("lastname", values.lastname)
+    payload.append("email", values.email)
+    payload.append("password", values.password)
+    payload.append("dni", values.dni)
+    payload.append("phone", values.phone)
+    payload.append("phone_prefix", values.phone_prefix)
+    payload.append("role", values.role)
+    payload.append("country", values.country)
+    payload.append("state", values.state)
+    payload.append("city", values.city)
+    payload.append("address", values.address)
+
+    if (profileImageFile) {
+      payload.append("profile_picture", profileImageFile)
+    }
+
+    mutation.mutate(payload)
   }
 
   if (isLoading) {
@@ -282,6 +334,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
   const stateOptions = catalogsQuery.data?.states ?? []
   const roleOptions = catalogsQuery.data?.roles ?? []
   const cityOptions = selectedState?.cities ?? []
+  const fullName = `${values.name} ${values.lastname}`.trim() || "Reclutador"
 
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
@@ -303,6 +356,42 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
+            <div className="flex items-center gap-4 rounded-md border p-4">
+              <Avatar className="size-16">
+                <AvatarImage src={avatarPreview} alt={fullName} />
+                <AvatarFallback>{toInitials(fullName)}</AvatarFallback>
+              </Avatar>
+
+              <div className="space-y-2">
+                <p className="font-medium">{fullName}</p>
+                <Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+                  <Camera className="mr-2 size-4" />
+                  Cambiar foto
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0]
+
+                    if (!file) {
+                      return
+                    }
+
+                    const localUrl = URL.createObjectURL(file)
+                    setAvatarPreview(localUrl)
+                    setProfileImageFile(file)
+                    setValues((previous) => ({
+                      ...previous,
+                      profile_picture: file.name,
+                    }))
+                  }}
+                />
+              </div>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre *</Label>
@@ -343,7 +432,22 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono</Label>
-                <Input id="phone" value={values.phone} onChange={handleInputChange("phone")} />
+                <div className="flex gap-2">
+                  <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24" placeholder="+000" />
+                  <Input
+                    id="phone"
+                    value={values.phone}
+                    inputMode="numeric"
+                    placeholder="Número"
+                    onChange={(event) => {
+                      const digitsOnly = event.target.value.replace(/\D/g, "")
+                      setValues((previous) => ({
+                        ...previous,
+                        phone: digitsOnly,
+                      }))
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

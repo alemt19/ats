@@ -10,12 +10,14 @@ export type RecruiterStateOption = {
 
 export type RecruitersCatalogsResponse = {
   country: string
+  country_phone_prefix: string
   roles: RecruiterRoleOption[]
   states: RecruiterStateOption[]
 }
 
 export type Recruiter = {
   id: number
+  profile_picture: string
   name: string
   lastname: string
   email: string
@@ -42,8 +44,20 @@ export type RecruitersResponse = {
   pageSize: number
 }
 
-export type RecruiterPayload = Omit<Recruiter, "id" | "country"> & {
+export type RecruiterPayload = {
+  profile_picture?: string
+  name: string
+  lastname: string
+  email: string
+  password: string
+  dni: string
+  phone: string
+  phone_prefix?: string
+  role: string
   country?: string
+  state: string
+  city: string
+  address: string
 }
 
 const DEFAULT_PAGE = 1
