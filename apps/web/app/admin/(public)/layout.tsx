@@ -7,6 +7,8 @@ import {
 	LayoutDashboard,
 	BriefcaseBusiness,
 	Users,
+	UserSearch,
+	Tags,
 	Settings,
 	UserRound,
 	LogOut,
@@ -65,6 +67,16 @@ const adminLinks = [
 		icon: Users,
 	},
 	{
+		label: "Candidatos",
+		href: "/admin/candidatos",
+		icon: UserSearch,
+	},
+	{
+		label: "Categorias",
+		href: "/admin/categorias",
+		icon: Tags,
+	},
+	{
 		label: "Mi perfil",
 		href: "/admin/mi-perfil",
 		icon: UserRound,
@@ -82,6 +94,14 @@ function getAdminBreadcrumbLabel(pathname: string) {
 
 	if (pathname.startsWith("/admin/reclutadores")) {
 		return "Reclutadores"
+	}
+
+	if (pathname.startsWith("/admin/candidatos")) {
+		return "Candidatos"
+	}
+
+	if (pathname.startsWith("/admin/categorias")) {
+		return "Categorias"
 	}
 
 	if (pathname.startsWith("/admin/configuracion")) {
@@ -122,6 +142,22 @@ function getAdminBreadcrumbItems(pathname: string) {
 		return [
 			{ label: "Ofertas", href: "/admin/ofertas" },
 			{ label: "Crear" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/categorias/crear")) {
+		return [
+			{ label: "Categorias", href: "/admin/categorias" },
+			{ label: "Crear" },
+		]
+	}
+
+	const categoryDetailMatch = pathname.match(/^\/admin\/categorias\/([^/]+)/)
+
+	if (categoryDetailMatch && categoryDetailMatch[1]) {
+		return [
+			{ label: "Categorias", href: "/admin/categorias" },
+			{ label: categoryDetailMatch[1] },
 		]
 	}
 
