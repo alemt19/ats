@@ -1,0 +1,21 @@
+{
+  "country": "Venezuela",
+  "states": [
+    {
+      "name": "Carabobo",
+      "cities": ["Valencia", "Naguanagua", "Puerto Cabello"]
+    },
+    {
+      "name": "Distrito Capital",
+      "cities": ["Caracas"]
+    },
+    {
+      "name": "Miranda",
+      "cities": ["Los Teques", "Guatire", "Petare"]
+    },
+    {
+      "name": "Zulia",
+      "cities": ["Maracaibo", "Cabimas", "San Francisco"]
+    }
+  ]
+}
