@@ -2,7 +2,7 @@ import { Suspense } from "react"
 import path from "node:path"
 import { readFile } from "node:fs/promises"
 
-import { auth } from "../../../auth"
+import { getSession } from "../../../auth"
 import PostulacionesList, {
 	type ApplicationStatusCatalogItem,
 	type JobApplication,
@@ -114,7 +114,7 @@ async function fetchApplicationsServer(
 }
 
 async function PostulacionesData() {
-	const session = await auth()
+	const session = await getSession()
 	const userId = session?.user?.id ?? "user_123"
 	const accessToken = session?.accessToken
 

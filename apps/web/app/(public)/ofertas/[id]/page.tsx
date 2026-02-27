@@ -4,7 +4,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, MapPin, Wallet } from "lucide-react"
 
-import { auth } from "../../../../auth"
+import { getSession } from "../../../../auth"
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "react/components/ui/card"
@@ -193,7 +193,7 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 		notFound()
 	}
 
-	const session = await auth()
+	const session = await getSession()
 	const userId = session?.user?.id ?? ""
 	const accessToken = session?.accessToken
 

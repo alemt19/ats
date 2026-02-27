@@ -1,4 +1,4 @@
-import { auth } from "../../../../../auth"
+import { getSession } from "../../../../../auth"
 import type {
 	AdminCompanyConfigInitialData,
 	CityRecord,
@@ -15,7 +15,7 @@ import {
 import InformacionValoresForm from "./informacion-valores-form"
 
 export default async function AdminConfiguracionInformacionValoresPage() {
-	const session = await auth()
+	const session = await getSession()
 	const userId = session?.user?.id ?? "admin_123"
 	const accessToken = session?.accessToken
 

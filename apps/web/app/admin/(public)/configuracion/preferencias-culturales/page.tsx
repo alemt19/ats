@@ -1,4 +1,4 @@
-import { auth } from "../../../../../auth"
+import { getSession } from "../../../../../auth"
 import type {
 	CulturePreferenceCategory,
 } from "../company-config-bootstrap"
@@ -9,7 +9,7 @@ import {
 import PreferenciasCulturalesForm from "./preferencias-culturales-form"
 
 export default async function AdminConfiguracionPreferenciasCulturalesPage() {
-	const session = await auth()
+	const session = await getSession()
 	const userId = session?.user?.id ?? "admin_123"
 	const accessToken = session?.accessToken
 

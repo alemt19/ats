@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 
-import { auth } from "../../../../auth"
+import { getSession } from "../../../../auth"
 import {
   getAdminProfileServer,
   updateAdminProfileServer,
@@ -59,7 +59,7 @@ function isInvalidPayload(payload: AdminProfilePayload) {
 }
 
 export async function GET() {
-  const session = await auth()
+  const session = await getSession()
 
   const profile = await getAdminProfileServer({
     userId: session?.user?.id,
@@ -75,7 +75,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await auth()
+  const session = await getSession()
   const contentType = request.headers.get("content-type") ?? ""
 
   const payload = contentType.includes("multipart/form-data")

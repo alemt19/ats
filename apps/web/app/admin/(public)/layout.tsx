@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut, useSession } from "next-auth/react"
+import { signOut, useSession } from "../../../auth-client"
 import {
 	LayoutDashboard,
 	BriefcaseBusiness,
@@ -348,7 +348,12 @@ export default function AdminPublicLayout({
 					<Button
 						variant="outline"
 						className="w-full justify-start"
-						onClick={() => void signOut({ callbackUrl: "/login" })}
+						onClick={() => {
+							void (async () => {
+								await signOut()
+								window.location.href = "/login"
+							})()
+						}}
 					>
 						<LogOut className="mr-2 size-4" />
 						Logout

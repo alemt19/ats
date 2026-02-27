@@ -2,7 +2,7 @@ import path from "node:path"
 import { readFile } from "node:fs/promises"
 import { notFound } from "next/navigation"
 
-import { auth } from "../../../../../../../auth"
+import { getSession } from "../../../../../../../auth"
 import CandidateApplicationDetailClient, {
 	type ApplicationNote,
 	type ApplicationStatusOption,
@@ -98,7 +98,7 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 		notFound()
 	}
 
-	const session = await auth()
+	const session = await getSession()
 	const accessToken = session?.accessToken
 	const behavioralQuestion1 =
 		process.env.behavioral_question_1 ??

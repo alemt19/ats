@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut, useSession } from "next-auth/react"
+import { signOut, useSession } from "../../../auth-client"
 import { BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
@@ -121,7 +121,12 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                     <Button
                         variant="outline"
                         className="w-full justify-start"
-                        onClick={() => void signOut({ callbackUrl: "/" })}
+                        onClick={() => {
+                            void (async () => {
+                                await signOut()
+                                window.location.href = "/"
+                            })()
+                        }}
                     >
                         <LogOut className="mr-2 size-4" />
                         Logout

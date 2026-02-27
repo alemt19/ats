@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useSession } from "next-auth/react"
+import { useSession } from "../../../auth-client"
 
 import {
 	NavigationMenu,

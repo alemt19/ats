@@ -1,4 +1,4 @@
-import { auth } from "../../../../auth"
+import { getSession } from "../../../../auth"
 
 import MiPerfilForm from "./mi-perfil-form"
 import {
@@ -7,7 +7,7 @@ import {
 } from "./mi-perfil-service"
 
 export default async function AdminMiPerfilPage() {
-	const session = await auth()
+	const session = await getSession()
 
 	const [catalogs, profile] = await Promise.all([
 		getAdminProfileCatalogsServer(),
