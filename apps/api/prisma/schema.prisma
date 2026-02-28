@@ -42,8 +42,8 @@ model candidates {
   profile_picture         String?
   name                    String?                       @db.VarChar(100)
   lastname                String?                       @db.VarChar(100)
-  email                   String                        @unique @db.VarChar(255)
-  password                String?                       @db.VarChar(255)
+  user_id                 String?                       @unique
+  user                    User?                         @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   dni                     String?                       @db.VarChar(50)
   phone                   String?                       @db.VarChar(50)
   country                 String?                       @db.VarChar(100)
@@ -68,7 +68,7 @@ model candidates {
   applications            applications[]
   candidate_attributes    candidate_attributes[]
 
-  @@index([email], map: "idx_candidates_email")
+  @@index([user_id], map: "idx_candidates_user_id")
   @@index([summary_embedding], map: "idx_candidates_summary_embedding")
 }
 
@@ -178,8 +178,8 @@ model user_admin {
   profile_picture String?
   name            String?    @db.VarChar(100)
   lastname        String?    @db.VarChar(100)
-  email           String     @unique @db.VarChar(255)
-  password        String     @db.VarChar(255)
+  user_id         String?    @unique
+  user            User?      @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   dni             String?    @db.VarChar(50)
   phone           String?    @db.VarChar(50)
   role            String?    @db.VarChar(50)
@@ -192,6 +192,64 @@ model user_admin {
   updated_at      DateTime?  @default(now()) @db.Timestamp(6)
   notes           notes[]
   companies       companies? @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+/// Better-Auth core models
+enum user_role_enum {
+  candidate
+  admin
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String?        @unique
+  emailVerified DateTime?
+  role          user_role_enum @default(candidate)
+
+  // relations to existing domain tables (one-to-one)
+  candidate candidates? @relation()
+  admin     user_admin? @relation()
+
+  // adapter relations
+  accounts account[]
+  sessions session[]
+}
+
+model account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  accessToken  String?  @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model verification_token {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
 
 enum attribute_type_enum {
