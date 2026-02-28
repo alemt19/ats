@@ -6,6 +6,7 @@ import {
 	Injectable,
 	NestInterceptor,
 } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { map, type Observable } from 'rxjs';
 
 export interface ApiResponse<T> {
@@ -20,9 +21,18 @@ export class ResponseInterceptor<T> implements NestInterceptor<
 	ApiResponse<T>
 > {
 	intercept(
-		_context: ExecutionContext,
+		context: ExecutionContext,
 		next: CallHandler,
 	): Observable<ApiResponse<T>> {
+		const http = context.switchToHttp();
+		const request = http.getRequest<Request>();
+		const response = http.getResponse<Response>();
+
+		// Skip wrapping for Better-Auth endpoints or when response is already sent
+		if (request?.url?.startsWith('/api/auth') || response?.headersSent) {
+			return next.handle() as Observable<any>;
+		}
+
 		return next.handle().pipe(
 			map((data) => {
 				if (data && typeof data === 'object' && 'data' in data) {
