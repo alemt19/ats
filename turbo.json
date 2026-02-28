@@ -19,7 +19,12 @@
         "NODE_ENV",
         "DATABASE_URL",
         "PORT",
-        "DIRECT_URL"
+        "DIRECT_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_BASE_URL",
+        "RESEND_API_KEY",
+        "RESEND_FROM",
+        "APP_URL"
       ]
     },
     "lint": {
