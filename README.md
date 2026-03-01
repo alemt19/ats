@@ -10,6 +10,7 @@ Next.js + NestJS apps orchestrated by Turborepo.
 ```
 apps/
 	api/              # NestJS API (modular)
+	fastapi/          # FastAPI service
 	web/              # Next.js app (App Router)
 packages/
 	eslint-config/    # Shared ESLint configs
@@ -20,9 +21,32 @@ packages/
 
 ## Quick Start
 
+### Prerequisites
+
+- [pnpm](https://pnpm.io/installation)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (for Python/FastAPI)
+
+To install `uv` quickly via terminal:
+
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### Setup
+
 ```
 pnpm install
 pnpm dev
+```
+
+Run only FastAPI:
+
+```
+pnpm dev --filter fastapi
 ```
 
 ## Scripts

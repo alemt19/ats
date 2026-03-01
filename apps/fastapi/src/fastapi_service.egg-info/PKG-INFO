@@ -1,0 +1,31 @@
+Metadata-Version: 2.4
+Name: fastapi-service
+Version: 0.1.0
+Summary: FastAPI microservice for ATS
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.115.0
+Requires-Dist: uvicorn[standard]>=0.30.0
+
+# FastAPI service
+
+## Local dev
+
+### Prerequisites
+
+You need `uv` installed. If you don't have it:
+
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+### Setup
+
+- Install dependencies: `uv sync`
+- Start server: `pnpm dev --filter fastapi`
+
+The service listens on port 8000 by default.
