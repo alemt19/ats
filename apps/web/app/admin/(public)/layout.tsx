@@ -2,14 +2,17 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut, useSession } from "next-auth/react"
+import { signOut, useSession } from "../../../auth-client"
 import {
 	LayoutDashboard,
 	BriefcaseBusiness,
 	Users,
+	UserSearch,
+	Tags,
 	Settings,
 	UserRound,
 	LogOut,
+	ChevronRight,
 } from "lucide-react"
 
 import { useCompany } from "react/contexts/company-context"
@@ -24,6 +27,11 @@ import {
 } from "react/components/ui/breadcrumb"
 import { Button } from "react/components/ui/button"
 import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "react/components/ui/collapsible"
+import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
@@ -34,6 +42,9 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
+	SidebarMenuSub,
+	SidebarMenuSubButton,
+	SidebarMenuSubItem,
 	SidebarProvider,
 	SidebarSeparator,
 	SidebarTrigger,
@@ -56,9 +67,14 @@ const adminLinks = [
 		icon: Users,
 	},
 	{
-		label: "Configuración",
-		href: "/admin/configuracion",
-		icon: Settings,
+		label: "Candidatos",
+		href: "/admin/candidatos",
+		icon: UserSearch,
+	},
+	{
+		label: "Categorias",
+		href: "/admin/categorias",
+		icon: Tags,
 	},
 	{
 		label: "Mi perfil",
@@ -80,8 +96,24 @@ function getAdminBreadcrumbLabel(pathname: string) {
 		return "Reclutadores"
 	}
 
+	if (pathname.startsWith("/admin/candidatos")) {
+		return "Candidatos"
+	}
+
+	if (pathname.startsWith("/admin/categorias")) {
+		return "Categorias"
+	}
+
 	if (pathname.startsWith("/admin/configuracion")) {
 		return "Configuración"
+	}
+
+	if (pathname.startsWith("/admin/configuracion/informacion-valores")) {
+		return "Información y Valores"
+	}
+
+	if (pathname.startsWith("/admin/configuracion/preferencias-culturales")) {
+		return "Preferencias Culturales"
 	}
 
 	if (pathname.startsWith("/admin/mi-perfil")) {
@@ -89,6 +121,103 @@ function getAdminBreadcrumbLabel(pathname: string) {
 	}
 
 	return "Dashboard"
+}
+
+function getAdminBreadcrumbItems(pathname: string) {
+	if (pathname.startsWith("/admin/configuracion/informacion-valores")) {
+		return [
+			{ label: "Configuración" },
+			{ label: "Información y Valores" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/configuracion/preferencias-culturales")) {
+		return [
+			{ label: "Configuración" },
+			{ label: "Preferencias Culturales" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/ofertas/crear")) {
+		return [
+			{ label: "Ofertas", href: "/admin/ofertas" },
+			{ label: "Crear" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/reclutadores/crear/email-verification")) {
+		return [
+			{ label: "Reclutadores", href: "/admin/reclutadores" },
+			{ label: "Crear", href: "/admin/reclutadores/crear" },
+			{ label: "Verificación de correo" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/reclutadores/crear")) {
+		return [
+			{ label: "Reclutadores", href: "/admin/reclutadores" },
+			{ label: "Crear" },
+		]
+	}
+
+	if (pathname.startsWith("/admin/categorias/crear")) {
+		return [
+			{ label: "Categorias", href: "/admin/categorias" },
+			{ label: "Crear" },
+		]
+	}
+
+	const recruiterDetailMatch = pathname.match(/^\/admin\/reclutadores\/([^/]+)/)
+
+	if (recruiterDetailMatch && recruiterDetailMatch[1]) {
+		return [
+			{ label: "Reclutadores", href: "/admin/reclutadores" },
+			{ label: recruiterDetailMatch[1] },
+		]
+	}
+
+	const adminCandidateDetailMatch = pathname.match(/^\/admin\/candidatos\/([^/]+)/)
+
+	if (adminCandidateDetailMatch && adminCandidateDetailMatch[1]) {
+		return [
+			{ label: "Candidatos", href: "/admin/candidatos" },
+			{ label: adminCandidateDetailMatch[1] },
+		]
+	}
+
+	const categoryDetailMatch = pathname.match(/^\/admin\/categorias\/([^/]+)/)
+
+	if (categoryDetailMatch && categoryDetailMatch[1]) {
+		return [
+			{ label: "Categorias", href: "/admin/categorias" },
+			{ label: categoryDetailMatch[1] },
+		]
+	}
+
+	const candidateDetailMatch = pathname.match(/^\/admin\/ofertas\/([^/]+)\/candidatos\/([^/]+)/)
+
+	if (candidateDetailMatch && candidateDetailMatch[1] && candidateDetailMatch[2]) {
+		const offerId = candidateDetailMatch[1]
+		const candidateId = candidateDetailMatch[2]
+
+		return [
+			{ label: "Oferta", href: "/admin/ofertas" },
+			{ label: offerId, href: `/admin/ofertas/${offerId}` },
+			{ label: "Candidatos" },
+			{ label: candidateId },
+		]
+	}
+
+	const offerDetailMatch = pathname.match(/^\/admin\/ofertas\/([^/]+)/)
+
+	if (offerDetailMatch && offerDetailMatch[1]) {
+		return [
+			{ label: "Ofertas", href: "/admin/ofertas" },
+			{ label: offerDetailMatch[1] },
+		]
+	}
+
+	return [{ label: getAdminBreadcrumbLabel(pathname) }]
 }
 
 type AdminSessionUser = {
@@ -118,7 +247,10 @@ export default function AdminPublicLayout({
 
 	const companyName = company?.name ?? "ATS"
 	const companyLogo = company?.logo
-	const currentPage = getAdminBreadcrumbLabel(pathname)
+	const breadcrumbItems = getAdminBreadcrumbItems(pathname)
+	const isConfigurationSection =
+		pathname.startsWith("/admin/configuracion/informacion-valores") ||
+		pathname.startsWith("/admin/configuracion/preferencias-culturales")
 
 	return (
 		<SidebarProvider>
@@ -156,6 +288,44 @@ export default function AdminPublicLayout({
 										</SidebarMenuButton>
 									</SidebarMenuItem>
 								))}
+
+								<Collapsible defaultOpen={isConfigurationSection} className="group/collapsible">
+									<SidebarMenuItem>
+										<CollapsibleTrigger asChild>
+											<SidebarMenuButton isActive={isConfigurationSection}>
+												<Settings />
+												<span>Configuración</span>
+												<ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+											</SidebarMenuButton>
+										</CollapsibleTrigger>
+
+										<CollapsibleContent>
+											<SidebarMenuSub>
+												<SidebarMenuSubItem>
+													<SidebarMenuSubButton
+														asChild
+														isActive={pathname.startsWith("/admin/configuracion/informacion-valores")}
+													>
+														<Link href="/admin/configuracion/informacion-valores">
+															<span>Información y Valores</span>
+														</Link>
+													</SidebarMenuSubButton>
+												</SidebarMenuSubItem>
+
+												<SidebarMenuSubItem>
+													<SidebarMenuSubButton
+														asChild
+														isActive={pathname.startsWith("/admin/configuracion/preferencias-culturales")}
+													>
+														<Link href="/admin/configuracion/preferencias-culturales">
+															<span>Preferencias Culturales</span>
+														</Link>
+													</SidebarMenuSubButton>
+												</SidebarMenuSubItem>
+											</SidebarMenuSub>
+										</CollapsibleContent>
+									</SidebarMenuItem>
+								</Collapsible>
 							</SidebarMenu>
 						</SidebarGroupContent>
 					</SidebarGroup>
@@ -178,7 +348,12 @@ export default function AdminPublicLayout({
 					<Button
 						variant="outline"
 						className="w-full justify-start"
-						onClick={() => void signOut({ callbackUrl: "/login" })}
+						onClick={() => {
+							void (async () => {
+								await signOut()
+								window.location.href = "/login"
+							})()
+						}}
 					>
 						<LogOut className="mr-2 size-4" />
 						Logout
@@ -194,10 +369,22 @@ export default function AdminPublicLayout({
 							<BreadcrumbItem>
 								<BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
 							</BreadcrumbItem>
-							<BreadcrumbSeparator />
-							<BreadcrumbItem>
-								<BreadcrumbPage>{currentPage}</BreadcrumbPage>
-							</BreadcrumbItem>
+							{breadcrumbItems.map((item, index) => {
+								const isLast = index === breadcrumbItems.length - 1
+
+								return (
+									<div key={`${item.label}-${index}`} className="contents">
+										<BreadcrumbSeparator />
+										<BreadcrumbItem>
+											{!isLast && item.href ? (
+												<BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+											) : (
+												<BreadcrumbPage>{item.label}</BreadcrumbPage>
+											)}
+										</BreadcrumbItem>
+									</div>
+								)
+							})}
 						</BreadcrumbList>
 					</Breadcrumb>
 				</header>

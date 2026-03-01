@@ -4,7 +4,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { loginSchema } from "@repo/schema"
 import { Eye, EyeOff } from "lucide-react"
-import { signIn } from "next-auth/react"
+import { signIn } from "../../../auth-client"
 import * as React from "react"
 import { type FieldValues, type Path, type Resolver, useForm } from "react-hook-form"
 import { z } from "zod"
@@ -165,19 +165,17 @@ export default function LoginPage() {
 		setRegisterMessage(null)
 
 		try {
-			const response = await signIn("credentials", {
+			const response = await signIn.email({
 				email: values.email,
 				password: values.password,
-				callbackUrl: "/",
-				redirect: false,
 			})
 
-			if (response?.error) {
+			if (response.error) {
 				setLoginError("Credenciales inválidas")
 				return
 			}
 
-			window.location.href = response?.url ?? "/"
+			window.location.href = "/"
 		} catch {
 			setLoginError("No se pudo iniciar sesión. Verifica tus credenciales e inténtalo de nuevo.")
 		}

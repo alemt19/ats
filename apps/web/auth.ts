@@ -1,95 +1,60 @@
-import NextAuth from "next-auth"
-import type { NextAuthResult } from "next-auth"
-import Credentials from "next-auth/providers/credentials"
+import { headers } from "next/headers"
+import { betterAuth } from "better-auth"
+import { nextCookies } from "better-auth/next-js"
 
-type LoginApiResponse = {
-  success?: boolean
-  timestamp?: string
-  data?: {
-    userId?: string
-    email?: string
-    token?: string
+type AppSession = {
+  user?: {
+    id?: string
+    email?: string | null
+    name?: string | null
+    image?: string | null
+    lastname?: string | null
+    lastName?: string | null
   }
+  accessToken?: string
 }
 
-const nextAuthSecret =
-  process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET ?? "dev-only-nextauth-secret-change-in-production"
+const betterAuthSecret =
+  process.env.BETTER_AUTH_SECRET ??
+  process.env.AUTH_SECRET ??
+  "dev-only-better-auth-secret-change-in-production"
 
-const authResult: NextAuthResult = NextAuth({
-  trustHost: true,
-  secret: nextAuthSecret,
-  providers: [
-    Credentials({
-      name: "Credentials",
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
-          return null
-        }
+const betterAuthBaseURL =
+  process.env.BETTER_AUTH_URL ??
+  process.env.AUTH_URL ??
+  "http://localhost:3000"
 
-        const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-
-        const response = await fetch(`${apiBaseUrl}/auth/login`, {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-          },
-          body: JSON.stringify({
-            email: credentials.email,
-            password: credentials.password,
-          }),
-        })
-        if (!response.ok) {
-          return null
-        }
-
-        const payload = (await response.json()) as LoginApiResponse
-        const loginData = payload.data
-
-        if (!loginData?.userId || !loginData?.email || !loginData.token) {
-          return null
-        }
-
-        return {
-          id: loginData.userId,
-          email: loginData.email,
-          accessToken: loginData.token,
-        }
-      },
-    }),
-  ],
-  session: {
-    strategy: "jwt",
-  },
-  pages: {
-    signIn: "/examples/login",
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id as string
-        token.email = user.email
-        token.accessToken = user.accessToken
-      }
-
-      return token
-    },
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub ?? ""
-      }
-
-      session.accessToken =
-        typeof token.accessToken === "string" ? token.accessToken : undefined
-      return session
-    },
-  },
+export const auth = betterAuth({
+  secret: betterAuthSecret,
+  baseURL: betterAuthBaseURL,
+  basePath: "/api/auth",
+  plugins: [nextCookies()],
 })
 
-export const handlers = authResult.handlers
-export const auth = authResult.auth
-export const signIn: NextAuthResult["signIn"] = authResult.signIn
-export const signOut: NextAuthResult["signOut"] = authResult.signOut
+export async function getSession(): Promise<AppSession | null> {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  })
+
+  if (!session || typeof session !== "object") {
+    return null
+  }
+
+  const sessionRecord = session as Record<string, unknown>
+  const nestedSession =
+    sessionRecord.session && typeof sessionRecord.session === "object"
+      ? (sessionRecord.session as Record<string, unknown>)
+      : undefined
+
+  const accessToken =
+    typeof sessionRecord.accessToken === "string"
+      ? sessionRecord.accessToken
+      : typeof nestedSession?.token === "string"
+        ? nestedSession.token
+        : undefined
+
+  return {
+    ...(sessionRecord as AppSession),
+    accessToken,
+  }
+}

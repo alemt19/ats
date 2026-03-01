@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "recruiter_id": "rec_1",
+    "recruiter_name": "Carlos Rodríguez",
+    "recruiter_avatar_url": "https://i.pravatar.cc/80?img=12",
+    "text": "Excelentes habilidades técnicas demostradas en la prueba. Profundo conocimiento de React.",
+    "created_at": "2026-02-22T15:30:00.000Z"
+  },
+  {
+    "id": 2,
+    "recruiter_id": "rec_2",
+    "recruiter_name": "María García",
+    "recruiter_avatar_url": "https://i.pravatar.cc/80?img=47",
+    "text": "Parece tener un buen encaje cultural. Sería bueno explorar su experiencia en liderazgo en la próxima entrevista.",
+    "created_at": "2026-02-17T10:00:00.000Z"
+  }
+]

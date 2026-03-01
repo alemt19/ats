@@ -1,7 +1,7 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
 
-import { auth } from "../../../auth"
+import { getSession } from "../../../auth"
 import PreferenciasCulturalesForm, {
     type CulturePreferenceCategory,
 } from "./preferencias-culturales-form"
@@ -61,7 +61,7 @@ async function fetchCulturePreferencesServer(
 }
 
 export default async function PreferenciasCulturalesPage() {
-    const session = await auth()
+    const session = await getSession()
     const userId = session?.user?.id ?? "user_123"
     const accessToken = session?.accessToken
 

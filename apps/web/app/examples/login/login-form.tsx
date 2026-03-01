@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { signIn } from "next-auth/react";
+import { signIn } from "../../../auth-client";
 import { loginSchema } from "@repo/schema";
 import { z } from "zod";
 
@@ -26,10 +26,9 @@ export default function LoginForm() {
     const onSubmit = async (values: LoginInput) => {
         setResult(null);
 
-        const response = await signIn("credentials", {
+        const response = await signIn.email({
             email: values.email,
             password: values.password,
-            redirect: false
         });
 
         if (response?.error) {
@@ -50,7 +49,7 @@ export default function LoginForm() {
             JSON.stringify(
                 {
                     success: true,
-                    message: "Sesión iniciada con NextAuth"
+                        message: "Sesión iniciada con Better Auth"
                 },
                 null,
                 2

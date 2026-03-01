@@ -1,4 +1,4 @@
-import { auth } from "../../../auth"
+import { getSession } from "../../../auth"
 import CompetenciasValoresForm, {
     type CompetenciasValoresInitialData,
 } from "./competencias-valores-form"
@@ -98,7 +98,7 @@ async function fetchCatalogsServer(accessToken?: string): Promise<CatalogRespons
 }
 
 export default async function CompetenciasValoresPage() {
-    const session = await auth()
+    const session = await getSession()
     const userId = session?.user?.id ?? "user_123"
     const accessToken = session?.accessToken
     const behavioralQuestion1 =

@@ -9,8 +9,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 Create `apps/web/.env.local` with:
 
 ```bash
-NEXTAUTH_URL=http://localhost:3000
-NEXTAUTH_SECRET=replace-with-a-long-random-secret
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_SECRET=replace-with-a-long-random-secret-at-least-32-chars
 BACKEND_API_URL=http://localhost:4000
 ```
 
