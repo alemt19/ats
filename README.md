@@ -66,3 +66,25 @@ Example paths:
 - packages/schema/src/auth.ts
 - apps/api/src/modules/auth
 - apps/web/app/examples/login
+
+## Async CV Parsing (Supabase + Redis)
+
+High-level flow for CV processing:
+
+1. NestJS receives the CV upload, validates it, and stores the file in Supabase
+   Storage.
+2. NestJS enqueues a job in Redis (BullMQ) with the file reference and metadata.
+3. FastAPI consumes the job, downloads the PDF, extracts text, and persists
+   results to the database.
+
+Storage conventions:
+
+- Bucket: ats-files
+- CVs: cvs/{candidateId}/{timestamp}.pdf
+- Company logos: company-logos/{companyId}/{timestamp}.{ext}
+
+Environment (local dev):
+
+- SUPABASE_URL
+- SUPABASE_SERVICE_ROLE_KEY
+- REDIS_URL

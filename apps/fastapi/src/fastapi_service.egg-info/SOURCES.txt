@@ -1,9 +1,0 @@
-README.md
-pyproject.toml
-src/fastapi_service/__init__.py
-src/fastapi_service/main.py
-src/fastapi_service.egg-info/PKG-INFO
-src/fastapi_service.egg-info/SOURCES.txt
-src/fastapi_service.egg-info/dependency_links.txt
-src/fastapi_service.egg-info/requires.txt
-src/fastapi_service.egg-info/top_level.txt
