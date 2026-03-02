@@ -1,6 +1,8 @@
 /** @format */
 
-import 'dotenv/config';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { config as loadEnv } from 'dotenv';
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
@@ -14,6 +16,18 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 	return this.toString();
 };
 
+const envCandidates = [
+	resolve(process.cwd(), '.env'),
+	resolve(process.cwd(), 'apps/api/.env'),
+];
+
+for (const envPath of envCandidates) {
+	if (existsSync(envPath)) {
+		loadEnv({ path: envPath });
+		break;
+	}
+}
+
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 
@@ -21,6 +35,7 @@ async function bootstrap() {
 
 	app.enableCors({
 		origin: 'http://localhost:3000',
+		credentials: true,
 	});
 
 	app.useGlobalPipes(new ZodValidationPipe());

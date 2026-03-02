@@ -53,7 +53,7 @@ export class BetterAuthController {
 		return this.betterAuth.handler(req, res);
 	}
 
-	@Post('forget-password')
+	@Post('request-password-reset')
 	@ApiOperation({ summary: 'Request password reset email' })
 	@ApiBody({ type: ForgotPasswordDto })
 	@ApiResponse({ status: 200, description: 'Password reset email sent' })

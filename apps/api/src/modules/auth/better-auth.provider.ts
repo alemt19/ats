@@ -45,7 +45,7 @@ export const BetterAuthProvider: Provider = {
 		const auth = betterAuth({
 			baseURL,
 			secret,
-			adapter,
+			database: adapter,
 			trustedOrigins: [
 				process.env.APP_URL ?? 'http://localhost:3000',
 			],

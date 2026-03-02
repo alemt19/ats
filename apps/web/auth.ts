@@ -1,6 +1,4 @@
 import { headers } from "next/headers"
-import { betterAuth } from "better-auth"
-import { nextCookies } from "better-auth/next-js"
 
 type AppSession = {
   user?: {
@@ -14,27 +12,32 @@ type AppSession = {
   accessToken?: string
 }
 
-const betterAuthSecret =
-  process.env.BETTER_AUTH_SECRET ??
-  process.env.AUTH_SECRET ??
-  "dev-only-better-auth-secret-change-in-production"
-
 const betterAuthBaseURL =
-  process.env.BETTER_AUTH_URL ??
-  process.env.AUTH_URL ??
-  "http://localhost:3000"
-
-export const auth = betterAuth({
-  secret: betterAuthSecret,
-  baseURL: betterAuthBaseURL,
-  basePath: "/api/auth",
-  plugins: [nextCookies()],
-})
+  process.env.NEXT_PUBLIC_BETTER_AUTH_URL ??
+  process.env.BETTER_AUTH_BASE_URL ??
+  "http://localhost:4000"
 
 export async function getSession(): Promise<AppSession | null> {
-  const session = await auth.api.getSession({
-    headers: await headers(),
+  const requestHeaders = await headers()
+  const cookie = requestHeaders.get("cookie")
+
+  if (!cookie) {
+    return null
+  }
+
+  const response = await fetch(`${betterAuthBaseURL}/api/auth/get-session`, {
+    method: "GET",
+    headers: {
+      cookie,
+    },
+    cache: "no-store",
   })
+
+  if (!response.ok) {
+    return null
+  }
+
+  const session = (await response.json()) as Record<string, unknown> | null
 
   if (!session || typeof session !== "object") {
     return null

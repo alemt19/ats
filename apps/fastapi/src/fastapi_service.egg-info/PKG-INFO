@@ -7,6 +7,8 @@ Description-Content-Type: text/markdown
 Requires-Dist: fastapi>=0.115.0
 Requires-Dist: uvicorn[standard]>=0.30.0
 
+<!-- @format -->
+
 # FastAPI service
 
 ## Local dev

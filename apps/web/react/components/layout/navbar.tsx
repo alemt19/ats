@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { useSession } from "../../../auth-client"
+import { signOut, useSession } from "../../../auth-client"
 
 import {
 	NavigationMenu,
@@ -173,7 +173,12 @@ export default function Navbar({
 								<DropdownMenuSeparator />
 								<DropdownMenuItem
 									className="cursor-pointer text-red-600 focus:text-red-600"
-									onClick={() => console.log("Cerrar sesión")}
+									onClick={() => {
+										void (async () => {
+											await signOut()
+											window.location.href = "/login"
+										})()
+										}}
 								>
 									<LogOut className="mr-2 size-4" />
 									<span>Salir</span>
