@@ -39,7 +39,7 @@ export default function Navbar({
 	companyName,
 	logoSrc,
 }: NavbarProps) {
-	const { data: session } = useSession()
+	const { data: session, isPending } = useSession()
 	const [company, setCompany] = React.useState<
 		| {
 			name: string
@@ -48,17 +48,7 @@ export default function Navbar({
 		| null
 	>(null)
 
-	const demoSession = React.useMemo(
-		() => ({
-			user: {
-				name: "Carla Lopez",
-				image: "https://i.pravatar.cc/100?img=32",
-			},
-		}),
-		[]
-	)
-
-	// const user = session?.user ?? demoSession.user
+	const isAuthResolved = !isPending
 	const user = session?.user
 	const resolvedCompanyName = companyName ?? company?.name ?? "Ats"
 	const resolvedLogoSrc = logoSrc ?? company?.logo
@@ -140,7 +130,9 @@ export default function Navbar({
 						</SheetContent>
 					</Sheet>
 
-					{user ? (
+					{!isAuthResolved ? (
+						<div className="h-9 w-33 animate-pulse rounded-full bg-muted" />
+					) : user ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild className="cursor-pointer">
 								<Button variant="ghost" className="h-9 rounded-full px-2">

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Camera } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Button } from "react/components/ui/button"
@@ -59,16 +60,33 @@ type MisDatosFormProps = {
   countries: Country[]
   states: State[]
   cities: City[]
-  userId: string
 }
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 
 export default function MisDatosForm({
   initialProfile,
   countries,
   states,
   cities,
-  userId,
 }: MisDatosFormProps) {
+  const onlyDigits = (value: string) => value.replace(/\D/g, "")
+
+  const stripCountryCode = (phone: string, countryCode?: string) => {
+    const digits = onlyDigits(phone)
+    const codeDigits = onlyDigits(countryCode ?? "")
+
+    if (!digits || !codeDigits) {
+      return digits
+    }
+
+    if (digits.startsWith(codeDigits)) {
+      return digits.slice(codeDigits.length)
+    }
+
+    return digits
+  }
+
   const normalize = (value: string) => value.trim().toLowerCase()
 
   const venezuela = countries.find((country) => normalize(country.name) === "venezuela")
@@ -81,11 +99,13 @@ export default function MisDatosForm({
   const resolvedStateId =
     initialProfile.state ??
     (resolvedCountryId === (venezuela?.id ?? "") ? carabobo?.id ?? "" : "")
+  const resolvedCountry = countries.find((country) => country.id === resolvedCountryId)
+  const resolvedPhone = stripCountryCode(initialProfile.phone ?? "", resolvedCountry?.phonecode)
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
   const [avatarPreview, setAvatarPreview] = React.useState<string>(
-    initialProfile.profile_picture ?? "https://i.pravatar.cc/150?img=32"
+    initialProfile.profile_picture ?? ""
   )
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
 
@@ -99,7 +119,7 @@ export default function MisDatosForm({
       city: initialProfile.city ?? "",
       address: initialProfile.address ?? "",
       contact_page: initialProfile.contact_page ?? "",
-      phone: initialProfile.phone ?? "",
+      phone: resolvedPhone,
       dni: initialProfile.dni ?? "",
     },
   })
@@ -126,26 +146,74 @@ export default function MisDatosForm({
 
   const phonePrefix = selectedCountry?.phonecode ? `+${selectedCountry.phonecode}` : ""
 
-  const onSubmit = (values: ProfileFormValues) => {
-    const formData = new FormData()
-
-    formData.append("userId", userId)
-    formData.append("name", values.name)
-    formData.append("lastname", values.lastname)
-    formData.append("country", values.country)
-    formData.append("state", values.state)
-    formData.append("city", values.city)
-    formData.append("address", values.address)
-    formData.append("contact_page", values.contact_page)
-    formData.append("phone", values.phone)
-    formData.append("phone_prefix", phonePrefix)
-    formData.append("dni", values.dni)
+  const onSubmit = async (values: ProfileFormValues) => {
+    let profilePicture = avatarPreview.startsWith("blob:")
+      ? initialProfile.profile_picture ?? null
+      : avatarPreview || null
 
     if (profileImageFile) {
-      formData.append("profile_picture", profileImageFile)
+      const uploadForm = new FormData()
+      uploadForm.append("profile_picture", profileImageFile)
+
+      const uploadResponse = await fetch(`${apiBaseUrl}/api/candidates/me/profile-picture`, {
+        method: "POST",
+        credentials: "include",
+        body: uploadForm,
+      })
+
+      if (!uploadResponse.ok) {
+        toast.error("No se pudo subir la imagen de perfil")
+        return
+      }
+
+      const uploadPayload = (await uploadResponse.json()) as {
+        data?: { imageUrl?: string }
+        imageUrl?: string
+      }
+
+      const uploadedImageUrl = uploadPayload?.data?.imageUrl ?? uploadPayload?.imageUrl
+      if (uploadedImageUrl) {
+        profilePicture = uploadedImageUrl
+        setAvatarPreview(uploadedImageUrl)
+      }
     }
 
-    console.log("Payload para backend (multipart/form-data):", formData)
+    const normalizedLocalPhone = stripCountryCode(values.phone, selectedCountry?.phonecode)
+
+    const payload = {
+      profile_picture: profilePicture,
+      name: values.name || null,
+      lastname: values.lastname || null,
+      country: values.country || null,
+      state: values.state || null,
+      city: values.city || null,
+      address: values.address || null,
+      contact_page: values.contact_page || null,
+      phone: normalizedLocalPhone
+        ? (phonePrefix ? `${phonePrefix}${normalizedLocalPhone}` : normalizedLocalPhone)
+        : null,
+      dni: values.dni || null,
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/candidates/me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error("No se pudo guardar el perfil")
+      }
+
+      toast.success("Datos actualizados correctamente")
+      setProfileImageFile(null)
+    } catch {
+      toast.error("No se pudieron guardar los cambios")
+    }
   }
 
   const initials =
@@ -164,7 +232,7 @@ export default function MisDatosForm({
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="flex items-center gap-4">
             <Avatar className="h-20 w-20">
-              <AvatarImage src={avatarPreview} alt="Foto de perfil" />
+              <AvatarImage src={avatarPreview || undefined} alt="Foto de perfil" />
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
 
@@ -211,7 +279,6 @@ export default function MisDatosForm({
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="lastname"
@@ -234,11 +301,8 @@ export default function MisDatosForm({
                   <FormLabel>Country</FormLabel>
                   <Select
                     value={field.value}
-                    onValueChange={(value) => {
-                      field.onChange(value)
-                      form.setValue("state", "")
-                      form.setValue("city", "")
-                    }}
+                    onValueChange={field.onChange}
+                    disabled
                   >
                     <FormControl>
                       <SelectTrigger className="w-full">
@@ -393,7 +457,9 @@ export default function MisDatosForm({
           </div>
 
           <div className="flex justify-end">
-            <Button type="submit">Guardar cambios</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar cambios"}
+            </Button>
           </div>
         </form>
       </Form>

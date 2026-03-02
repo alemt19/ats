@@ -2,11 +2,45 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateCandidateDto, UpdateCandidateDto } from './dto/candidates.dto';
+import { CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
 
 @Injectable()
 export class CandidatesService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async findMe(userId: string) {
+    const candidate = await this.prisma.candidates.findUnique({
+      where: { user_id: userId },
+    });
+
+    if (candidate) {
+      return candidate;
+    }
+
+    return this.prisma.candidates.create({
+      data: { user_id: userId },
+    });
+  }
+
+  async updateMe(userId: string, dto: UpdateMyCandidateDto) {
+    const current = await this.findMe(userId);
+    const updatedCandidate = await this.prisma.candidates.update({
+      where: { id: current.id },
+      data: dto,
+    });
+
+    const fullName = `${updatedCandidate.name ?? ''} ${updatedCandidate.lastname ?? ''}`.trim();
+
+    await this.prisma.user.updateMany({
+      where: { id: userId },
+      data: {
+        name: fullName || null,
+        image: updatedCandidate.profile_picture ?? null,
+      },
+    });
+
+    return updatedCandidate;
+  }
 
   /**
    * Create a new candidate

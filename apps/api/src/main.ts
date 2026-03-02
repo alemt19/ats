@@ -1,9 +1,10 @@
 /** @format */
 
-import { existsSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import 'reflect-metadata';
+import express from 'express';
 import { NestFactory } from '@nestjs/core';
 import { ZodValidationPipe } from 'nestjs-zod';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -30,6 +31,10 @@ for (const envPath of envCandidates) {
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
+	const uploadsRoot = resolve(process.cwd(), 'uploads');
+	const candidateUploadsRoot = resolve(uploadsRoot, 'candidates');
+	mkdirSync(candidateUploadsRoot, { recursive: true });
+	app.use('/uploads', express.static(uploadsRoot));
 
 	app.setGlobalPrefix('api');
 
