@@ -8,6 +8,7 @@ type AppSession = {
     image?: string | null
     lastname?: string | null
     lastName?: string | null
+    role?: string | null
   }
   accessToken?: string
 }
@@ -60,4 +61,23 @@ export async function getSession(): Promise<AppSession | null> {
     ...(sessionRecord as AppSession),
     accessToken,
   }
+}
+
+export async function hasAuthAccess(scope: "admin" | "candidate"): Promise<boolean> {
+  const requestHeaders = await headers()
+  const cookie = requestHeaders.get("cookie")
+
+  if (!cookie) {
+    return false
+  }
+
+  const response = await fetch(`${betterAuthBaseURL}/api/auth/access/${scope}`, {
+    method: "GET",
+    headers: {
+      cookie,
+    },
+    cache: "no-store",
+  })
+
+  return response.ok
 }

@@ -5,6 +5,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { AuthController } from './auth.controller';
 import { BetterAuthController } from './better-auth.controller';
 import { BetterAuthProvider } from './better-auth.provider';
+import { BetterAuthGuard } from './auth.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
@@ -28,7 +29,7 @@ import { PrismaModule } from '../../prisma/prisma.module';
 		}),
 	],
 	controllers: [AuthController, BetterAuthController],
-	providers: [BetterAuthProvider],
-	exports: [BetterAuthProvider],
+	providers: [BetterAuthProvider, BetterAuthGuard],
+	exports: [BetterAuthProvider, BetterAuthGuard],
 })
 export class AuthModule {}

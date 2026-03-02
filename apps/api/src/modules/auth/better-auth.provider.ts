@@ -6,6 +6,7 @@ import { toNodeHandler } from 'better-auth/node';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailerService } from '@nestjs-modules/mailer';
+import { toPublicEmail } from './auth-email-scope';
 
 const buildLink = (path: string, token: string) => {
 	const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
@@ -58,8 +59,9 @@ export const BetterAuthProvider: Provider = {
 						return;
 					}
 					const resetLink = buildLink('/auth/reset', token);
+					const recipientEmail = toPublicEmail(user.email);
 					await sendEmail(mailer, {
-						to: user.email,
+						to: recipientEmail,
 						subject: 'Reset your password',
 						html: `<p>Reset your password:</p><p><a href="${resetLink}">${resetLink}</a></p>`,
 					});
@@ -74,15 +76,16 @@ export const BetterAuthProvider: Provider = {
 						return;
 					}
 					const verifyLink = buildLink('/auth/verify', token);
+					const recipientEmail = toPublicEmail(user.email);
 					try {
 						await sendEmail(mailer, {
-							to: user.email,
+							to: recipientEmail,
 							subject: 'Verify your email',
 							html: `<p>Verify your email:</p><p><a href="${verifyLink}">${verifyLink}</a></p>`,
 						});
-						console.log(`[Auth] Verification email sent to ${user.email}`);
+						console.log(`[Auth] Verification email sent to ${recipientEmail}`);
 					} catch (err) {
-						console.error(`[Auth] Failed to send verification email to ${user.email}:`, err);
+						console.error(`[Auth] Failed to send verification email to ${recipientEmail}:`, err);
 					}
 				},
 			},

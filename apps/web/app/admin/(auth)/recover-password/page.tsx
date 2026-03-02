@@ -1,10 +1,11 @@
 "use client"
 
+"use client"
 import * as React from "react"
-import { useRouter } from "next/navigation"
 import { z } from "zod"
 import { toast } from "sonner"
 
+import { toAdminScopedEmail } from "react/lib/auth-email-scope"
 import { useCompany } from "react/contexts/company-context"
 import { Button } from "react/components/ui/button"
 import {
@@ -21,12 +22,14 @@ const recoverSchema = z.object({
 	email: z.string().email("Ingresa un correo válido"),
 })
 
+const authBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
+
 export default function AdminRecoverPasswordPage() {
-	const router = useRouter()
 	const { company } = useCompany()
 
 	const [email, setEmail] = React.useState("")
 	const [error, setError] = React.useState<string | null>(null)
+	const [successMessage, setSuccessMessage] = React.useState<string | null>(null)
 	const [isSubmitting, setIsSubmitting] = React.useState(false)
 
 	const companyName = company?.name ?? "TalentoIA"
@@ -34,6 +37,7 @@ export default function AdminRecoverPasswordPage() {
 	async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
 		event.preventDefault()
 		setError(null)
+		setSuccessMessage(null)
 
 		const parsed = recoverSchema.safeParse({ email })
 
@@ -45,15 +49,16 @@ export default function AdminRecoverPasswordPage() {
 		setIsSubmitting(true)
 
 		try {
-			const response = await fetch("https://dummyjson.com/posts/add", {
+			const adminScopedEmail = toAdminScopedEmail(parsed.data.email)
+
+			const response = await fetch(`${authBaseUrl}/api/auth/request-password-reset`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
+				credentials: "include",
 				body: JSON.stringify({
-					title: "password-recovery-request-admin",
-					body: `Admin recover password for ${parsed.data.email}`,
-					userId: 1,
+					email: adminScopedEmail,
 				}),
 			})
 
@@ -61,9 +66,10 @@ export default function AdminRecoverPasswordPage() {
 				throw new Error("No se pudo procesar la solicitud")
 			}
 
-			toast.success("Te enviamos un código de verificación al correo")
-			const nextUrl = `/admin/confirm-password?email=${encodeURIComponent(parsed.data.email)}`
-			router.push(nextUrl)
+			toast.success("Te enviamos un enlace para restablecer tu contraseña")
+			setSuccessMessage(
+				"Revisa tu correo y abre el enlace de recuperación para definir una nueva contraseña."
+			)
 		} catch {
 			setError("No se pudo enviar el correo de recuperación. Intenta de nuevo.")
 		} finally {
@@ -78,7 +84,7 @@ export default function AdminRecoverPasswordPage() {
 					<p className="text-sm font-medium text-muted-foreground">{companyName}</p>
 					<CardTitle className="text-2xl">Recuperar contraseña</CardTitle>
 					<CardDescription>
-						Ingresa el correo de tu cuenta y te enviaremos un código OTP para restablecerla.
+						Ingresa el correo de tu cuenta y te enviaremos un enlace para restablecerla.
 					</CardDescription>
 				</CardHeader>
 
@@ -97,6 +103,7 @@ export default function AdminRecoverPasswordPage() {
 						</div>
 
 						{error ? <p className="text-sm text-destructive">{error}</p> : null}
+						{successMessage ? <p className="text-sm text-primary">{successMessage}</p> : null}
 
 						<Button type="submit" className="w-full" disabled={isSubmitting}>
 							{isSubmitting ? "Enviando..." : "Enviar código"}

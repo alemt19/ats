@@ -2,8 +2,9 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { signOut, useSession } from "../../../auth-client"
+import { signOut } from "../../../auth-client"
 import { BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
+import { useCandidateSession } from "react/hooks/use-segmented-session"
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Button } from "../ui/button"
@@ -52,13 +53,13 @@ type SidebarClientProps = {
 
 export default function SidebarClient({ children }: SidebarClientProps) {
     const pathname = usePathname()
-    const { data: session, isPending } = useSession()
+    const { user, isPending } = useCandidateSession()
     const { company } = useCompany()
 
     const isAuthResolved = !isPending
-    const userName = session?.user?.name ?? "Usuario"
-    const userEmail = session?.user?.email ?? ""
-    const userImage = session?.user?.image ?? undefined
+    const userName = user?.name ?? "Usuario"
+    const userEmail = user?.email ?? ""
+    const userImage = user?.image ?? undefined
     const resolvedCompanyName = company?.name ?? "Acme Corp"
     const resolvedLogoSrc = company?.logo ?? "https://i.pravatar.cc/100?img=1"
 
@@ -134,6 +135,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                         className="w-full justify-start"
                         onClick={() => {
                             void (async () => {
+                                document.cookie = "ats_scope=; Path=/; Max-Age=0; SameSite=Lax"
                                 await signOut()
                                 window.location.href = "/"
                             })()

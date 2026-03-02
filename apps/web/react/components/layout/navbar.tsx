@@ -2,7 +2,8 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { signOut, useSession } from "../../../auth-client"
+import { signOut } from "../../../auth-client"
+import { useCandidateSession } from "react/hooks/use-segmented-session"
 
 import {
 	NavigationMenu,
@@ -39,7 +40,7 @@ export default function Navbar({
 	companyName,
 	logoSrc,
 }: NavbarProps) {
-	const { data: session, isPending } = useSession()
+	const { user, isPending, isAuthenticated } = useCandidateSession()
 	const [company, setCompany] = React.useState<
 		| {
 			name: string
@@ -49,7 +50,6 @@ export default function Navbar({
 	>(null)
 
 	const isAuthResolved = !isPending
-	const user = session?.user
 	const resolvedCompanyName = companyName ?? company?.name ?? "Ats"
 	const resolvedLogoSrc = logoSrc ?? company?.logo
 	const navItems = [
@@ -132,7 +132,7 @@ export default function Navbar({
 
 					{!isAuthResolved ? (
 						<div className="h-9 w-33 animate-pulse rounded-full bg-muted" />
-					) : user ? (
+					) : isAuthenticated && user ? (
 						<DropdownMenu>
 							<DropdownMenuTrigger asChild className="cursor-pointer">
 								<Button variant="ghost" className="h-9 rounded-full px-2">
@@ -151,7 +151,7 @@ export default function Navbar({
 									<div className="flex flex-col space-y-1">
 										<p className="text-sm font-medium leading-none">{user.name ?? "Usuario"}</p>
 										<p className="text-xs leading-none text-muted-foreground">
-											{session?.user?.email || "usuario@ejemplo.com"}
+											{user.email || "usuario@ejemplo.com"}
 										</p>
 									</div>
 								</DropdownMenuLabel>
@@ -167,6 +167,7 @@ export default function Navbar({
 									className="cursor-pointer text-red-600 focus:text-red-600"
 									onClick={() => {
 										void (async () => {
+											document.cookie = "ats_scope=; Path=/; Max-Age=0; SameSite=Lax"
 											await signOut()
 											window.location.href = "/login"
 										})()

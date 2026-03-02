@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation"
 
-import { getSession } from "../../auth"
+import { hasAuthAccess } from "../../auth"
 import LayoutClient from "./layout-client"
 
 export default async function Layout({ children }: Readonly<{
     children: React.ReactNode
 }>) {
-    const session = await getSession()
+    const canAccessCandidateArea = await hasAuthAccess("candidate")
 
-    if (!session?.user) {
+    if (!canAccessCandidateArea) {
         redirect("/login")
     }
 

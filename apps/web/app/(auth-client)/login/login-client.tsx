@@ -175,6 +175,8 @@ export default function LoginClientPage() {
 				return
 			}
 
+			document.cookie = "ats_scope=candidate; Path=/; SameSite=Lax"
+
 			window.location.href = "/"
 		} catch {
 			setLoginError("No se pudo iniciar sesión. Verifica tus credenciales e inténtalo de nuevo.")
