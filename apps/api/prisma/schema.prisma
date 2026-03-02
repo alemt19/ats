@@ -51,6 +51,7 @@ model candidates {
   city                    String?                       @db.VarChar(100)
   address                 String?
   cv_file_url             String?
+  cv_text                 String?
   summary                 String?
   summary_embedding       Unsupported("vector")?
   dress_code              dress_code_enum?              @default(none)
