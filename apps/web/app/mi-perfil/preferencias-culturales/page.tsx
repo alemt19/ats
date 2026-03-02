@@ -1,18 +1,13 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
+import { headers } from "next/headers"
 
 import { getSession } from "../../../auth"
 import PreferenciasCulturalesForm, {
     type CulturePreferenceCategory,
 } from "./preferencias-culturales-form"
 
-type UserPreferencesResponse = Record<string, string>
-
-function isPreferencesEnvelope(
-    value: unknown
-): value is { preferences?: Record<string, string> } {
-    return typeof value === "object" && value !== null && "preferences" in value
-}
+type UserPreferencesResponse = Partial<Record<string, string | null>>
 
 async function readJsonFile<T>(relativePath: string): Promise<T> {
     const fullPath = path.join(process.cwd(), "public", "data", relativePath)
@@ -21,58 +16,46 @@ async function readJsonFile<T>(relativePath: string): Promise<T> {
 }
 
 async function fetchCulturePreferencesServer(
-    userId: string,
-    accessToken?: string
+    cookie: string
 ): Promise<UserPreferencesResponse> {
     const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
     try {
-        const response = await fetch(`${apiBaseUrl}/profile/culture-preferences`, {
+        const response = await fetch(`${apiBaseUrl}/api/candidates/me`, {
             method: "GET",
             headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-                "x-user-id": userId,
+                cookie,
             },
             cache: "no-store",
         })
 
         if (response.ok) {
-            const payload = (await response.json()) as unknown
-
-            if (isPreferencesEnvelope(payload)) {
-                return payload.preferences ?? {}
+            const payload = (await response.json()) as {
+                success?: boolean
+                data?: UserPreferencesResponse
             }
 
-            return (payload ?? {}) as UserPreferencesResponse
+            return payload.data ?? {}
         }
     } catch {
-        // Fallback to mock data while backend endpoint is not implemented.
+        // Return empty selections if backend is unavailable.
     }
-    // delay de 500ms to simulate network latency
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    return {
-        // dress_code: "semi_formal",
-        // collaboration_style: "mixed",
-        // work_pace: "moderate",
-        // level_of_autonomy: "balanced",
-        // dealing_with_management: "friendly_and_approachable",
-        // level_of_monitoring: "weekly_goals",
-    }
+
+    return {}
 }
 
 export default async function PreferenciasCulturalesPage() {
     const session = await getSession()
-    const userId = session?.user?.id ?? "user_123"
-    const accessToken = session?.accessToken
+    const requestHeaders = await headers()
+    const cookie = requestHeaders.get("cookie") ?? ""
 
     const [categories, initialSelections] = await Promise.all([
         readJsonFile<CulturePreferenceCategory[]>("culture_preference.json"),
-        fetchCulturePreferencesServer(userId, accessToken),
+        fetchCulturePreferencesServer(cookie),
     ])
 
     return (
         <PreferenciasCulturalesForm
-            userId={userId}
             categories={categories}
             initialSelections={initialSelections}
         />

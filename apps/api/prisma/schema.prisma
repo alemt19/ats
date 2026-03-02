@@ -53,12 +53,12 @@ model candidates {
   cv_file_url             String?
   summary                 String?
   summary_embedding       Unsupported("vector")?
-  dress_code              dress_code_enum?              @default(none)
-  collaboration_style     colaboration_style_enum?      @default(flexible)
+  dress_code              dress_code_enum?              @default(casual)
+  collaboration_style     colaboration_style_enum?      @default(mixed)
   work_pace               work_pace_enum?               @default(moderate)
-  level_of_autonomy       level_of_autonomy_enum?       @default(medium)
-  dealing_with_management dealing_with_management_enum? @default(none)
-  level_of_monitoring     level_of_monitoring_enum?     @default(medium)
+  level_of_autonomy       level_of_autonomy_enum?       @default(balanced)
+  dealing_with_management dealing_with_management_enum? @default(friendly_and_approachable)
+  level_of_monitoring     level_of_monitoring_enum?     @default(weekly_goals)
   behavioral_ans_1        String?
   behavioral_ans_2        String?
   contact_page            String?                       @db.VarChar(255)
@@ -78,12 +78,12 @@ model companies {
   logo_url                String?
   description             String?
   mision                  String?
-  dress_code              dress_code_enum?              @default(none)
-  colaboration_style      colaboration_style_enum?      @default(flexible)
+  dress_code              dress_code_enum?              @default(casual)
+  colaboration_style      colaboration_style_enum?      @default(mixed)
   work_pace               work_pace_enum?               @default(moderate)
-  level_of_autonomy       level_of_autonomy_enum?       @default(medium)
-  dealing_with_management dealing_with_management_enum? @default(none)
-  level_of_monitoring     level_of_monitoring_enum?     @default(medium)
+  level_of_autonomy       level_of_autonomy_enum?       @default(balanced)
+  dealing_with_management dealing_with_management_enum? @default(friendly_and_approachable)
+  level_of_monitoring     level_of_monitoring_enum?     @default(weekly_goals)
   address                 String?                       @db.VarChar(255)
   city                    String?                       @db.VarChar(100)
   state                   String?                       @db.VarChar(100)
@@ -281,22 +281,21 @@ enum attribute_type_enum {
 }
 
 enum colaboration_style_enum {
-  independent
-  team_oriented @map("team-oriented")
-  flexible
+  individual
+  mixed
+  highly_collaborative
 }
 
 enum dealing_with_management_enum {
-  structured
-  flexible
-  none
+  strictly_professional
+  friendly_and_approachable
+  nearby
 }
 
 enum dress_code_enum {
   formal
-  business_casual
+  semi_formal
   casual
-  none
 }
 
 enum employment_enum {
@@ -314,21 +313,23 @@ enum job_status_enum {
 }
 
 enum level_of_autonomy_enum {
-  low
-  medium
-  high
+  high_control
+  balanced
+  total_freedom
 }
 
 enum level_of_monitoring_enum {
-  low
-  medium
-  high
+  daily_monitoring
+  frequent_monitoring
+  weekly_goals
+  biweekly_goals
+  total_trust
 }
 
 enum work_pace_enum {
   slow
   moderate
-  fast
+  accelerated
 }
 
 enum workplace_enum {

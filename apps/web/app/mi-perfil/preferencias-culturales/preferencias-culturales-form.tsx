@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useForm, type FieldPath } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "react/components/ui/button"
 import {
@@ -39,25 +40,30 @@ export type CulturePreferenceFormValues = {
 }
 
 type PreferenciasCulturalesFormProps = {
-  userId: string
   categories: CulturePreferenceCategory[]
-  initialSelections: Record<string, string>
+  initialSelections: Partial<Record<string, string | null>>
 }
+
+const apiBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 
 function buildDefaultSelections(
   categories: CulturePreferenceCategory[],
-  initialSelections: Record<string, string>
+  initialSelections: Partial<Record<string, string | null>>
 ) {
   return categories.reduce<Record<string, string>>((acc, category) => {
     const fallbackValue = category.values[0]?.technical_name ?? ""
+    const initialValue = initialSelections[category.technical_name]
     acc[category.technical_name] =
-      initialSelections[category.technical_name] ?? fallbackValue
+      typeof initialValue === "string" &&
+      category.values.some((value) => value.technical_name === initialValue)
+        ? initialValue
+        : fallbackValue
+
     return acc
   }, {})
 }
 
 export default function PreferenciasCulturalesForm({
-  userId,
   categories,
   initialSelections,
 }: PreferenciasCulturalesFormProps) {
@@ -72,13 +78,34 @@ export default function PreferenciasCulturalesForm({
     },
   })
 
-  const onSubmit = (values: CulturePreferenceFormValues) => {
+  const onSubmit = async (values: CulturePreferenceFormValues) => {
     const payload = {
-      userId,
-      preferences: values.preferences,
+      dress_code: values.preferences.dress_code ?? null,
+      collaboration_style: values.preferences.collaboration_style ?? null,
+      work_pace: values.preferences.work_pace ?? null,
+      level_of_autonomy: values.preferences.level_of_autonomy ?? null,
+      dealing_with_management: values.preferences.dealing_with_management ?? null,
+      level_of_monitoring: values.preferences.level_of_monitoring ?? null,
     }
 
-    console.log("Payload para backend:", payload)
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/candidates/me`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      })
+
+      if (!response.ok) {
+        throw new Error("No se pudieron guardar las preferencias")
+      }
+
+      toast.success("Preferencias culturales actualizadas")
+    } catch {
+      toast.error("No se pudieron guardar los cambios")
+    }
   }
 
   return (

@@ -9,22 +9,21 @@ export const AttributeTypeSchema = z.enum([
 ]);
 
 export const ColaborationStyleSchema = z.enum([
-	'independent',
-	'team_oriented',
-	'flexible',
+	'individual',
+	'mixed',
+	'highly_collaborative',
 ]);
 
 export const DealingWithManagementSchema = z.enum([
-	'structured',
-	'flexible',
-	'none',
+	'strictly_professional',
+	'friendly_and_approachable',
+	'nearby',
 ]);
 
 export const DressCodeSchema = z.enum([
 	'formal',
-	'business_casual',
+	'semi_formal',
 	'casual',
-	'none',
 ]);
 
 export const EmploymentSchema = z.enum([
@@ -41,11 +40,17 @@ export const JobStatusSchema = z.enum([
 	'archived',
 ]);
 
-export const LevelOfAutonomySchema = z.enum(['low', 'medium', 'high']);
+export const LevelOfAutonomySchema = z.enum(['high_control', 'balanced', 'total_freedom']);
 
-export const LevelOfMonitoringSchema = z.enum(['low', 'medium', 'high']);
+export const LevelOfMonitoringSchema = z.enum([
+	'daily_monitoring',
+	'frequent_monitoring',
+	'weekly_goals',
+	'biweekly_goals',
+	'total_trust',
+]);
 
-export const WorkPaceSchema = z.enum(['slow', 'moderate', 'fast']);
+export const WorkPaceSchema = z.enum(['slow', 'moderate', 'accelerated']);
 
 export const WorkplaceSchema = z.enum(['remote', 'onsite', 'hybrid']);
 

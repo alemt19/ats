@@ -25,12 +25,12 @@ type PreferenciasCulturalesFormProps = {
 }
 
 const DEFAULT_SCHEMA_PREFERENCES: Record<PreferenceFieldName, string> = {
-	dress_code: "none",
-	colaboration_style: "flexible",
+	dress_code: "casual",
+	colaboration_style: "mixed",
 	work_pace: "moderate",
-	level_of_autonomy: "medium",
-	dealing_with_management: "none",
-	level_of_monitoring: "medium",
+	level_of_autonomy: "balanced",
+	dealing_with_management: "friendly_and_approachable",
+	level_of_monitoring: "weekly_goals",
 }
 
 function mapCategoryTechnicalNameToPreferenceField(technicalName: string): PreferenceFieldName | null {

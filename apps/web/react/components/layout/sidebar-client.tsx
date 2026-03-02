@@ -52,12 +52,13 @@ type SidebarClientProps = {
 
 export default function SidebarClient({ children }: SidebarClientProps) {
     const pathname = usePathname()
-    const { data: session } = useSession()
+    const { data: session, isPending } = useSession()
     const { company } = useCompany()
 
-    const userName = session?.user?.name ?? "Carla Lopez"
-    const userEmail = session?.user?.email ?? "carla.lopez@ejemplo.com"
-    const userImage = session?.user?.image ?? "https://i.pravatar.cc/100?img=32"
+    const isAuthResolved = !isPending
+    const userName = session?.user?.name ?? "Usuario"
+    const userEmail = session?.user?.email ?? ""
+    const userImage = session?.user?.image ?? undefined
     const resolvedCompanyName = company?.name ?? "Acme Corp"
     const resolvedLogoSrc = company?.logo ?? "https://i.pravatar.cc/100?img=1"
 
@@ -107,16 +108,26 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                 <SidebarSeparator />
 
                 <SidebarFooter>
-                    <div className="flex items-center gap-3 rounded-md px-2 py-1">
-                        <Avatar className="h-9 w-9">
-                            <AvatarImage src={userImage} alt={userName} />
-                            <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">{userName}</p>
-                            <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                    {!isAuthResolved ? (
+                        <div className="flex items-center gap-3 rounded-md px-2 py-1">
+                            <div className="h-9 w-9 animate-pulse rounded-full bg-muted" />
+                            <div className="min-w-0 flex-1 space-y-2">
+                                <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                                <div className="h-3 w-32 animate-pulse rounded bg-muted" />
+                            </div>
                         </div>
-                    </div>
+                    ) : (
+                        <div className="flex items-center gap-3 rounded-md px-2 py-1">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={userImage} alt={userName} />
+                                <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">{userName}</p>
+                                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                            </div>
+                        </div>
+                    )}
 
                     <Button
                         variant="outline"
