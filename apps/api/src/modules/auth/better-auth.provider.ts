@@ -6,7 +6,7 @@ import { toNodeHandler } from 'better-auth/node';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { MailerService } from '@nestjs-modules/mailer';
-import { toPublicEmail } from './auth-email-scope';
+import { isAdminScopedEmail, toPublicEmail } from './auth-email-scope';
 
 const buildLink = (path: string, token: string) => {
 	const appUrl = process.env.APP_URL ?? 'http://localhost:3000';
@@ -47,6 +47,43 @@ export const BetterAuthProvider: Provider = {
 			baseURL,
 			secret,
 			database: adapter,
+			databaseHooks: {
+				user: {
+					create: {
+						after: async (createdUser: { id?: string; email?: string | null }) => {
+							if (!createdUser?.id) {
+								return;
+							}
+
+							if (createdUser.email && isAdminScopedEmail(createdUser.email)) {
+								return;
+							}
+
+							await prisma.$executeRaw`
+								INSERT INTO "candidates" (
+									"user_id",
+									"dress_code",
+									"collaboration_style",
+									"work_pace",
+									"level_of_autonomy",
+									"dealing_with_management",
+									"level_of_monitoring"
+								)
+								VALUES (
+									${createdUser.id},
+									NULL,
+									NULL,
+									NULL,
+									NULL,
+									NULL,
+									NULL
+								)
+								ON CONFLICT ("user_id") DO NOTHING
+							`;
+						},
+					},
+				},
+			},
 			trustedOrigins: [
 				process.env.APP_URL ?? 'http://localhost:3000',
 			],

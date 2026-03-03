@@ -95,7 +95,6 @@ export class AuthController {
 	async getCandidateAccess(@CurrentUser() session: any, @Req() request: Request) {
 		const userId = this.getUserIdFromSession(session);
 		const currentScope = this.getScopeFromCookie(request);
-
 		if (currentScope !== 'candidate') {
 			throw new ForbiddenException('Candidate session required');
 		}
@@ -109,11 +108,10 @@ export class AuthController {
 				profile_picture: true,
 			},
 		});
-
+		
 		if (!candidateProfile) {
 			throw new ForbiddenException('Candidate access required');
 		}
-
 		return {
 			ok: true,
 			userId,

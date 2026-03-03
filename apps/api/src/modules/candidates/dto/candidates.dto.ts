@@ -29,6 +29,11 @@ const UpdateMyCandidateSchema = z.object({
 	city: z.string().max(100).nullable().optional(),
 	address: z.string().nullable().optional(),
 	contact_page: z.string().max(255).nullable().optional(),
+	birth_date: z
+		.string()
+		.regex(/^\d{4}-\d{2}-\d{2}$/)
+		.nullable()
+		.optional(),
 	dress_code: DressCodeSchema.nullable().optional(),
 	collaboration_style: ColaborationStyleSchema.nullable().optional(),
 	work_pace: WorkPaceSchema.nullable().optional(),

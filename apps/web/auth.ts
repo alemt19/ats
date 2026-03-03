@@ -78,6 +78,5 @@ export async function hasAuthAccess(scope: "admin" | "candidate"): Promise<boole
     },
     cache: "no-store",
   })
-
   return response.ok
 }

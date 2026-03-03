@@ -46,6 +46,7 @@ export type ProfileFormValues = {
   profile_picture: string
   name: string
   lastname: string
+  birth_date: string
   country: string
   state: string
   city: string
@@ -71,6 +72,23 @@ export default function MisDatosForm({
   cities,
 }: MisDatosFormProps) {
   const onlyDigits = (value: string) => value.replace(/\D/g, "")
+
+  const toDateInputValue = (value?: string) => {
+    if (!value) {
+      return ""
+    }
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return value
+    }
+
+    const parsed = new Date(value)
+    if (Number.isNaN(parsed.getTime())) {
+      return ""
+    }
+
+    return parsed.toISOString().slice(0, 10)
+  }
 
   const stripCountryCode = (phone: string, countryCode?: string) => {
     const digits = onlyDigits(phone)
@@ -114,6 +132,7 @@ export default function MisDatosForm({
       profile_picture: initialProfile.profile_picture ?? "",
       name: initialProfile.name ?? "",
       lastname: initialProfile.lastname ?? "",
+      birth_date: toDateInputValue(initialProfile.birth_date),
       country: resolvedCountryId,
       state: resolvedStateId,
       city: initialProfile.city ?? "",
@@ -184,6 +203,7 @@ export default function MisDatosForm({
       profile_picture: profilePicture,
       name: values.name || null,
       lastname: values.lastname || null,
+      birth_date: values.birth_date || null,
       country: values.country || null,
       state: values.state || null,
       city: values.city || null,
@@ -271,7 +291,7 @@ export default function MisDatosForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nombre</FormLabel>
                   <FormControl>
                     <Input placeholder="Tu nombre" {...field} />
                   </FormControl>
@@ -284,9 +304,23 @@ export default function MisDatosForm({
               name="lastname"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Lastname</FormLabel>
+                  <FormLabel>Apellido</FormLabel>
                   <FormControl>
                     <Input placeholder="Tu apellido" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="birth_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha de nacimiento</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -298,7 +332,7 @@ export default function MisDatosForm({
               name="country"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Country</FormLabel>
+                  <FormLabel>País</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -327,7 +361,7 @@ export default function MisDatosForm({
               name="state"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>State</FormLabel>
+                  <FormLabel>Estado</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -359,7 +393,7 @@ export default function MisDatosForm({
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel>Ciudad</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -388,7 +422,7 @@ export default function MisDatosForm({
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Address</FormLabel>
+                  <FormLabel>Dirección</FormLabel>
                   <FormControl>
                     <Input placeholder="Dirección" {...field} />
                   </FormControl>
@@ -402,7 +436,7 @@ export default function MisDatosForm({
               name="contact_page"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Contact page</FormLabel>
+                  <FormLabel>Página de contacto</FormLabel>
                   <FormControl>
                     <Input placeholder="https://..." {...field} />
                   </FormControl>
@@ -416,7 +450,7 @@ export default function MisDatosForm({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Teléfono</FormLabel>
                   <div className="flex gap-2">
                     <Input
                       value={phonePrefix}
