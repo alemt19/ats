@@ -49,7 +49,7 @@ export type RecruiterPayload = {
   name: string
   lastname: string
   email: string
-  password: string
+  password?: string
   dni: string
   phone: string
   phone_prefix?: string

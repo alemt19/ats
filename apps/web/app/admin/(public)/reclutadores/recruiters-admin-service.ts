@@ -50,6 +50,47 @@ type CityRecord = {
   state_id?: unknown
 }
 
+type BackendEnvelope<T> = {
+  success?: boolean
+  data?: T
+}
+
+export class BackendRequestError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = "BackendRequestError"
+    this.status = status
+  }
+}
+
+const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+
+function backendHeaders(cookie?: string): HeadersInit {
+  if (!cookie) {
+    return {}
+  }
+
+  return { cookie }
+}
+
+async function parseBackendResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const fallbackMessage = "No se pudo completar la operación de reclutadores"
+    const errorBody = (await response.json().catch(() => null)) as { message?: string } | null
+    throw new BackendRequestError(errorBody?.message ?? fallbackMessage, response.status)
+  }
+
+  const payload = (await response.json()) as BackendEnvelope<T> | T
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as BackendEnvelope<T>).data as T
+  }
+
+  return payload as T
+}
+
 async function readJsonFile<T>(relativePath: string): Promise<T> {
   const fullPath = path.join(process.cwd(), "public", "data", relativePath)
   const fileContents = await readFile(fullPath, "utf-8")
@@ -201,126 +242,82 @@ export async function getRecruitersCatalogsServer(): Promise<RecruitersCatalogsR
   }
 }
 
-async function getAllRecruiters(): Promise<Recruiter[]> {
-  const catalogs = await getRecruitersCatalogsServer()
-
-  try {
-    const payload = await readJsonFile<RecruiterDummyRecord[]>("user_admin_dummy.json")
-
-    if (!Array.isArray(payload)) {
-      return []
-    }
-
-    return payload.map((record, index) => normalizeRecruiter(record, index + 1, catalogs.country))
-  } catch {
-    return [
-      {
-        id: 1,
-        profile_picture: "https://i.pravatar.cc/150?img=18",
-        name: "Mariana",
-        lastname: "Pérez",
-        email: "mariana.perez@talentoia.com",
-        password: "M4riana!2026",
-        dni: "V-12345678",
-        phone: "+58 412-1112233",
-        role: "head_of_recruiters",
-        country: catalogs.country,
-        state: "Distrito Capital",
-        city: "Caracas",
-        address: "Altamira",
-      },
-    ]
-  }
-}
-
-function applyFilters(recruiters: Recruiter[], query: RecruitersQueryParams): RecruitersResponse {
-  const normalizedSearch = query.search.toLowerCase()
-
-  const filtered = recruiters.filter((recruiter) => {
-    if (!normalizedSearch) {
-      return true
-    }
-
-    const fullName = `${recruiter.name} ${recruiter.lastname}`.toLowerCase()
-
-    return (
-      fullName.includes(normalizedSearch) ||
-      recruiter.email.toLowerCase().includes(normalizedSearch) ||
-      recruiter.dni.toLowerCase().includes(normalizedSearch)
-    )
-  })
-
-  const total = filtered.length
-  const start = (query.page - 1) * query.pageSize
-
-  return {
-    items: filtered.slice(start, start + query.pageSize),
-    total,
-    page: query.page,
-    pageSize: query.pageSize,
-  }
-}
-
 export async function getRecruitersServer(
-  queryInput?: Partial<Record<keyof RecruitersQueryParams, string | number | undefined>>
+  queryInput?: Partial<Record<keyof RecruitersQueryParams, string | number | undefined>>,
+  cookie?: string,
 ): Promise<RecruitersResponse> {
   const query = normalizeRecruitersQuery(queryInput)
-  const recruiters = await getAllRecruiters()
-  return applyFilters(recruiters, query)
+
+	const params = new URLSearchParams()
+	if (query.search) {
+		params.set("search", query.search)
+	}
+	params.set("page", String(query.page))
+	params.set("pageSize", String(query.pageSize))
+
+	const response = await fetch(`${backendApiUrl}/api/admin/reclutadores?${params.toString()}`, {
+		method: "GET",
+		headers: backendHeaders(cookie),
+		cache: "no-store",
+	})
+
+	return parseBackendResponse<RecruitersResponse>(response)
 }
 
-export async function getRecruiterByIdServer(recruiterId: number): Promise<Recruiter | null> {
+export async function getRecruiterByIdServer(recruiterId: number, cookie?: string): Promise<Recruiter | null> {
   if (!Number.isFinite(recruiterId) || recruiterId <= 0) {
     return null
   }
 
-  const recruiters = await getAllRecruiters()
-  return recruiters.find((recruiter) => recruiter.id === recruiterId) ?? null
+	const response = await fetch(`${backendApiUrl}/api/admin/reclutadores/${recruiterId}`, {
+		method: "GET",
+		headers: backendHeaders(cookie),
+		cache: "no-store",
+	})
+
+	if (response.status === 404) {
+		return null
+	}
+
+	return parseBackendResponse<Recruiter>(response)
 }
 
-export async function createRecruiterServer(payload: RecruiterPayload): Promise<Recruiter> {
-  const catalogs = await getRecruitersCatalogsServer()
-  const recruiters = await getAllRecruiters()
+export async function createRecruiterServer(payload: RecruiterPayload | FormData, cookie?: string): Promise<Recruiter> {
+  const body = payload instanceof FormData ? payload : JSON.stringify(payload)
+  const headers: HeadersInit = payload instanceof FormData
+    ? backendHeaders(cookie)
+    : {
+      "Content-Type": "application/json",
+      ...backendHeaders(cookie),
+    }
 
-  const nextId = recruiters.reduce((maxId, recruiter) => Math.max(maxId, recruiter.id), 0) + 1
+  const response = await fetch(`${backendApiUrl}/api/admin/reclutadores`, {
+    method: "POST",
+    headers,
+    body,
+  })
 
-  return {
-    id: nextId,
-    profile_picture: payload.profile_picture?.trim() || "",
-    name: payload.name.trim(),
-    lastname: payload.lastname.trim(),
-    email: payload.email.trim(),
-    password: payload.password.trim(),
-    dni: payload.dni.trim(),
-    phone: `${(payload.phone_prefix ?? catalogs.country_phone_prefix).trim()} ${payload.phone.trim()}`.trim(),
-    role: payload.role.trim(),
-    country: catalogs.country,
-    state: payload.state.trim(),
-    city: payload.city.trim(),
-    address: payload.address.trim(),
-  }
+	return parseBackendResponse<Recruiter>(response)
 }
 
-export async function updateRecruiterServer(recruiterId: number, payload: RecruiterPayload): Promise<Recruiter> {
-  const existing = await getRecruiterByIdServer(recruiterId)
-  const catalogs = await getRecruitersCatalogsServer()
+export async function updateRecruiterServer(
+	recruiterId: number,
+  payload: RecruiterPayload | FormData,
+	cookie?: string,
+): Promise<Recruiter> {
+  const body = payload instanceof FormData ? payload : JSON.stringify(payload)
+  const headers: HeadersInit = payload instanceof FormData
+    ? backendHeaders(cookie)
+    : {
+      "Content-Type": "application/json",
+      ...backendHeaders(cookie),
+    }
 
-  if (!existing) {
-    throw new Error("Reclutador no encontrado")
-  }
+	const response = await fetch(`${backendApiUrl}/api/admin/reclutadores/${recruiterId}`, {
+		method: "PUT",
+    headers,
+    body,
+	})
 
-  return {
-    ...existing,
-    profile_picture: payload.profile_picture?.trim() ? payload.profile_picture.trim() : existing.profile_picture,
-    name: payload.name.trim(),
-    lastname: payload.lastname.trim(),
-    password: payload.password.trim().length > 0 ? payload.password.trim() : existing.password,
-    dni: payload.dni.trim(),
-    phone: `${(payload.phone_prefix ?? catalogs.country_phone_prefix).trim()} ${payload.phone.trim()}`.trim(),
-    role: payload.role.trim(),
-    country: catalogs.country,
-    state: payload.state.trim(),
-    city: payload.city.trim(),
-    address: payload.address.trim(),
-  }
+	return parseBackendResponse<Recruiter>(response)
 }

@@ -4,6 +4,7 @@ import {
 	normalizeRecruitersQuery,
 	type RecruitersQueryParams,
 } from "./recruiters-admin-types"
+import { headers } from "next/headers"
 
 type AdminReclutadoresPageProps = {
 	searchParams?: Promise<Partial<Record<keyof RecruitersQueryParams, string | string[] | undefined>>>
@@ -24,7 +25,10 @@ export default async function AdminReclutadoresPage({ searchParams }: AdminReclu
 			: resolvedSearchParams?.pageSize,
 	})
 
-	const initialData = await getRecruitersServer(initialQuery)
+	const requestHeaders = await headers()
+	const cookie = requestHeaders.get("cookie") ?? undefined
+
+	const initialData = await getRecruitersServer(initialQuery, cookie)
 
 	return <ReclutadoresAdminClient initialQuery={initialQuery} initialData={initialData} />
 }

@@ -70,27 +70,39 @@ function parseRecruiterMultipartPayload(formData: FormData): RecruiterPayload {
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
+  const cookie = request.headers.get("cookie") ?? undefined
 
   const data = await getRecruitersServer({
     search: url.searchParams.get("search") ?? undefined,
     page: url.searchParams.get("page") ?? undefined,
     pageSize: url.searchParams.get("pageSize") ?? undefined,
-  })
+  }, cookie)
 
   return NextResponse.json(data)
 }
 
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? ""
+  const cookie = request.headers.get("cookie") ?? undefined
 
-  const payload = contentType.includes("multipart/form-data")
-    ? parseRecruiterMultipartPayload(await request.formData())
-    : parseRecruiterPayload((await request.json().catch(() => null)) as unknown)
+  if (contentType.includes("multipart/form-data")) {
+    const formData = await request.formData()
+    const payload = parseRecruiterMultipartPayload(formData)
+
+    if (isInvalidPayload(payload)) {
+      return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
+    }
+
+    const created = await createRecruiterServer(formData, cookie)
+    return NextResponse.json(created, { status: 201 })
+  }
+
+  const payload = parseRecruiterPayload((await request.json().catch(() => null)) as unknown)
 
   if (isInvalidPayload(payload)) {
     return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
   }
 
-  const created = await createRecruiterServer(payload)
+  const created = await createRecruiterServer(payload, cookie)
   return NextResponse.json(created, { status: 201 })
 }

@@ -7,6 +7,7 @@ import { JobsModule } from './modules/jobs/jobs.module';
 import { CandidatesModule } from './modules/candidates/candidates.module';
 import { CompaniesModule } from './modules/companies/companies.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
+import { RecruitersModule } from './modules/recruiters/recruiters.module';
 
 @Module({
 	imports: [
@@ -16,6 +17,7 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 		CandidatesModule,
 		CompaniesModule,
 		ApplicationsModule,
+		RecruitersModule,
 	],
 })
 export class AppModule {}

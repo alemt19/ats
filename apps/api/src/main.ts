@@ -33,7 +33,9 @@ async function bootstrap() {
 	const app = await NestFactory.create(AppModule);
 	const uploadsRoot = resolve(process.cwd(), 'uploads');
 	const candidateUploadsRoot = resolve(uploadsRoot, 'candidates');
+	const recruiterUploadsRoot = resolve(uploadsRoot, 'reclutadores');
 	mkdirSync(candidateUploadsRoot, { recursive: true });
+	mkdirSync(recruiterUploadsRoot, { recursive: true });
 	app.use('/uploads', express.static(uploadsRoot));
 
 	app.setGlobalPrefix('api');

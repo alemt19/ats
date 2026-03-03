@@ -1,9 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
-import * as React from "react"
-import { toast } from "sonner"
+import { useSearchParams } from "next/navigation"
 
 import { Button } from "react/components/ui/button"
 import {
@@ -13,13 +11,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "react/components/ui/card"
-import {
-	InputOTP,
-	InputOTPGroup,
-	InputOTPSlot,
-} from "react/components/ui/input-otp"
-
-const OTP_LENGTH = 6
 
 function maskEmail(email: string) {
 	const [localPart, domain] = email.split("@")
@@ -37,34 +28,10 @@ function maskEmail(email: string) {
 }
 
 export default function ReclutadorEmailVerificationPage() {
-	const router = useRouter()
 	const searchParams = useSearchParams()
-	const [otpCode, setOtpCode] = React.useState("")
-	const [isSubmitting, setIsSubmitting] = React.useState(false)
 
 	const email = searchParams.get("email") ?? ""
 	const emailLabel = email ? maskEmail(email) : "el correo del reclutador"
-
-	const isOtpComplete = otpCode.length === OTP_LENGTH
-
-	async function handleVerify(event: React.FormEvent<HTMLFormElement>) {
-		event.preventDefault()
-
-		if (!isOtpComplete) {
-			return
-		}
-
-		setIsSubmitting(true)
-
-		try {
-			await new Promise((resolve) => setTimeout(resolve, 500))
-			toast.success("Correo verificado correctamente")
-			router.push("/admin/reclutadores")
-			router.refresh()
-		} finally {
-			setIsSubmitting(false)
-		}
-	}
 
 	return (
 		<main className="flex min-h-[70vh] items-center justify-center p-4 md:p-6">
@@ -72,35 +39,21 @@ export default function ReclutadorEmailVerificationPage() {
 				<CardHeader className="space-y-3 text-center">
 					<CardTitle className="text-2xl">Verifica el correo del reclutador</CardTitle>
 					<CardDescription>
-						Ingresa el código OTP de 6 dígitos enviado a {emailLabel}.
+						Enviamos un enlace de verificación a {emailLabel}. El reclutador debe abrirlo para
+						activar su acceso.
 					</CardDescription>
 				</CardHeader>
 
 				<CardContent>
-					<form className="space-y-6" onSubmit={handleVerify}>
-						<div className="flex justify-center">
-							<InputOTP
-								maxLength={OTP_LENGTH}
-								value={otpCode}
-								onChange={(value) => setOtpCode(value)}
-								containerClassName="justify-center"
-							>
-								<InputOTPGroup>
-									{Array.from({ length: OTP_LENGTH }).map((_, index) => (
-										<InputOTPSlot key={index} index={index} />
-									))}
-								</InputOTPGroup>
-							</InputOTP>
-						</div>
-
-						<Button type="submit" className="w-full" disabled={!isOtpComplete || isSubmitting}>
-							{isSubmitting ? "Verificando..." : "Verificar correo"}
+					<div className="space-y-3">
+						<Button type="button" className="w-full" asChild>
+							<Link href="/admin/reclutadores">Ir al listado de reclutadores</Link>
 						</Button>
 
 						<Button type="button" variant="outline" className="w-full" asChild>
-							<Link href="/admin/reclutadores">Volver al listado</Link>
+							<Link href="/admin/reclutadores/crear">Crear otro reclutador</Link>
 						</Button>
-					</form>
+					</div>
 				</CardContent>
 			</Card>
 		</main>

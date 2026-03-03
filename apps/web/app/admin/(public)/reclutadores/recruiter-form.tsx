@@ -24,7 +24,6 @@ import { Textarea } from "react/components/ui/textarea"
 
 import {
   type Recruiter,
-  type RecruiterPayload,
   type RecruitersCatalogsResponse,
 } from "./recruiters-admin-types"
 
@@ -48,6 +47,8 @@ type RecruiterFormValues = {
   city: string
   address: string
 }
+
+type RecruiterApiPayload = Recruiter | { data?: Recruiter | null } | null
 
 const EMPTY_VALUES: RecruiterFormValues = {
   profile_picture: "",
@@ -92,27 +93,86 @@ function extractPhoneNumber(phone: string, prefix: string) {
 
 function valuesFromRecruiter(recruiter: Recruiter, phonePrefix: string): RecruiterFormValues {
   return {
-    profile_picture: recruiter.profile_picture,
-    name: recruiter.name,
-    lastname: recruiter.lastname,
-    email: recruiter.email,
+    profile_picture: recruiter.profile_picture?.trim?.() ?? "",
+    name: recruiter.name?.trim?.() ?? "",
+    lastname: recruiter.lastname?.trim?.() ?? "",
+    email: recruiter.email?.trim?.() ?? "",
     password: "",
-    dni: recruiter.dni,
+    dni: recruiter.dni?.trim?.() ?? "",
     phone: extractPhoneNumber(recruiter.phone, phonePrefix),
     phone_prefix: phonePrefix,
-    role: recruiter.role,
-    country: recruiter.country,
-    state: recruiter.state,
-    city: recruiter.city,
-    address: recruiter.address,
+    role: recruiter.role?.trim?.() ?? "",
+    country: recruiter.country?.trim?.() ?? "",
+    state: recruiter.state?.trim?.() ?? "",
+    city: recruiter.city?.trim?.() ?? "",
+    address: recruiter.address?.trim?.() ?? "",
   }
+}
+
+function extractRecruiterFromPayload(payload: RecruiterApiPayload): Recruiter | null {
+  if (!payload || typeof payload !== "object") {
+    return null
+  }
+
+  const direct = payload as Partial<Recruiter>
+  if (typeof direct.id === "number" && Number.isFinite(direct.id)) {
+    return direct as Recruiter
+  }
+
+  const wrapped = (payload as { data?: unknown }).data
+  if (wrapped && typeof wrapped === "object") {
+    const nested = wrapped as Partial<Recruiter>
+    if (typeof nested.id === "number" && Number.isFinite(nested.id)) {
+      return nested as Recruiter
+    }
+  }
+
+  return null
+}
+
+function resolveProfilePictureSrc(profilePicture: string) {
+  const value = profilePicture.trim()
+
+  if (!value) {
+    return ""
+  }
+
+  if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("blob:") || value.startsWith("data:")) {
+    return value
+  }
+
+  const backendBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
+
+  if (value.startsWith("/")) {
+    return `${backendBaseUrl}${value}`
+  }
+
+  if (value.startsWith("uploads/")) {
+    return `${backendBaseUrl}/${value}`
+  }
+
+  return `${backendBaseUrl}/uploads/reclutadores/${value}`
+}
+
+function ensureOptionValue(options: string[], value: string) {
+  const normalizedValue = value.trim()
+
+  if (!normalizedValue) {
+    return options
+  }
+
+  if (options.includes(normalizedValue)) {
+    return options
+  }
+
+  return [normalizedValue, ...options]
 }
 
 export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps) {
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
-  const [avatarPreview, setAvatarPreview] = React.useState<string>("https://i.pravatar.cc/150?img=32")
+  const [avatarPreview, setAvatarPreview] = React.useState<string>("")
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
   const [values, setValues] = React.useState<RecruiterFormValues>(EMPTY_VALUES)
 
@@ -133,7 +193,6 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
     enabled: mode === "edit" && Number.isFinite(recruiterId),
     queryFn: async () => {
       const response = await fetch(`/api/admin/reclutadores/${recruiterId}`)
-
       if (response.status === 404) {
         throw new Error("El reclutador no existe")
       }
@@ -142,14 +201,20 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
         throw new Error("No se pudo cargar el reclutador")
       }
 
-      return (await response.json()) as Recruiter
+      const payload = (await response.json()) as RecruiterApiPayload
+      console.log("Recruiter detail payload: ", payload)
+      const recruiter = extractRecruiterFromPayload(payload)
+
+      if (!recruiter) {
+        throw new Error("No se pudo cargar el reclutador")
+      }
+
+      return recruiter
     },
   })
 
-  const hasAppliedInitialValues = React.useRef(false)
-
   React.useEffect(() => {
-    if (!catalogsQuery.data || hasAppliedInitialValues.current) {
+    if (!catalogsQuery.data || mode !== "create") {
       return
     }
 
@@ -166,44 +231,95 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
         city: previous.city || firstCity,
         role: previous.role || firstRole,
       }))
+    }
+  }, [catalogsQuery.data, mode])
 
-      hasAppliedInitialValues.current = true
+  React.useEffect(() => {
+    if (!catalogsQuery.data || mode !== "edit" || !detailQuery.data) {
       return
     }
 
-    if (mode === "edit" && detailQuery.data) {
-      setValues(valuesFromRecruiter({
-        ...detailQuery.data,
-        country: catalogsQuery.data.country,
-      }, catalogsQuery.data.country_phone_prefix))
-      hasAppliedInitialValues.current = true
-    }
+    setValues(
+      valuesFromRecruiter(
+        {
+          ...detailQuery.data,
+          country: catalogsQuery.data.country,
+        },
+        catalogsQuery.data.country_phone_prefix,
+      ),
+    )
   }, [catalogsQuery.data, detailQuery.data, mode])
 
   React.useEffect(() => {
     if (mode === "edit" && detailQuery.data) {
-      setAvatarPreview(detailQuery.data.profile_picture || "https://i.pravatar.cc/150?img=32")
+      setAvatarPreview(resolveProfilePictureSrc(detailQuery.data.profile_picture || ""))
       return
     }
 
     if (mode === "create") {
-      setAvatarPreview("https://i.pravatar.cc/150?img=32")
+      setAvatarPreview("")
     }
   }, [detailQuery.data, mode])
 
+  const roleOptions = React.useMemo(() => {
+    const catalogRoles = catalogsQuery.data?.roles ?? []
+
+    if (!values.role.trim()) {
+      return catalogRoles
+    }
+
+    if (catalogRoles.some((roleOption) => roleOption.technical_name === values.role)) {
+      return catalogRoles
+    }
+
+    return [
+      {
+        technical_name: values.role,
+        display_name: values.role,
+      },
+      ...catalogRoles,
+    ]
+  }, [catalogsQuery.data?.roles, values.role])
+
+  const stateOptions = React.useMemo(() => {
+    const catalogStates = catalogsQuery.data?.states ?? []
+
+    if (!values.state.trim()) {
+      return catalogStates
+    }
+
+    if (catalogStates.some((stateOption) => stateOption.name === values.state)) {
+      return catalogStates
+    }
+
+    const inferredCities = values.city.trim() ? [values.city.trim()] : []
+
+    return [
+      {
+        name: values.state,
+        cities: inferredCities,
+      },
+      ...catalogStates,
+    ]
+  }, [catalogsQuery.data?.states, values.state, values.city])
+
   const selectedState = React.useMemo(
-    () => catalogsQuery.data?.states.find((state) => state.name === values.state),
-    [catalogsQuery.data?.states, values.state]
+    () => stateOptions.find((stateOption) => stateOption.name === values.state),
+    [stateOptions, values.state],
   )
 
+  const cityOptions = React.useMemo(() => {
+    return ensureOptionValue(selectedState?.cities ?? [], values.city)
+  }, [selectedState?.cities, values.city])
+
   const mutation = useMutation<Recruiter, Error, FormData>({
-    mutationFn: async (payload) => {
+    mutationFn: async (formData) => {
       const endpoint = mode === "create" ? "/api/admin/reclutadores" : `/api/admin/reclutadores/${recruiterId}`
       const method = mode === "create" ? "POST" : "PUT"
 
       const response = await fetch(endpoint, {
         method,
-        body: payload,
+        body: formData,
       })
 
       if (!response.ok) {
@@ -214,7 +330,14 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
         )
       }
 
-      return (await response.json()) as Recruiter
+      const responsePayload = (await response.json()) as RecruiterApiPayload
+      const recruiter = extractRecruiterFromPayload(responsePayload)
+
+      if (!recruiter) {
+        throw new Error(mode === "create" ? "No se pudo crear el reclutador" : "No se pudo actualizar el reclutador")
+      }
+
+      return recruiter
     },
     onSuccess: (data) => {
       toast.success(mode === "create" ? "Reclutador creado correctamente" : "Reclutador actualizado")
@@ -297,7 +420,11 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
     payload.append("name", values.name)
     payload.append("lastname", values.lastname)
     payload.append("email", values.email)
-    payload.append("password", values.password)
+
+    if (mode === "create" || values.password.trim().length > 0) {
+      payload.append("password", values.password)
+    }
+
     payload.append("dni", values.dni)
     payload.append("phone", values.phone)
     payload.append("phone_prefix", values.phone_prefix)
@@ -309,6 +436,8 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
     if (profileImageFile) {
       payload.append("profile_picture", profileImageFile)
+    } else if (values.profile_picture.trim().length > 0) {
+      payload.append("profile_picture", values.profile_picture)
     }
 
     mutation.mutate(payload)
@@ -331,9 +460,6 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
     return <p className="text-destructive">{detailQuery.error.message}</p>
   }
 
-  const stateOptions = catalogsQuery.data?.states ?? []
-  const roleOptions = catalogsQuery.data?.roles ?? []
-  const cityOptions = selectedState?.cities ?? []
   const fullName = `${values.name} ${values.lastname}`.trim() || "Reclutador"
 
   return (
@@ -358,7 +484,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="flex items-center gap-4 rounded-md border p-4">
               <Avatar className="size-16">
-                <AvatarImage src={avatarPreview} alt={fullName} />
+                <AvatarImage src={avatarPreview || undefined} alt={fullName} />
                 <AvatarFallback>{toInitials(fullName)}</AvatarFallback>
               </Avatar>
 
@@ -452,9 +578,15 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
               <div className="space-y-2">
                 <Label>Rol *</Label>
-                <Select value={values.role} onValueChange={handleRoleChange}>
+                <Select
+                  key={`role-${values.role}-${roleOptions.length}`}
+                  value={values.role}
+                  onValueChange={handleRoleChange}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un rol" />
+                    <SelectValue placeholder="Selecciona un rol">
+                      {roleOptions.find((roleOption) => roleOption.technical_name === values.role)?.display_name ?? values.role}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {roleOptions.map((roleOption) => (
@@ -473,9 +605,13 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
               <div className="space-y-2">
                 <Label>Estado *</Label>
-                <Select value={values.state} onValueChange={handleStateChange}>
+                <Select
+                  key={`state-${values.state}-${stateOptions.length}`}
+                  value={values.state}
+                  onValueChange={handleStateChange}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un estado" />
+                    <SelectValue placeholder="Selecciona un estado">{values.state}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {stateOptions.map((stateOption) => (
@@ -489,9 +625,14 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
               <div className="space-y-2">
                 <Label>Ciudad *</Label>
-                <Select value={values.city} onValueChange={handleCityChange} disabled={cityOptions.length === 0}>
+                <Select
+                  key={`city-${values.state}-${values.city}-${cityOptions.length}`}
+                  value={values.city}
+                  onValueChange={handleCityChange}
+                  disabled={cityOptions.length === 0}
+                >
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una ciudad" />
+                    <SelectValue placeholder="Selecciona una ciudad">{values.city}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {cityOptions.length === 0 ? (
