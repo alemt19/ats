@@ -106,13 +106,14 @@ model company_attributes {
 
 model global_attributes {
   id                   Int                    @id @default(autoincrement())
-  name                 String                 @unique @db.VarChar(255)
+  name                 String                 @db.VarChar(255)
   type                 attribute_type_enum?   @default(hard_skill)
   embedding            Unsupported("vector")?
   candidate_attributes candidate_attributes[]
   company_attributes   company_attributes[]
   job_attributes       job_attributes[]
 
+  @@unique([name, type], map: "global_attributes_name_type_key")
   @@index([embedding], map: "idx_global_attributes")
 }
 
