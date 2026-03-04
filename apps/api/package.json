@@ -28,6 +28,7 @@
         "@supabase/supabase-js": "2.56.1",
         "@repo/schema": "workspace:*",
         "better-auth": "1.5.0-beta.16",
+        "bullmq": "5.58.5",
         "multer": "2.1.0",
         "nestjs-zod": "5.1.1",
         "nodemailer": "8.0.1",

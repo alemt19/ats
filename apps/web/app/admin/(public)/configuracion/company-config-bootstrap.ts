@@ -1,5 +1,6 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
+import { getCompanyConfigServer } from "./company-config-service"
 
 export type CountryRecord = {
 	id: string
@@ -80,23 +81,11 @@ export async function readJsonFile<T>(relativePath: string): Promise<T> {
 
 export async function fetchCompanyConfigBootstrap(
 	userId: string,
-	accessToken?: string
+	accessToken?: string,
+	cookie?: string,
 ): Promise<CompanyConfigBootstrapData> {
-	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-
 	try {
-		const response = await fetch(`${apiBaseUrl}/admin/company-config`, {
-			method: "GET",
-			headers: {
-				...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-				"x-user-id": userId,
-			},
-			cache: "no-store",
-		})
-
-		if (response.ok) {
-			return (await response.json()) as CompanyConfigBootstrapData
-		}
+		return await getCompanyConfigServer(cookie)
 	} catch {
 		// Fallback to dummyjson while backend endpoint is not implemented.
 	}

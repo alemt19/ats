@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { Camera, Sparkles, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import type { AdminCompanyConfigInitialData } from "../company-config-bootstrap"
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
@@ -130,13 +132,20 @@ function MultiDatalistField({
 		[onChangeValues, selectedValues]
 	)
 
-	const availableOptions = React.useMemo(
-		() =>
-			options.filter(
-				(option) => !selectedValues.some((selected) => normalizeValue(selected) === normalizeValue(option))
-			),
-		[options, selectedValues]
-	)
+	const availableOptions = React.useMemo(() => {
+		const uniqueOptions = new Map<string, string>()
+
+		options.forEach((option) => {
+			const normalized = normalizeValue(option)
+			if (!normalized || uniqueOptions.has(normalized)) {
+				return
+			}
+
+			uniqueOptions.set(normalized, option.trim())
+		})
+
+		return Array.from(uniqueOptions.values())
+	}, [options])
 
 	return (
 		<div className="space-y-2">
@@ -231,11 +240,13 @@ export default function InformacionValoresForm({
 	cityOptions,
 	companyValueOptions,
 }: InformacionValoresFormProps) {
+	const router = useRouter()
 	const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 	const [logoPreview, setLogoPreview] = React.useState<string>(initialData.logo || "")
 	const [logoFile, setLogoFile] = React.useState<File | null>(null)
 	const [isGeneratingSuggestions, setIsGeneratingSuggestions] = React.useState(false)
 	const [valueSuggestions, setValueSuggestions] = React.useState<string[]>([])
+	const [isSaving, setIsSaving] = React.useState(false)
 
 	const defaultValues = React.useMemo<InformacionValoresFormValues>(
 		() => ({
@@ -302,7 +313,9 @@ export default function InformacionValoresForm({
 		}
 	}
 
-	const onSubmit = (values: InformacionValoresFormValues) => {
+	const onSubmit = async (values: InformacionValoresFormValues) => {
+		setIsSaving(true)
+
 		const payload = new FormData()
 
 		payload.append("userId", userId)
@@ -321,7 +334,24 @@ export default function InformacionValoresForm({
 			payload.append("logo_file", logoFile)
 		}
 
-		console.log("Payload para backend (multipart/form-data):", payload)
+		try {
+			const response = await fetch("/api/admin/company-config", {
+				method: "PUT",
+				body: payload,
+			})
+
+			if (!response.ok) {
+				const body = (await response.json().catch(() => null)) as { message?: string } | null
+				throw new Error(body?.message ?? "No se pudo guardar la configuración")
+			}
+
+			toast.success("Información de empresa actualizada")
+			router.refresh()
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "No se pudo guardar la configuración")
+		} finally {
+			setIsSaving(false)
+		}
 	}
 
 	return (
@@ -546,7 +576,7 @@ export default function InformacionValoresForm({
 								</p>
 							) : null}
 
-							<div className={canSuggestValues ? "space-y-4" : "pointer-events-none space-y-4 opacity-60"}>
+							<div className="space-y-4">
 								<MultiDatalistField
 									label="Valores"
 									placeholder="Selecciona o escribe un valor"
@@ -555,14 +585,16 @@ export default function InformacionValoresForm({
 									onChangeValues={(values) => form.setValue("values", dedupe(values), { shouldDirty: true })}
 									suggestionItems={valueSuggestions}
 									onAddSuggestion={addSuggestionToValues}
-									disabled={!canSuggestValues}
+									disabled={false}
 								/>
 							</div>
 						</CardContent>
 					</Card>
 
 					<CardFooter className="justify-end px-0">
-						<Button type="submit">Guardar cambios</Button>
+						<Button type="submit" disabled={isSaving}>
+							{isSaving ? "Guardando..." : "Guardar cambios"}
+						</Button>
 					</CardFooter>
 				</form>
 			</Form>

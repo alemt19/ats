@@ -9,10 +9,12 @@ import { CompaniesModule } from './modules/companies/companies.module';
 import { ApplicationsModule } from './modules/applications/applications.module';
 import { RecruitersModule } from './modules/recruiters/recruiters.module';
 import { StorageModule } from './common/storage/storage.module';
+import { QueuesModule } from './common/queues/queues.module';
 
 @Module({
 	imports: [
 		StorageModule,
+		QueuesModule,
 		PrismaModule, 
 		AuthModule,
 		JobsModule,

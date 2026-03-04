@@ -1,4 +1,5 @@
 import { getSession } from "../../../../../auth"
+import { headers } from "next/headers"
 import type {
 	AdminCompanyConfigInitialData,
 	CityRecord,
@@ -18,12 +19,13 @@ export default async function AdminConfiguracionInformacionValoresPage() {
 	const session = await getSession()
 	const userId = session?.user?.id ?? "admin_123"
 	const accessToken = session?.accessToken
+	const cookie = (await headers()).get("cookie") ?? undefined
 
 	const [countries, states, cities, bootstrapData] = await Promise.all([
 		readJsonFile<CountryRecord[]>("country.json"),
 		readJsonFile<StateRecord[]>("state.json"),
 		readJsonFile<CityRecord[]>("city.json"),
-		fetchCompanyConfigBootstrap(userId, accessToken),
+		fetchCompanyConfigBootstrap(userId, accessToken, cookie),
 	])
 
 	const cityOptions = getFixedCityOptions(countries, states, cities)
@@ -38,7 +40,7 @@ export default async function AdminConfiguracionInformacionValoresPage() {
 		state: FIXED_STATE_NAME,
 		city: fixedCity,
 	}
-
+	console.log("Bootstrap data loaded:", { initialData, companyValueOptions: bootstrapData.companyValueOptions })
 	return (
 		<InformacionValoresForm
 			userId={userId}

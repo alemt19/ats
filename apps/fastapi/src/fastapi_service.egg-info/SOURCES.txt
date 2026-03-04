@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 src/fastapi_service/__init__.py
+src/fastapi_service/embedding_worker.py
 src/fastapi_service/main.py
 src/fastapi_service.egg-info/PKG-INFO
 src/fastapi_service.egg-info/SOURCES.txt
