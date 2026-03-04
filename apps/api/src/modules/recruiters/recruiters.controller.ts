@@ -18,10 +18,8 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import type { StorageEngine } from 'multer';
-import { extname, resolve } from 'node:path';
-import { mkdirSync } from 'node:fs';
+import { memoryStorage } from 'multer';
+import { SupabaseStorageService } from '../../common/storage/supabase-storage.service';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import {
@@ -34,7 +32,10 @@ import { RecruitersService } from './recruiters.service';
 @Controller('admin/reclutadores')
 @UseGuards(BetterAuthGuard)
 export class RecruitersController {
-	constructor(private readonly recruitersService: RecruitersService) {}
+	constructor(
+		private readonly recruitersService: RecruitersService,
+		private readonly supabaseStorageService: SupabaseStorageService,
+	) {}
 
 	private getUserIdFromSession(session: any): string {
 		const userId = session?.user?.id ?? session?.id;
@@ -81,27 +82,7 @@ export class RecruitersController {
 
 	@Post()
 	@UseInterceptors(FileInterceptor('profile_picture', {
-		storage: diskStorage({
-			destination: (
-				_req: Request,
-				_file: Express.Multer.File,
-				callback: (error: Error | null, destination: string) => void,
-			) => {
-				const uploadDir = resolve(process.cwd(), 'uploads', 'reclutadores');
-				mkdirSync(uploadDir, { recursive: true });
-				callback(null, uploadDir);
-			},
-			filename: (
-				_req: Request,
-				file: Express.Multer.File,
-				callback: (error: Error | null, filename: string) => void,
-			) => {
-				const fileExt = extname(file.originalname || '').toLowerCase();
-				const safeExt = fileExt || '.jpg';
-				const fileName = `recruiter-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
-				callback(null, fileName);
-			},
-		}) as StorageEngine,
+		storage: memoryStorage(),
 		limits: {
 			fileSize: 5 * 1024 * 1024,
 		},
@@ -125,9 +106,16 @@ export class RecruitersController {
 	) {
 		this.assertAdminScope(request);
 		const userId = this.getUserIdFromSession(session);
+		return this.handleCreate(userId, dto, file);
+	}
 
+	private async handleCreate(
+		userId: string,
+		dto: CreateRecruiterDto,
+		file?: Express.Multer.File,
+	) {
 		if (file) {
-			dto.profile_picture = `/uploads/reclutadores/${file.filename}`;
+			dto.profile_picture = await this.supabaseStorageService.uploadImage(file, 'recruiters');
 		}
 
 		return this.recruitersService.create(userId, dto);
@@ -135,27 +123,7 @@ export class RecruitersController {
 
 	@Put(':id')
 	@UseInterceptors(FileInterceptor('profile_picture', {
-		storage: diskStorage({
-			destination: (
-				_req: Request,
-				_file: Express.Multer.File,
-				callback: (error: Error | null, destination: string) => void,
-			) => {
-				const uploadDir = resolve(process.cwd(), 'uploads', 'reclutadores');
-				mkdirSync(uploadDir, { recursive: true });
-				callback(null, uploadDir);
-			},
-			filename: (
-				_req: Request,
-				file: Express.Multer.File,
-				callback: (error: Error | null, filename: string) => void,
-			) => {
-				const fileExt = extname(file.originalname || '').toLowerCase();
-				const safeExt = fileExt || '.jpg';
-				const fileName = `recruiter-${Date.now()}-${Math.round(Math.random() * 1e9)}${safeExt}`;
-				callback(null, fileName);
-			},
-		}) as StorageEngine,
+		storage: memoryStorage(),
 		limits: {
 			fileSize: 5 * 1024 * 1024,
 		},
@@ -171,7 +139,7 @@ export class RecruitersController {
 			callback(null, true);
 		},
 	}))
-	update(
+	async update(
 		@CurrentUser() session: any,
 		@Req() request: Request,
 		@Param('id', ParseIntPipe) recruiterId: number,
@@ -182,7 +150,7 @@ export class RecruitersController {
 		const userId = this.getUserIdFromSession(session);
 
 		if (file) {
-			dto.profile_picture = `/uploads/reclutadores/${file.filename}`;
+			dto.profile_picture = await this.supabaseStorageService.uploadImage(file, 'recruiters');
 		}
 
 		return this.recruitersService.update(userId, recruiterId, dto);
