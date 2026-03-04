@@ -216,6 +216,12 @@ export class CompaniesService {
           address: dto.address?.trim() || null,
           description: dto.description?.trim() || null,
           mision: dto.mision?.trim() || null,
+          dress_code: dto.dress_code || null,
+          colaboration_style: dto.colaboration_style || null,
+          work_pace: dto.work_pace || null,
+          level_of_autonomy: dto.level_of_autonomy || null,
+          dealing_with_management: dto.dealing_with_management || null,
+          level_of_monitoring: dto.level_of_monitoring || null,
         },
       }),
       this.prisma.company_attributes.deleteMany({

@@ -1,6 +1,25 @@
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 
+const dressCodeSchema = z.union([z.enum(['formal', 'semi_formal', 'casual']), z.literal('')]);
+const colaborationStyleSchema = z.union([
+	z.enum(['individual', 'mixed', 'highly_collaborative']),
+	z.literal(''),
+]);
+const workPaceSchema = z.union([z.enum(['slow', 'moderate', 'accelerated']), z.literal('')]);
+const levelOfAutonomySchema = z.union([
+	z.enum(['high_control', 'balanced', 'total_freedom']),
+	z.literal(''),
+]);
+const dealingWithManagementSchema = z.union([
+	z.enum(['strictly_professional', 'friendly_and_approachable', 'nearby']),
+	z.literal(''),
+]);
+const levelOfMonitoringSchema = z.union([
+	z.enum(['daily_monitoring', 'frequent_monitoring', 'weekly_goals', 'biweekly_goals', 'total_trust']),
+	z.literal(''),
+]);
+
 const CompanyConfigBootstrapSchema = z.object({
 	initialData: z.object({
 		name: z.string(),
@@ -35,6 +54,12 @@ const UpdateCompanyConfigSchema = z.object({
 	address: z.string().max(255).optional(),
 	description: z.string().optional(),
 	mision: z.string().optional(),
+	dress_code: dressCodeSchema.optional(),
+	colaboration_style: colaborationStyleSchema.optional(),
+	work_pace: workPaceSchema.optional(),
+	level_of_autonomy: levelOfAutonomySchema.optional(),
+	dealing_with_management: dealingWithManagementSchema.optional(),
+	level_of_monitoring: levelOfMonitoringSchema.optional(),
 	values: z.union([z.array(z.string()), z.string()]).optional(),
 	values_json: z.string().optional(),
 });

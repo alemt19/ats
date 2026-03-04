@@ -53,12 +53,12 @@ model candidates {
   cv_file_url             String?
   summary                 String?
   summary_embedding       Unsupported("vector")?
-  dress_code              dress_code_enum?              @default(casual)
-  collaboration_style     colaboration_style_enum?      @default(mixed)
-  work_pace               work_pace_enum?               @default(moderate)
-  level_of_autonomy       level_of_autonomy_enum?       @default(balanced)
-  dealing_with_management dealing_with_management_enum? @default(friendly_and_approachable)
-  level_of_monitoring     level_of_monitoring_enum?     @default(weekly_goals)
+  dress_code              dress_code_enum?
+  collaboration_style     colaboration_style_enum?
+  work_pace               work_pace_enum?
+  level_of_autonomy       level_of_autonomy_enum?
+  dealing_with_management dealing_with_management_enum?
+  level_of_monitoring     level_of_monitoring_enum?
   behavioral_ans_1        String?
   behavioral_ans_2        String?
   contact_page            String?                       @db.VarChar(255)
@@ -78,12 +78,12 @@ model companies {
   logo_url                String?
   description             String?
   mision                  String?
-  dress_code              dress_code_enum?              @default(casual)
-  colaboration_style      colaboration_style_enum?      @default(mixed)
-  work_pace               work_pace_enum?               @default(moderate)
-  level_of_autonomy       level_of_autonomy_enum?       @default(balanced)
-  dealing_with_management dealing_with_management_enum? @default(friendly_and_approachable)
-  level_of_monitoring     level_of_monitoring_enum?     @default(weekly_goals)
+  dress_code              dress_code_enum?
+  colaboration_style      colaboration_style_enum?
+  work_pace               work_pace_enum?
+  level_of_autonomy       level_of_autonomy_enum?
+  dealing_with_management dealing_with_management_enum?
+  level_of_monitoring     level_of_monitoring_enum?
   address                 String?                       @db.VarChar(255)
   city                    String?                       @db.VarChar(100)
   state                   String?                       @db.VarChar(100)

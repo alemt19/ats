@@ -1,7 +1,9 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { useForm, type FieldPath } from "react-hook-form"
+import { toast } from "sonner"
 
 import type {
 	AdminCompanyConfigInitialData,
@@ -22,15 +24,6 @@ type PreferenciasCulturalesFormProps = {
 	userId: string
 	initialData: AdminCompanyConfigInitialData
 	cultureCategories: CulturePreferenceCategory[]
-}
-
-const DEFAULT_SCHEMA_PREFERENCES: Record<PreferenceFieldName, string> = {
-	dress_code: "casual",
-	colaboration_style: "mixed",
-	work_pace: "moderate",
-	level_of_autonomy: "balanced",
-	dealing_with_management: "friendly_and_approachable",
-	level_of_monitoring: "weekly_goals",
 }
 
 function mapCategoryTechnicalNameToPreferenceField(technicalName: string): PreferenceFieldName | null {
@@ -65,9 +58,7 @@ function buildInitialPreferences(
 
 			const options = category.values.map((option) => option.technical_name)
 			const initialValue = initialPreferences[fieldName]
-			const schemaDefault = DEFAULT_SCHEMA_PREFERENCES[fieldName]
-			const fallbackBySchema = options.includes(schemaDefault) ? schemaDefault : options[0] ?? ""
-			const selectedValue = initialValue && options.includes(initialValue) ? initialValue : fallbackBySchema
+			const selectedValue = initialValue && options.includes(initialValue) ? initialValue : ""
 
 			acc[fieldName] = selectedValue
 			return acc
@@ -88,6 +79,9 @@ export default function PreferenciasCulturalesForm({
 	initialData,
 	cultureCategories,
 }: PreferenciasCulturalesFormProps) {
+	const router = useRouter()
+	const [isSaving, setIsSaving] = React.useState(false)
+
 	const defaultPreferences = React.useMemo(
 		() => buildInitialPreferences(cultureCategories, initialData.preferences),
 		[cultureCategories, initialData.preferences]
@@ -108,9 +102,21 @@ export default function PreferenciasCulturalesForm({
 		form.reset(defaultValues)
 	}, [defaultValues, form])
 
-	const onSubmit = (values: PreferenciasCulturalesFormValues) => {
+	const onSubmit = async (values: PreferenciasCulturalesFormValues) => {
+		setIsSaving(true)
+
 		const payload = {
 			userId,
+			name: initialData.name.trim() || "Empresa",
+			logo: initialData.logo,
+			contact_email: initialData.contact_email,
+			country: initialData.country,
+			state: initialData.state,
+			city: initialData.city,
+			address: initialData.address,
+			description: initialData.description,
+			mision: initialData.mision,
+			values: initialData.values,
 			dress_code: values.preferences.dress_code,
 			colaboration_style: values.preferences.colaboration_style,
 			work_pace: values.preferences.work_pace,
@@ -119,7 +125,27 @@ export default function PreferenciasCulturalesForm({
 			level_of_monitoring: values.preferences.level_of_monitoring,
 		}
 
-		console.log("Payload para backend:", payload)
+		try {
+			const response = await fetch("/api/admin/company-config", {
+				method: "PUT",
+				headers: {
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(payload),
+			})
+
+			if (!response.ok) {
+				const body = (await response.json().catch(() => null)) as { message?: string } | null
+				throw new Error(body?.message ?? "No se pudo guardar la configuración")
+			}
+
+			toast.success("Preferencias culturales actualizadas")
+			router.refresh()
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "No se pudo guardar la configuración")
+		} finally {
+			setIsSaving(false)
+		}
 	}
 
 	return (
@@ -216,7 +242,9 @@ export default function PreferenciasCulturalesForm({
 					</Card>
 
 					<CardFooter className="justify-end px-0">
-						<Button type="submit">Guardar cambios</Button>
+						<Button type="submit" disabled={isSaving}>
+							{isSaving ? "Guardando..." : "Guardar cambios"}
+						</Button>
 					</CardFooter>
 				</form>
 			</Form>
