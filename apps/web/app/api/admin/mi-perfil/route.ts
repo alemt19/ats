@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
-import { getSession } from "../../../../auth"
 import {
+  BackendRequestError,
   getAdminProfileServer,
   updateAdminProfileServer,
 } from "../../../admin/(public)/mi-perfil/mi-perfil-service"
@@ -17,6 +17,7 @@ function parsePayload(body: unknown): AdminProfilePayload {
     profile_picture: typeof source.profile_picture === "string" ? source.profile_picture : undefined,
     name: typeof source.name === "string" ? source.name : "",
     lastname: typeof source.lastname === "string" ? source.lastname : "",
+    birth_date: typeof source.birth_date === "string" ? source.birth_date : "",
     dni: typeof source.dni === "string" ? source.dni : "",
     phone: typeof source.phone === "string" ? source.phone : "",
     phone_prefix: typeof source.phone_prefix === "string" ? source.phone_prefix : "",
@@ -38,6 +39,7 @@ function parseMultipartPayload(formData: FormData): AdminProfilePayload {
           : undefined,
     name: typeof formData.get("name") === "string" ? (formData.get("name") as string) : "",
     lastname: typeof formData.get("lastname") === "string" ? (formData.get("lastname") as string) : "",
+    birth_date: typeof formData.get("birth_date") === "string" ? (formData.get("birth_date") as string) : "",
     dni: typeof formData.get("dni") === "string" ? (formData.get("dni") as string) : "",
     phone: typeof formData.get("phone") === "string" ? (formData.get("phone") as string) : "",
     phone_prefix:
@@ -58,14 +60,20 @@ function isInvalidPayload(payload: AdminProfilePayload) {
   )
 }
 
-export async function GET() {
-  const session = await getSession()
+export async function GET(request: Request) {
+  const cookie = request.headers.get("cookie") ?? undefined
 
-  const profile = await getAdminProfileServer({
-    userId: session?.user?.id,
-    userEmail: session?.user?.email ?? undefined,
-    accessToken: session?.accessToken,
-  })
+  let profile = null
+
+  try {
+    profile = await getAdminProfileServer(cookie)
+  } catch (error) {
+    if (error instanceof BackendRequestError) {
+      return NextResponse.json({ message: error.message }, { status: error.status })
+    }
+
+    return NextResponse.json({ message: "No se pudo cargar el perfil" }, { status: 500 })
+  }
 
   if (!profile) {
     return NextResponse.json({ message: "Perfil no encontrado" }, { status: 404 })
@@ -75,22 +83,28 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const session = await getSession()
+  const cookie = request.headers.get("cookie") ?? undefined
   const contentType = request.headers.get("content-type") ?? ""
 
   const payload = contentType.includes("multipart/form-data")
-    ? parseMultipartPayload(await request.formData())
+    ? await request.formData()
     : parsePayload((await request.json().catch(() => null)) as unknown)
 
-  if (isInvalidPayload(payload)) {
+  const normalizedPayload = payload instanceof FormData ? parseMultipartPayload(payload) : payload
+
+  if (isInvalidPayload(normalizedPayload)) {
     return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
   }
 
-  const updated = await updateAdminProfileServer(payload, {
-    userId: session?.user?.id,
-    userEmail: session?.user?.email ?? undefined,
-    accessToken: session?.accessToken,
-  })
+  try {
+    const updated = await updateAdminProfileServer(payload, cookie)
 
-  return NextResponse.json(updated)
+    return NextResponse.json(updated)
+  } catch (error) {
+    if (error instanceof BackendRequestError) {
+      return NextResponse.json({ message: error.message }, { status: error.status })
+    }
+
+    return NextResponse.json({ message: "No se pudo actualizar el perfil" }, { status: 500 })
+  }
 }

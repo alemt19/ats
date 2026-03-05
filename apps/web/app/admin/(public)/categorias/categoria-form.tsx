@@ -41,10 +41,12 @@ export default function CategoriaForm({ mode, categoryId, initialName = "" }: Ca
       })
 
       if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { message?: string } | null
         throw new Error(
-          mode === "create"
-            ? "No se pudo crear la categoría"
-            : "No se pudo actualizar la categoría"
+          body?.message ??
+            (mode === "create"
+              ? "No se pudo crear la categoría"
+              : "No se pudo actualizar la categoría")
         )
       }
 

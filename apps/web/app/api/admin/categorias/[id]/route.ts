@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import {
+  BackendRequestError,
   getAdminCategoryByIdServer,
   updateAdminCategoryServer,
 } from "../../../../admin/(public)/categorias/categories-admin-service"
@@ -12,7 +13,8 @@ type RouteContext = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(_request: Request, context: RouteContext) {
+export async function GET(request: Request, context: RouteContext) {
+  const cookie = request.headers.get("cookie") ?? undefined
   const { id } = await context.params
   const numericId = Number(id)
 
@@ -20,7 +22,17 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ message: "Categoría no encontrada" }, { status: 404 })
   }
 
-  const data = await getAdminCategoryByIdServer(numericId)
+  let data = null
+
+  try {
+    data = await getAdminCategoryByIdServer(numericId, cookie)
+  } catch (error) {
+    if (error instanceof BackendRequestError) {
+      return NextResponse.json({ message: error.message }, { status: error.status })
+    }
+
+    return NextResponse.json({ message: "No se pudo cargar la categoría" }, { status: 500 })
+  }
 
   if (!data) {
     return NextResponse.json({ message: "Categoría no encontrada" }, { status: 404 })
@@ -30,6 +42,7 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
+  const cookie = request.headers.get("cookie") ?? undefined
   const { id } = await context.params
   const numericId = Number(id)
   const payload = (await request.json().catch(() => null)) as { name?: unknown } | null
@@ -43,6 +56,14 @@ export async function PUT(request: Request, context: RouteContext) {
     return NextResponse.json({ message: "El nombre es requerido" }, { status: 400 })
   }
 
-  const updated = await updateAdminCategoryServer(numericId, name)
-  return NextResponse.json(updated)
+  try {
+    const updated = await updateAdminCategoryServer(numericId, name, cookie)
+    return NextResponse.json(updated)
+  } catch (error) {
+    if (error instanceof BackendRequestError) {
+      return NextResponse.json({ message: error.message }, { status: error.status })
+    }
+
+    return NextResponse.json({ message: "No se pudo actualizar la categoría" }, { status: 500 })
+  }
 }

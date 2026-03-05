@@ -35,6 +35,7 @@ type MiPerfilFormValues = {
   profile_picture: string
   name: string
   lastname: string
+  birth_date: string
   email: string
   dni: string
   phone: string
@@ -79,7 +80,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
   const [avatarPreview, setAvatarPreview] = React.useState<string>(
-    initialProfile.profile_picture || "https://i.pravatar.cc/150?img=32"
+    initialProfile.profile_picture || ""
   )
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
 
@@ -87,6 +88,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
     profile_picture: initialProfile.profile_picture,
     name: initialProfile.name,
     lastname: initialProfile.lastname,
+    birth_date: initialProfile.birth_date,
     email: initialProfile.email,
     dni: initialProfile.dni,
     phone: extractPhoneNumber(initialProfile.phone, catalogs.country_phone_prefix),
@@ -118,11 +120,13 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       return (await response.json()) as AdminProfile
     },
     onSuccess: (updated) => {
+      setAvatarPreview(updated.profile_picture || "")
       setValues((previous) => ({
         ...previous,
         profile_picture: updated.profile_picture,
         name: updated.name,
         lastname: updated.lastname,
+        birth_date: updated.birth_date,
         dni: updated.dni,
         phone: extractPhoneNumber(updated.phone, previous.phone_prefix),
         country: updated.country,
@@ -186,6 +190,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
 
     payload.append("name", values.name)
     payload.append("lastname", values.lastname)
+    payload.append("birth_date", values.birth_date)
     payload.append("dni", values.dni)
     payload.append("phone", values.phone)
     payload.append("phone_prefix", values.phone_prefix)
@@ -277,6 +282,16 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               </div>
 
               <div className="space-y-2">
+                <Label htmlFor="birth_date">Fecha de nacimiento</Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={values.birth_date}
+                  onChange={handleInputChange("birth_date")}
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="dni">DNI</Label>
                 <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
               </div>
@@ -309,7 +324,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               <div className="space-y-2">
                 <Label>Estado *</Label>
                 <Select value={values.state} onValueChange={handleStateChange}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona un estado" />
                   </SelectTrigger>
                   <SelectContent>
@@ -325,7 +340,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               <div className="space-y-2">
                 <Label>Ciudad *</Label>
                 <Select value={values.city} onValueChange={handleCityChange} disabled={cityOptions.length === 0}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona una ciudad" />
                   </SelectTrigger>
                   <SelectContent>

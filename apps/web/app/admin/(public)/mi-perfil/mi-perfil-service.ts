@@ -9,21 +9,6 @@ import {
   type AdminProfilePayload,
 } from "./mi-perfil-types"
 
-type UserAdminRecord = {
-  id?: unknown
-  profile_picture?: unknown
-  name?: unknown
-  lastname?: unknown
-  email?: unknown
-  dni?: unknown
-  phone?: unknown
-  role?: unknown
-  country?: unknown
-  state?: unknown
-  city?: unknown
-  address?: unknown
-}
-
 type RoleRecord = {
   technical_name?: unknown
   display_name?: unknown
@@ -46,38 +31,74 @@ type CityRecord = {
   state_id?: unknown
 }
 
-export type AdminProfileIdentity = {
-  userId?: string
-  userEmail?: string
-  accessToken?: string
+type BackendEnvelope<T> = {
+  success?: boolean
+  data?: T
+  message?: string
+  error?: {
+    message?: string | Array<{ message?: string }>
+  }
+}
+
+export class BackendRequestError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = "BackendRequestError"
+    this.status = status
+  }
+}
+
+const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+
+function backendHeaders(cookie?: string): HeadersInit {
+  if (!cookie) {
+    return {}
+  }
+
+  return { cookie }
+}
+
+function parseErrorMessage(payload: BackendEnvelope<unknown> | null, fallback: string) {
+  if (typeof payload?.message === "string" && payload.message.trim()) {
+    return payload.message
+  }
+
+  const nested = payload?.error?.message
+  if (typeof nested === "string" && nested.trim()) {
+    return nested
+  }
+
+  if (Array.isArray(nested) && nested.length > 0) {
+    const first = nested[0]?.message
+    if (typeof first === "string" && first.trim()) {
+      return first
+    }
+  }
+
+  return fallback
+}
+
+async function parseBackendResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const payload = (await response.json().catch(() => null)) as BackendEnvelope<T> | T | null
+
+  if (!response.ok) {
+    const message = parseErrorMessage(payload as BackendEnvelope<unknown> | null, fallbackMessage)
+    throw new BackendRequestError(message, response.status)
+  }
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as BackendEnvelope<T>).data as T
+  }
+
+  return payload as T
 }
 
 async function readJsonFile<T>(relativePath: string): Promise<T> {
   const fullPath = path.join(process.cwd(), "public", "data", relativePath)
   const fileContents = await readFile(fullPath, "utf-8")
   return JSON.parse(fileContents) as T
-}
-
-function normalizeUserAdmin(record: UserAdminRecord, fallbackCountry: string): AdminProfile {
-  const idValue = Number(record.id)
-
-  return {
-    id: Number.isFinite(idValue) && idValue > 0 ? idValue : 1,
-    profile_picture: typeof record.profile_picture === "string" ? record.profile_picture.trim() : "",
-    name: typeof record.name === "string" ? record.name.trim() : "",
-    lastname: typeof record.lastname === "string" ? record.lastname.trim() : "",
-    email: typeof record.email === "string" ? record.email.trim() : "",
-    dni: typeof record.dni === "string" ? record.dni.trim() : "",
-    phone: typeof record.phone === "string" ? record.phone.trim() : "",
-    role: typeof record.role === "string" ? record.role.trim() : "recruiter",
-    country:
-      typeof record.country === "string" && record.country.trim().length > 0
-        ? record.country.trim()
-        : fallbackCountry,
-    state: typeof record.state === "string" ? record.state.trim() : "",
-    city: typeof record.city === "string" ? record.city.trim() : "",
-    address: typeof record.address === "string" ? record.address.trim() : "",
-  }
 }
 
 export async function getAdminProfileCatalogsServer(): Promise<AdminProfileCatalogsResponse> {
@@ -191,96 +212,38 @@ export async function getAdminProfileCatalogsServer(): Promise<AdminProfileCatal
   }
 }
 
-async function getDummyUserAdminProfile(identity?: AdminProfileIdentity): Promise<AdminProfile | null> {
-  const catalogs = await getAdminProfileCatalogsServer()
+export async function getAdminProfileServer(cookie?: string): Promise<AdminProfile | null> {
+  const response = await fetch(`${backendApiUrl}/api/admin/mi-perfil`, {
+    method: "GET",
+    headers: backendHeaders(cookie),
+    cache: "no-store",
+  })
 
-  try {
-    const payload = await readJsonFile<UserAdminRecord[]>("user_admin_dummy.json")
-
-    if (!Array.isArray(payload) || payload.length === 0) {
-      return null
-    }
-
-    const byId = identity?.userId
-      ? payload.find((item) => String(item.id ?? "") === String(identity.userId))
-      : null
-
-    const byEmail = !byId && identity?.userEmail
-      ? payload.find((item) => String(item.email ?? "").toLowerCase() === identity.userEmail?.toLowerCase())
-      : null
-
-    const selected = byId ?? byEmail ?? payload[0]
-
-    if (!selected) {
-      return null
-    }
-
-    return normalizeUserAdmin(selected, catalogs.country)
-  } catch {
-    return {
-      id: 1,
-      profile_picture: "https://i.pravatar.cc/150?img=12",
-      name: "Admin",
-      lastname: "Principal",
-      email: identity?.userEmail ?? "admin@empresa.com",
-      dni: "V-00000001",
-      phone: "+58 412 000 0000",
-      role: "head_of_recruiters",
-      country: catalogs.country,
-      state: "Distrito Capital",
-      city: "Caracas",
-      address: "Av. Principal",
-    }
-  }
-}
-
-export async function getAdminProfileServer(identity?: AdminProfileIdentity): Promise<AdminProfile | null> {
-  const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-
-  try {
-    const response = await fetch(`${apiBaseUrl}/admin/mi-perfil`, {
-      method: "GET",
-      headers: {
-        ...(identity?.accessToken ? { Authorization: `Bearer ${identity.accessToken}` } : {}),
-        ...(identity?.userId ? { "x-user-id": identity.userId } : {}),
-        ...(identity?.userEmail ? { "x-user-email": identity.userEmail } : {}),
-      },
-      cache: "no-store",
-    })
-
-    if (response.ok) {
-      const payload = (await response.json()) as UserAdminRecord
-      const catalogs = await getAdminProfileCatalogsServer()
-      return normalizeUserAdmin(payload, catalogs.country)
-    }
-  } catch {
-    // fallback to dummy while backend endpoint is pending
+  if (response.status === 404) {
+    return null
   }
 
-  return getDummyUserAdminProfile(identity)
+  return parseBackendResponse<AdminProfile>(response, "No se pudo cargar el perfil")
 }
 
 export async function updateAdminProfileServer(
-  payload: AdminProfilePayload,
-  identity?: AdminProfileIdentity
+  payload: AdminProfilePayload | FormData,
+  cookie?: string
 ): Promise<AdminProfile> {
-  const existing = await getAdminProfileServer(identity)
-  const catalogs = await getAdminProfileCatalogsServer()
+  const body = payload instanceof FormData ? payload : JSON.stringify(payload)
+  const headers: HeadersInit = payload instanceof FormData
+    ? backendHeaders(cookie)
+    : {
+        "Content-Type": "application/json",
+        ...backendHeaders(cookie),
+      }
 
-  if (!existing) {
-    throw new Error("Perfil no encontrado")
-  }
+  const response = await fetch(`${backendApiUrl}/api/admin/mi-perfil`, {
+    method: "PUT",
+    headers,
+    body,
+    cache: "no-store",
+  })
 
-  return {
-    ...existing,
-    profile_picture: payload.profile_picture?.trim() ? payload.profile_picture.trim() : existing.profile_picture,
-    name: payload.name.trim(),
-    lastname: payload.lastname.trim(),
-    dni: payload.dni.trim(),
-    phone: `${payload.phone_prefix.trim()} ${payload.phone.trim()}`.trim(),
-    country: catalogs.country,
-    state: payload.state.trim(),
-    city: payload.city.trim(),
-    address: payload.address.trim(),
-  }
+  return parseBackendResponse<AdminProfile>(response, "No se pudo actualizar el perfil")
 }

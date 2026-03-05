@@ -7,10 +7,14 @@ import { BetterAuthController } from './better-auth.controller';
 import { BetterAuthProvider } from './better-auth.provider';
 import { BetterAuthGuard } from './auth.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { StorageModule } from '../../common/storage/storage.module';
+import { AdminProfileController } from './admin-profile.controller';
+import { AdminProfileService } from './admin-profile.service';
 
 @Module({
 	imports: [
 		PrismaModule,
+		StorageModule,
 		MailerModule.forRootAsync({
 			useFactory: () => ({
 				transport: {
@@ -28,8 +32,8 @@ import { PrismaModule } from '../../prisma/prisma.module';
 			}),
 		}),
 	],
-	controllers: [AuthController, BetterAuthController],
-	providers: [BetterAuthProvider, BetterAuthGuard],
+	controllers: [AuthController, BetterAuthController, AdminProfileController],
+	providers: [BetterAuthProvider, BetterAuthGuard, AdminProfileService],
 	exports: [BetterAuthProvider, BetterAuthGuard],
 })
 export class AuthModule {}

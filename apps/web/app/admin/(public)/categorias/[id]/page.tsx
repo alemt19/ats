@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { headers } from "next/headers"
 
 import { getAdminCategoryByIdServer } from "../categories-admin-service"
 import CategoriaForm from "../categoria-form"
@@ -15,7 +16,8 @@ export default async function AdminCategoriaDetallePage({ params }: AdminCategor
     notFound()
   }
 
-  const category = await getAdminCategoryByIdServer(categoryId)
+  const cookie = (await headers()).get("cookie") ?? undefined
+  const category = await getAdminCategoryByIdServer(categoryId, cookie)
 
   if (!category) {
     notFound()

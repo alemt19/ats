@@ -49,6 +49,7 @@ import {
 	SidebarSeparator,
 	SidebarTrigger,
 } from "react/components/ui/sidebar"
+import { Skeleton } from "react/components/ui/skeleton"
 import { useAdminSession } from "react/hooks/use-segmented-session"
 
 const adminLinks = [
@@ -227,8 +228,9 @@ type AdminPublicLayoutClientProps = {
 
 export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutClientProps) {
 	const pathname = usePathname()
-	const { user } = useAdminSession()
-	const { company } = useCompany()
+	const { user, isPending: isAdminPending } = useAdminSession()
+	const { company, isLoading: isCompanyLoading } = useCompany()
+	const isSidebarIdentityLoading = isAdminPending || isCompanyLoading
 
 	const fullNameValue = user?.name ?? ""
 	const [firstNamePart, ...lastNameParts] = fullNameValue.trim().split(/\s+/).filter(Boolean)
@@ -250,20 +252,27 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 			<Sidebar collapsible="offcanvas">
 				<SidebarHeader>
 					<div className="flex items-center gap-3 rounded-md px-2 py-1">
-						<Link href="/admin/dashboard" className="flex items-center gap-3">
-							{companyLogo ? (
-								<img
-									src={companyLogo}
-									alt={`${companyName} logo`}
-									className="h-8 w-8 rounded-md object-contain"
-								/>
-							) : (
-								<div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
-									{companyName.slice(0, 2).toUpperCase()}
-								</div>
-							)}
-							<span className="text-base font-semibold tracking-tight">{companyName}</span>
-						</Link>
+						{isSidebarIdentityLoading ? (
+							<div className="flex items-center gap-3">
+								<Skeleton className="h-8 w-8 rounded-md" />
+								<Skeleton className="h-5 w-28" />
+							</div>
+						) : (
+							<Link href="/admin/dashboard" className="flex items-center gap-3">
+								{companyLogo ? (
+									<img
+										src={companyLogo}
+										alt={`${companyName} logo`}
+										className="h-8 w-8 rounded-md object-contain"
+									/>
+								) : (
+									<div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
+										{companyName.slice(0, 2).toUpperCase()}
+									</div>
+								)}
+								<span className="text-base font-semibold tracking-tight">{companyName}</span>
+							</Link>
+						)}
 					</div>
 				</SidebarHeader>
 
@@ -327,31 +336,46 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 				<SidebarSeparator />
 
 				<SidebarFooter>
-					<div className="flex items-center gap-3 rounded-md px-2 py-1">
-						<Avatar className="h-9 w-9">
-							<AvatarImage src={adminImage} alt={fullName} />
-							<AvatarFallback>{fullName.slice(0, 2).toUpperCase()}</AvatarFallback>
-						</Avatar>
-						<div className="min-w-0">
-							<p className="truncate text-sm font-medium">{fullName}</p>
-							<p className="truncate text-xs text-muted-foreground">{adminEmail}</p>
-						</div>
-					</div>
+					{isSidebarIdentityLoading ? (
+						<>
+							<div className="flex items-center gap-3 rounded-md px-2 py-1">
+								<Skeleton className="h-9 w-9 rounded-full" />
+								<div className="min-w-0 flex-1 space-y-1">
+									<Skeleton className="h-4 w-24" />
+									<Skeleton className="h-3 w-36" />
+								</div>
+							</div>
+							<Skeleton className="h-9 w-full" />
+						</>
+					) : (
+						<>
+							<div className="flex items-center gap-3 rounded-md px-2 py-1">
+								<Avatar className="h-9 w-9">
+									<AvatarImage src={adminImage} alt={fullName} />
+									<AvatarFallback>{fullName.slice(0, 2).toUpperCase()}</AvatarFallback>
+								</Avatar>
+								<div className="min-w-0">
+									<p className="truncate text-sm font-medium">{fullName}</p>
+									<p className="truncate text-xs text-muted-foreground">{adminEmail}</p>
+								</div>
+							</div>
 
-					<Button
-						variant="outline"
-						className="w-full justify-start"
-						onClick={() => {
-							void (async () => {
-								document.cookie = "ats_scope=; Path=/; Max-Age=0; SameSite=Lax"
-								await signOut()
-								window.location.href = "/login"
-							})()
-						}}
-					>
-						<LogOut className="mr-2 size-4" />
-						Logout
-					</Button>
+							<Button
+								variant="outline"
+								className="w-full justify-start"
+								onClick={() => {
+									void (async () => {
+										document.cookie = "ats_scope=; Path=/; Max-Age=0; SameSite=Lax"
+										await signOut()
+										window.location.href = "/login"
+									})()
+								}}
+							>
+								<LogOut className="mr-2 size-4" />
+								Logout
+							</Button>
+						</>
+					)}
 				</SidebarFooter>
 			</Sidebar>
 

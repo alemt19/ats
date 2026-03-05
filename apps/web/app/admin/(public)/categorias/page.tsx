@@ -1,5 +1,6 @@
 import CategoriasAdminClient from "./categorias-admin-client"
 import { getAdminCategoriesServer } from "./categories-admin-service"
+import { headers } from "next/headers"
 import {
 	normalizeAdminCategoriesQuery,
 	type AdminCategoriesQueryParams,
@@ -24,7 +25,8 @@ export default async function AdminCategoriasPage({ searchParams }: AdminCategor
 			: resolvedSearchParams?.pageSize,
 	})
 
-	const initialData = await getAdminCategoriesServer(initialQuery)
+	const cookie = (await headers()).get("cookie") ?? undefined
+	const initialData = await getAdminCategoriesServer(initialQuery, cookie)
 
 	return <CategoriasAdminClient initialQuery={initialQuery} initialData={initialData} />
 }

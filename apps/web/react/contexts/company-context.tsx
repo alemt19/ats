@@ -12,7 +12,7 @@ type CompanyContextValue = {
   isLoading: boolean
 }
 
-const COMPANY_ENDPOINT = "https://dummyjson.com/products/1"
+const COMPANY_ENDPOINT = "/api/company"
 
 const CompanyContext = React.createContext<CompanyContextValue | undefined>(undefined)
 
@@ -39,12 +39,17 @@ export function CompanyProvider({ children }: CompanyProviderProps) {
         }
 
         const data = (await response.json()) as {
-          brand?: string
-          thumbnail?: string
+          company?: {
+            name?: string
+            logo?: string
+          } | null
         }
 
-        if (data.brand && data.thumbnail) {
-          setCompany({ name: data.brand, logo: data.thumbnail })
+        if (data.company?.name) {
+          setCompany({
+            name: data.company.name,
+            logo: data.company.logo ?? "",
+          })
         } else {
           setCompany(null)
         }

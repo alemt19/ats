@@ -7,203 +7,161 @@ import {
   normalizeAdminCategoriesQuery,
 } from "./categories-admin-types"
 
-function humanizeSlug(value: string) {
-  return value
-    .split("-")
-    .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ")
+type BackendEnvelope<T> = {
+  success?: boolean
+  data?: T
+  message?: string
+  error?: {
+    message?: string | Array<{ message?: string }>
+  }
 }
 
-function normalizeDummyCategories(payload: unknown): AdminCategory[] {
-  if (!Array.isArray(payload)) {
-    return []
+export class BackendRequestError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = "BackendRequestError"
+    this.status = status
+  }
+}
+
+const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+
+function backendHeaders(cookie?: string): HeadersInit {
+  if (!cookie) {
+    return {}
   }
 
-  const names = payload
-    .map((item) => {
-      if (typeof item === "string") {
-        const normalized = item.trim()
-        return normalized ? humanizeSlug(normalized) : null
-      }
-
-      if (!item || typeof item !== "object") {
-        return null
-      }
-
-      const category = item as {
-        slug?: unknown
-        name?: unknown
-        id?: unknown
-      }
-
-      const rawName = category.name ?? category.slug ?? category.id
-      const name = typeof rawName === "string" ? rawName.trim() : ""
-
-      if (!name) {
-        return null
-      }
-
-      return humanizeSlug(name)
-    })
-    .filter((value): value is string => Boolean(value))
-
-  const deduped = Array.from(new Set(names.map((name) => name.toLowerCase()))).map((normalizedName) => {
-    const found = names.find((name) => name.toLowerCase() === normalizedName) ?? normalizedName
-    return found
-  })
-
-  return deduped
-    .sort((a, b) => a.localeCompare(b, "es"))
-    .map((name, index) => ({
-      id: index + 1,
-      name,
-    }))
+  return { cookie }
 }
 
-async function fetchAllCategories(): Promise<AdminCategory[]> {
-  const response = await fetch("https://dummyjson.com/products/categories", {
-    cache: "no-store",
-  })
+function parseErrorMessage(payload: BackendEnvelope<unknown> | null, fallback: string) {
+  const direct = payload?.message
+  if (typeof direct === "string" && direct.trim()) {
+    return direct
+  }
+
+  const nested = payload?.error?.message
+  if (typeof nested === "string" && nested.trim()) {
+    return nested
+  }
+
+  if (Array.isArray(nested) && nested.length > 0) {
+    const first = nested[0]?.message
+    if (typeof first === "string" && first.trim()) {
+      return first
+    }
+  }
+
+  return fallback
+}
+
+async function parseBackendResponse<T>(response: Response, fallbackMessage: string): Promise<T> {
+  const payload = (await response.json().catch(() => null)) as BackendEnvelope<T> | T | null
 
   if (!response.ok) {
-    throw new Error("No se pudieron obtener las categorías")
+    const message = parseErrorMessage(payload as BackendEnvelope<unknown> | null, fallbackMessage)
+    throw new BackendRequestError(message, response.status)
   }
 
-  const payload = (await response.json()) as unknown
-  return normalizeDummyCategories(payload)
-}
-
-function applyFilters(
-  categories: AdminCategory[],
-  query: AdminCategoriesQueryParams
-): AdminCategoriesResponse {
-  const normalizedName = query.name.toLowerCase()
-
-  const filtered = categories.filter((category) => {
-    if (!normalizedName) {
-      return true
-    }
-
-    return category.name.toLowerCase().includes(normalizedName)
-  })
-
-  const total = filtered.length
-  const start = (query.page - 1) * query.pageSize
-
-  return {
-    items: filtered.slice(start, start + query.pageSize),
-    total,
-    page: query.page,
-    pageSize: query.pageSize,
+  if (payload && typeof payload === "object" && "data" in payload) {
+    return (payload as BackendEnvelope<T>).data as T
   }
+
+  return payload as T
 }
 
 export async function getAdminCategoriesServer(
-  queryInput?: Partial<Record<keyof AdminCategoriesQueryParams, string | number | undefined>>
+  queryInput?: Partial<Record<keyof AdminCategoriesQueryParams, string | number | undefined>>,
+  cookie?: string
 ): Promise<AdminCategoriesResponse> {
   const query = normalizeAdminCategoriesQuery(queryInput)
 
-  try {
-    const categories = await fetchAllCategories()
-    return applyFilters(categories, query)
-  } catch {
-    return applyFilters(
-      [
-        { id: 1, name: "Tecnología" },
-        { id: 2, name: "Marketing" },
-      ],
-      query
-    )
+  const params = new URLSearchParams()
+  if (query.name) {
+    params.set("name", query.name)
   }
+  params.set("page", String(query.page))
+  params.set("pageSize", String(query.pageSize))
+
+  const response = await fetch(`${backendApiUrl}/api/admin/categorias?${params.toString()}`, {
+    method: "GET",
+    headers: backendHeaders(cookie),
+    cache: "no-store",
+  })
+
+  return parseBackendResponse<AdminCategoriesResponse>(
+    response,
+    "No se pudieron cargar las categorías"
+  )
 }
 
-export async function getAdminCategoryByIdServer(categoryId: number) {
+export async function getAdminCategoryByIdServer(
+  categoryId: number,
+  cookie?: string
+): Promise<AdminCategory | null> {
   if (!Number.isFinite(categoryId) || categoryId <= 0) {
     return null
   }
 
-  try {
-    const categories = await fetchAllCategories()
-    return categories.find((category) => category.id === categoryId) ?? null
-  } catch {
-    return {
-      id: categoryId,
-      name: `Categoría ${categoryId}`,
-    }
+  const response = await fetch(`${backendApiUrl}/api/admin/categorias/${categoryId}`, {
+    method: "GET",
+    headers: backendHeaders(cookie),
+    cache: "no-store",
+  })
+
+  if (response.status === 404) {
+    return null
   }
+
+  return parseBackendResponse<AdminCategory>(response, "No se pudo cargar la categoría")
 }
 
-export async function createAdminCategoryServer(name: string): Promise<AdminCategory> {
+export async function createAdminCategoryServer(name: string, cookie?: string): Promise<AdminCategory> {
   const normalizedName = name.trim()
 
   if (!normalizedName) {
-    throw new Error("El nombre es requerido")
+    throw new BackendRequestError("El nombre es requerido", 400)
   }
 
-  try {
-    const response = await fetch("https://dummyjson.com/products/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title: normalizedName }),
-      cache: "no-store",
-    })
+  const response = await fetch(`${backendApiUrl}/api/admin/categorias`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...backendHeaders(cookie),
+    },
+    body: JSON.stringify({ name: normalizedName }),
+    cache: "no-store",
+  })
 
-    if (!response.ok) {
-      throw new Error("No se pudo crear la categoría")
-    }
-
-    const payload = (await response.json()) as { id?: number | string; title?: string }
-    const numericPayloadId = Number(payload.id)
-
-    return {
-      id: Number.isFinite(numericPayloadId) && numericPayloadId > 0 ? numericPayloadId : Date.now(),
-      name: (payload.title ?? normalizedName).trim(),
-    }
-  } catch {
-    return {
-      id: Date.now(),
-      name: normalizedName,
-    }
-  }
+  return parseBackendResponse<AdminCategory>(response, "No se pudo crear la categoría")
 }
 
 export async function updateAdminCategoryServer(
   categoryId: number,
-  name: string
+  name: string,
+  cookie?: string
 ): Promise<AdminCategory> {
   const normalizedName = name.trim()
 
-  if (!Number.isFinite(categoryId) || categoryId <= 0 || !normalizedName) {
-    throw new Error("Datos inválidos")
+  if (!Number.isFinite(categoryId) || categoryId <= 0) {
+    throw new BackendRequestError("Categoría inválida", 400)
   }
 
-  try {
-    const response = await fetch(`https://dummyjson.com/products/${categoryId}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ title: normalizedName }),
-      cache: "no-store",
-    })
-
-    if (!response.ok) {
-      throw new Error("No se pudo editar la categoría")
-    }
-
-    const payload = (await response.json()) as { title?: string }
-
-    return {
-      id: categoryId,
-      name: (payload.title ?? normalizedName).trim(),
-    }
-  } catch {
-    return {
-      id: categoryId,
-      name: normalizedName,
-    }
+  if (!normalizedName) {
+    throw new BackendRequestError("El nombre es requerido", 400)
   }
+
+  const response = await fetch(`${backendApiUrl}/api/admin/categorias/${categoryId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      ...backendHeaders(cookie),
+    },
+    body: JSON.stringify({ name: normalizedName }),
+    cache: "no-store",
+  })
+
+  return parseBackendResponse<AdminCategory>(response, "No se pudo editar la categoría")
 }

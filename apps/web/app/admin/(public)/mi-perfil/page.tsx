@@ -1,4 +1,4 @@
-import { getSession } from "../../../../auth"
+import { headers } from "next/headers"
 
 import MiPerfilForm from "./mi-perfil-form"
 import {
@@ -7,15 +7,11 @@ import {
 } from "./mi-perfil-service"
 
 export default async function AdminMiPerfilPage() {
-	const session = await getSession()
+	const cookie = (await headers()).get("cookie") ?? undefined
 
 	const [catalogs, profile] = await Promise.all([
 		getAdminProfileCatalogsServer(),
-		getAdminProfileServer({
-			userId: session?.user?.id,
-			userEmail: session?.user?.email ?? undefined,
-			accessToken: session?.accessToken,
-		}),
+		getAdminProfileServer(cookie),
 	])
 
 	if (!profile) {

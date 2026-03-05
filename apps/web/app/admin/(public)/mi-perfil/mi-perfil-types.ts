@@ -20,6 +20,7 @@ export type AdminProfile = {
   profile_picture: string
   name: string
   lastname: string
+  birth_date: string
   email: string
   dni: string
   phone: string
@@ -34,6 +35,7 @@ export type AdminProfilePayload = {
   profile_picture?: string
   name: string
   lastname: string
+  birth_date?: string
   dni: string
   phone: string
   phone_prefix: string
