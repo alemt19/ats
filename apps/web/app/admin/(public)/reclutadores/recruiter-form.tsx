@@ -202,7 +202,6 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       }
 
       const payload = (await response.json()) as RecruiterApiPayload
-      console.log("Recruiter detail payload: ", payload)
       const recruiter = extractRecruiterFromPayload(payload)
 
       if (!recruiter) {

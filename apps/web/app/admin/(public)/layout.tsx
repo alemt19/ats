@@ -9,7 +9,6 @@ export default async function AdminPublicLayout({
 	children: React.ReactNode
 }>) {
 	const canAccessAdminArea = await hasAuthAccess("admin")
-	console.log("canAccessAdminArea", canAccessAdminArea)
 	if (!canAccessAdminArea) {
 		redirect("/admin/login")
 	}

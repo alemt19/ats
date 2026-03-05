@@ -40,7 +40,6 @@ export default async function AdminConfiguracionInformacionValoresPage() {
 		state: FIXED_STATE_NAME,
 		city: fixedCity,
 	}
-	console.log("Bootstrap data loaded:", { initialData, companyValueOptions: bootstrapData.companyValueOptions })
 	return (
 		<InformacionValoresForm
 			userId={userId}

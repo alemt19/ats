@@ -425,7 +425,6 @@ export default function ConfiguracionForm({
       values: values.values,
     }
 
-    console.log("Payload para backend:", payload)
   }
 
   return (

@@ -2,34 +2,20 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any
 
 import psycopg
 from bullmq import Worker
-from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+
+from fastapi_service.environment import load_environment
 
 logger = logging.getLogger("fastapi_service.embedding_worker")
 logging.basicConfig(
     level=os.getenv("LOG_LEVEL", "INFO").upper(),
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
-
-
-def load_environment() -> None:
-    cwd_env = Path.cwd() / ".env"
-    app_env = Path(__file__).resolve().parents[2] / ".env"
-
-    if cwd_env.exists():
-        load_dotenv(cwd_env)
-        logger.info("Loaded env from %s", cwd_env)
-
-    if app_env.exists() and app_env != cwd_env:
-        load_dotenv(app_env, override=False)
-        logger.info("Loaded env from %s", app_env)
-
 
 load_environment()
 

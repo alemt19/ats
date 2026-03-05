@@ -12,6 +12,7 @@ Create `apps/web/.env.local` with:
 BETTER_AUTH_URL=http://localhost:3000
 BETTER_AUTH_SECRET=replace-with-a-long-random-secret-at-least-32-chars
 BACKEND_API_URL=http://localhost:4000
+FASTAPI_API_URL=http://localhost:8000
 ```
 
 First, run the development server:

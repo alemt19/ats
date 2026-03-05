@@ -66,32 +66,30 @@ function dedupe(values: string[]) {
 	return Array.from(unique)
 }
 
-async function getCompanyValuesSuggestionsFromDummyApi(input: {
+async function getCompanyValuesSuggestions(input: {
+	name: string
 	description: string
-	mission: string
+	mision: string
 }): Promise<string[]> {
-	await new Promise((resolve) => setTimeout(resolve, 900))
+	const response = await fetch("/api/admin/company-config/sugerir-valores", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+		},
+		body: JSON.stringify({
+			name: input.name,
+			description: input.description,
+			mision: input.mision,
+		}),
+	})
 
-	const baseText = `${input.description} ${input.mission}`.toLowerCase()
-	const suggestions = ["Responsabilidad", "Integridad", "Colaboración"]
-
-	if (baseText.includes("cliente") || baseText.includes("servicio")) {
-		suggestions.push("Empatía")
+	if (!response.ok) {
+		const body = (await response.json().catch(() => null)) as { message?: string } | null
+		throw new Error(body?.message ?? "No se pudieron generar sugerencias")
 	}
 
-	if (baseText.includes("innov") || baseText.includes("tecnolog") || baseText.includes("mejora")) {
-		suggestions.push("Innovación")
-	}
-
-	if (baseText.includes("equipo") || baseText.includes("talento")) {
-		suggestions.push("Respeto")
-	}
-
-	if (baseText.includes("calidad") || baseText.includes("excelencia")) {
-		suggestions.push("Excelencia")
-	}
-
-	return dedupe(suggestions)
+	const body = (await response.json().catch(() => null)) as { values?: string[] } | null
+	return dedupe(Array.isArray(body?.values) ? body.values : [])
 }
 
 function MultiDatalistField({
@@ -278,9 +276,11 @@ export default function InformacionValoresForm({
 	}, [initialData.logo])
 
 	const description = form.watch("description")
-	const mission = form.watch("mision")
+	const mision = form.watch("mision")
+	const name = form.watch("name")
 	const companyValues = form.watch("values")
-	const canSuggestValues = description.trim().length > 0 && mission.trim().length > 0
+	const canSuggestValues =
+		name.trim().length > 0 && description.trim().length > 0 && mision.trim().length > 0
 
 	const addSuggestionToValues = React.useCallback(
 		(value: string) => {
@@ -302,12 +302,15 @@ export default function InformacionValoresForm({
 		setIsGeneratingSuggestions(true)
 
 		try {
-			const suggestions = await getCompanyValuesSuggestionsFromDummyApi({
+			const suggestions = await getCompanyValuesSuggestions({
+				name,
 				description,
-				mission,
+				mision,
 			})
 
 			setValueSuggestions(suggestions)
+		} catch (error) {
+			toast.error(error instanceof Error ? error.message : "No se pudieron generar sugerencias")
 		} finally {
 			setIsGeneratingSuggestions(false)
 		}
@@ -572,7 +575,7 @@ export default function InformacionValoresForm({
 
 							{!canSuggestValues ? (
 								<p className="text-sm text-muted-foreground">
-									Completa los campos de descripción y misión para habilitar esta sección.
+									Completa nombre, descripción y misión para habilitar esta sección.
 								</p>
 							) : null}
 
