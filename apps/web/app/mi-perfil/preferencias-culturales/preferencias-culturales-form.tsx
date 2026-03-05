@@ -51,13 +51,12 @@ function buildDefaultSelections(
   initialSelections: Partial<Record<string, string | null>>
 ) {
   return categories.reduce<Record<string, string>>((acc, category) => {
-    const fallbackValue = category.values[0]?.technical_name ?? ""
     const initialValue = initialSelections[category.technical_name]
     acc[category.technical_name] =
       typeof initialValue === "string" &&
       category.values.some((value) => value.technical_name === initialValue)
         ? initialValue
-        : fallbackValue
+        : ""
 
     return acc
   }, {})
@@ -80,12 +79,12 @@ export default function PreferenciasCulturalesForm({
 
   const onSubmit = async (values: CulturePreferenceFormValues) => {
     const payload = {
-      dress_code: values.preferences.dress_code ?? null,
-      collaboration_style: values.preferences.collaboration_style ?? null,
-      work_pace: values.preferences.work_pace ?? null,
-      level_of_autonomy: values.preferences.level_of_autonomy ?? null,
-      dealing_with_management: values.preferences.dealing_with_management ?? null,
-      level_of_monitoring: values.preferences.level_of_monitoring ?? null,
+      dress_code: values.preferences.dress_code || null,
+      collaboration_style: values.preferences.collaboration_style || null,
+      work_pace: values.preferences.work_pace || null,
+      level_of_autonomy: values.preferences.level_of_autonomy || null,
+      dealing_with_management: values.preferences.dealing_with_management || null,
+      level_of_monitoring: values.preferences.level_of_monitoring || null,
     }
 
     try {
