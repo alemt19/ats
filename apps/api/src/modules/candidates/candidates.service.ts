@@ -1,12 +1,61 @@
 /** @format */
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.producer';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
+import { UpdateMyCompetenciasValoresDto } from './dto/competencias-valores.dto';
+
+type CandidateAttributeType = 'hard_skill' | 'soft_skill' | 'value';
+
+type CandidateCompetenciasValoresResponse = {
+  initialData: {
+    cv_url: string;
+    behavioral_ans_1: string;
+    behavioral_ans_2: string;
+    technical_skills: string[];
+    soft_skills: string[];
+    values: string[];
+  };
+  technicalSkillOptions: string[];
+  softSkillOptions: string[];
+  valueOptions: string[];
+};
 
 @Injectable()
 export class CandidatesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly embeddingsQueueProducer: EmbeddingsQueueProducer,
+  ) {}
+
+  private normalizeAttributeNames(values: string[]) {
+    const unique = new Set<string>();
+
+    values.forEach((value) => {
+      const normalized = value.trim().toLowerCase();
+      if (!normalized) {
+        return;
+      }
+
+      unique.add(normalized);
+    });
+
+    return Array.from(unique);
+  }
+
+  private parseStringArray(value: string, fieldName: string) {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+      if (!Array.isArray(parsed)) {
+        throw new Error('Invalid array payload');
+      }
+
+      return parsed.map((item) => String(item));
+    } catch {
+      throw new BadRequestException(`Invalid ${fieldName} payload`);
+    }
+  }
 
   private async ensureCandidateRow(userId: string) {
     await this.prisma.$executeRaw`
@@ -83,6 +132,205 @@ export class CandidatesService {
     }
 
     throw new NotFoundException(`Candidate profile for user ${userId} was not found`);
+  }
+
+  async findMeCompetenciasValores(userId: string): Promise<CandidateCompetenciasValoresResponse> {
+    const candidate = await this.findMe(userId);
+
+    const [catalogs, candidateAttributes] = await Promise.all([
+      this.prisma.global_attributes.findMany({
+        where: {
+          type: {
+            in: ['hard_skill', 'soft_skill', 'value'],
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          type: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+      this.prisma.candidate_attributes.findMany({
+        where: { candidate_id: candidate.id },
+        select: {
+          global_attributes: {
+            select: {
+              name: true,
+              type: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const technicalSkillOptions = catalogs
+      .filter((item) => item.type === 'hard_skill')
+      .map((item) => item.name)
+      .filter(Boolean);
+
+    const softSkillOptions = catalogs
+      .filter((item) => item.type === 'soft_skill')
+      .map((item) => item.name)
+      .filter(Boolean);
+
+    const valueOptions = catalogs
+      .filter((item) => item.type === 'value')
+      .map((item) => item.name)
+      .filter(Boolean);
+
+    const technicalSkills = candidateAttributes
+      .map((link) => link.global_attributes)
+      .filter((attribute): attribute is { name: string; type: CandidateAttributeType } =>
+        Boolean(attribute?.name && attribute.type === 'hard_skill'),
+      )
+      .map((attribute) => attribute.name)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
+    const softSkills = candidateAttributes
+      .map((link) => link.global_attributes)
+      .filter((attribute): attribute is { name: string; type: CandidateAttributeType } =>
+        Boolean(attribute?.name && attribute.type === 'soft_skill'),
+      )
+      .map((attribute) => attribute.name)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
+    const values = candidateAttributes
+      .map((link) => link.global_attributes)
+      .filter((attribute): attribute is { name: string; type: CandidateAttributeType } =>
+        Boolean(attribute?.name && attribute.type === 'value'),
+      )
+      .map((attribute) => attribute.name)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
+    return {
+      initialData: {
+        cv_url: candidate.cv_file_url ?? '',
+        behavioral_ans_1: candidate.behavioral_ans_1 ?? '',
+        behavioral_ans_2: candidate.behavioral_ans_2 ?? '',
+        technical_skills: technicalSkills,
+        soft_skills: softSkills,
+        values,
+      },
+      technicalSkillOptions,
+      softSkillOptions,
+      valueOptions,
+    };
+  }
+
+  async updateMeCompetenciasValores(
+    userId: string,
+    dto: UpdateMyCompetenciasValoresDto,
+    cvFileUrl?: string,
+  ) {
+    const candidate = await this.findMe(userId);
+
+    const technicalSkills = this.normalizeAttributeNames(
+      this.parseStringArray(dto.technical_skills, 'technical_skills'),
+    );
+    const softSkills = this.normalizeAttributeNames(
+      this.parseStringArray(dto.soft_skills, 'soft_skills'),
+    );
+    const values = this.normalizeAttributeNames(this.parseStringArray(dto.values, 'values'));
+
+    const groupedByType: Record<CandidateAttributeType, string[]> = {
+      hard_skill: technicalSkills,
+      soft_skill: softSkills,
+      value: values,
+    };
+
+    const selectedAttributeIds: number[] = [];
+    const createdAttributes: Array<{ id: number; name: string }> = [];
+
+    for (const [type, names] of Object.entries(groupedByType) as Array<
+      [CandidateAttributeType, string[]]
+    >) {
+      for (const name of names) {
+        const uniqueWhere = {
+          name_type: {
+            name,
+            type,
+          },
+        } as const;
+
+        let attribute = await this.prisma.global_attributes.findUnique({
+          where: uniqueWhere,
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        if (!attribute) {
+          try {
+            attribute = await this.prisma.global_attributes.create({
+              data: {
+                name,
+                type,
+              },
+              select: {
+                id: true,
+                name: true,
+              },
+            });
+
+            createdAttributes.push(attribute);
+          } catch (error) {
+            attribute = await this.prisma.global_attributes.findUnique({
+              where: uniqueWhere,
+              select: {
+                id: true,
+                name: true,
+              },
+            });
+
+            if (!attribute) {
+              throw error;
+            }
+          }
+        }
+
+        selectedAttributeIds.push(attribute.id);
+      }
+    }
+
+    const uniqueSelectedAttributeIds = Array.from(new Set(selectedAttributeIds));
+
+    const existingCvUrl = dto.cv_existing_url?.trim() || null;
+    const nextCvFileUrl = cvFileUrl ?? existingCvUrl ?? candidate.cv_file_url;
+
+    await this.prisma.$transaction([
+      this.prisma.candidates.update({
+        where: { id: candidate.id },
+        data: {
+          cv_file_url: nextCvFileUrl,
+          behavioral_ans_1: dto.behavioral_ans_1.trim() || null,
+          behavioral_ans_2: dto.behavioral_ans_2.trim() || null,
+        },
+      }),
+      this.prisma.candidate_attributes.deleteMany({
+        where: { candidate_id: candidate.id },
+      }),
+      ...(uniqueSelectedAttributeIds.length > 0
+        ? [
+            this.prisma.candidate_attributes.createMany({
+              data: uniqueSelectedAttributeIds.map((attributeId) => ({
+                candidate_id: candidate.id,
+                attribute_id: attributeId,
+              })),
+            }),
+          ]
+        : []),
+    ]);
+
+    await this.embeddingsQueueProducer.enqueueAttributes(
+      createdAttributes.map((attribute) => ({
+        attributeId: attribute.id,
+        name: attribute.name,
+      })),
+    );
+
+    return this.findMeCompetenciasValores(userId);
   }
 
   async updateMe(userId: string, dto: UpdateMyCandidateDto) {

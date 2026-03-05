@@ -133,7 +133,7 @@ class GeminiBatchWorker:
         raise RuntimeError("Invalid embeddings response format from Gemini")
 
     def _update_embeddings_in_db(self, updates: list[tuple[int, list[float]]]) -> None:
-        with psycopg.connect(self.database_url) as connection:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as connection:
             with connection.cursor() as cursor:
                 for attribute_id, embedding in updates:
                     vector_literal = "[" + ",".join(str(value) for value in embedding) + "]"

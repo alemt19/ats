@@ -10,6 +10,8 @@ dependencies = [
   "bullmq>=2.16.0",
   "google-genai>=1.0.0",
   "psycopg[binary]>=3.2.6",
+  "pypdf>=5.3.1",
+  "python-multipart>=0.0.20",
   "python-dotenv>=1.0.1",
 ]
 

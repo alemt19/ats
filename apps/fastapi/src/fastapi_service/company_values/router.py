@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from .schemas import CompanyValuesSuggestionRequest, CompanyValuesSuggestionResponse
@@ -24,7 +26,10 @@ def get_company_values_service() -> CompanyValuesSuggestionService:
 @router.post("/suggest", response_model=CompanyValuesSuggestionResponse)
 async def suggest_company_values(
     payload: CompanyValuesSuggestionRequest,
-    service: CompanyValuesSuggestionService = Depends(get_company_values_service),
+    service: Annotated[
+        CompanyValuesSuggestionService,
+        Depends(get_company_values_service),
+    ],
 ) -> CompanyValuesSuggestionResponse:
     try:
         return await service.suggest_values(payload)

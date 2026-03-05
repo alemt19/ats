@@ -18,6 +18,7 @@ import {
 } from '@nestjs/common';
 import { CandidatesService } from './candidates.service';
 import { CandidatesQueryDto, CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
+import { UpdateMyCompetenciasValoresDto } from './dto/competencias-valores.dto';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -62,10 +63,56 @@ export class CandidatesController {
   }
 
   @UseGuards(BetterAuthGuard)
+  @Get('me/competencias-valores')
+  findMeCompetenciasValores(@CurrentUser() session: any) {
+    const userId = this.getUserIdFromSession(session);
+    return this.candidatesService.findMeCompetenciasValores(userId);
+  }
+
+  @UseGuards(BetterAuthGuard)
   @Patch('me')
   updateMe(@CurrentUser() session: any, @Body() dto: UpdateMyCandidateDto) {
     const userId = this.getUserIdFromSession(session);
     return this.candidatesService.updateMe(userId, dto);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Patch('me/competencias-valores')
+  @UseInterceptors(
+    FileInterceptor('cv', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+      fileFilter: (
+        _req: Request,
+        file: Express.Multer.File,
+        callback: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
+        const isPdf = file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
+        const isDocx =
+          file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          file.originalname.toLowerCase().endsWith('.docx');
+
+        if (!isPdf && !isDocx) {
+          return callback(new BadRequestException('Only PDF or DOCX files are allowed'), false);
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
+  async updateMeCompetenciasValores(
+    @CurrentUser() session: any,
+    @Body() dto: UpdateMyCompetenciasValoresDto,
+    @UploadedFile() file?: Express.Multer.File,
+  ) {
+    const userId = this.getUserIdFromSession(session);
+    const cvFileUrl = file
+      ? await this.supabaseStorageService.uploadImage(file, 'candidates')
+      : undefined;
+
+    return this.candidatesService.updateMeCompetenciasValores(userId, dto, cvFileUrl);
   }
 
   @UseGuards(BetterAuthGuard)

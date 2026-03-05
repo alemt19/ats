@@ -1,106 +1,62 @@
 import { getSession } from "../../../auth"
+import { headers } from "next/headers"
 import CompetenciasValoresForm, {
     type CompetenciasValoresInitialData,
 } from "./competencias-valores-form"
 
-type CatalogResponse = {
-    technical_skills: string[]
-    soft_skills: string[]
-    values: string[]
+type CompetenciasValoresPageResponse = {
+    initialData: CompetenciasValoresInitialData
+    technicalSkillOptions: string[]
+    softSkillOptions: string[]
+    valueOptions: string[]
 }
 
 async function fetchProfileDataServer(
-    userId: string,
-    accessToken?: string
-): Promise<CompetenciasValoresInitialData> {
+    cookie: string
+): Promise<CompetenciasValoresPageResponse> {
     const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
     try {
-        const response = await fetch(`${apiBaseUrl}/profile/competencias-valores`, {
+        const response = await fetch(`${apiBaseUrl}/api/candidates/me/competencias-valores`, {
             method: "GET",
             headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-                "x-user-id": userId,
+                cookie,
             },
             cache: "no-store",
         })
 
         if (response.ok) {
-            return (await response.json()) as CompetenciasValoresInitialData
+            const payload = (await response.json()) as {
+                data?: CompetenciasValoresPageResponse
+            }
+
+            if (payload.data) {
+                return payload.data
+            }
         }
     } catch {
-        // Fallback to mock data while backend endpoint is not implemented.
-    }
-    // delay de 3 segundos
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    return {
-        cv_url: "https://herramientas.datos.gov.co/sites/default/files/2021-08/Pruebas_3.pdf",
-        behavioral_ans_1:
-            "En mi último proyecto coordiné al equipo durante una migración crítica sin afectar el servicio.",
-        behavioral_ans_2: "Me enfoco en comunicación clara y resolución rápida de bloqueos.",
-        technical_skills: ["TypeScript", "NestJS", "PostgreSQL"],
-        soft_skills: ["Comunicación", "Trabajo en equipo"],
-        values: ["Responsabilidad", "Integridad"],
-    }
-}
-
-async function fetchCatalogsServer(accessToken?: string): Promise<CatalogResponse> {
-    const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-
-    try {
-        const response = await fetch(`${apiBaseUrl}/catalogs/skills-values`, {
-            method: "GET",
-            headers: {
-                ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-            },
-            cache: "no-store",
-        })
-
-        if (response.ok) {
-            return (await response.json()) as CatalogResponse
-        }
-    } catch {
-        // Fallback to mock data while backend endpoint is not implemented.
+        // Return empty defaults if backend is unavailable.
     }
 
     return {
-        technical_skills: [
-            "TypeScript",
-            "JavaScript",
-            "React",
-            "Next.js",
-            "Node.js",
-            "NestJS",
-            "PostgreSQL",
-            "Docker",
-            "Git",
-            "Pruebas unitarias",
-        ],
-        soft_skills: [
-            "Comunicación",
-            "Trabajo en equipo",
-            "Liderazgo",
-            "Pensamiento crítico",
-            "Resolución de problemas",
-            "Adaptabilidad",
-            "Gestión del tiempo",
-        ],
-        values: [
-            "Responsabilidad",
-            "Integridad",
-            "Colaboración",
-            "Innovación",
-            "Empatía",
-            "Compromiso",
-            "Transparencia",
-        ],
+        initialData: {
+            cv_url: "",
+            behavioral_ans_1: "",
+            behavioral_ans_2: "",
+            technical_skills: [],
+            soft_skills: [],
+            values: [],
+        },
+        technicalSkillOptions: [],
+        softSkillOptions: [],
+        valueOptions: [],
     }
 }
 
 export default async function CompetenciasValoresPage() {
     const session = await getSession()
-    const userId = session?.user?.id ?? "user_123"
-    const accessToken = session?.accessToken
+    const userId = session?.user?.id ?? ""
+    const cookie = (await headers()).get("cookie") ?? ""
     const behavioralQuestion1 =
         process.env.behavioral_question_1 ??
         "Cuéntame sobre una ocasión en la que tuviste que lidiar con un conflicto en un equipo. ¿Cuál fue la situación, cómo la manejaste y cuál fue el resultado?"
@@ -108,18 +64,15 @@ export default async function CompetenciasValoresPage() {
         process.env.behavioral_question_2 ??
         "Describe una situación en la que fallaste o cometiste un error importante. ¿Cómo reaccionaste y qué aprendiste de esa experiencia?"
 
-    const [initialData, catalogs] = await Promise.all([
-        fetchProfileDataServer(userId, accessToken),
-        fetchCatalogsServer(accessToken),
-    ])
+    const profileData = await fetchProfileDataServer(cookie)
 
     return (
         <CompetenciasValoresForm
             userId={userId}
-            initialData={initialData}
-            technicalSkillOptions={catalogs.technical_skills}
-            softSkillOptions={catalogs.soft_skills}
-            valueOptions={catalogs.values}
+            initialData={profileData.initialData}
+            technicalSkillOptions={profileData.technicalSkillOptions}
+            softSkillOptions={profileData.softSkillOptions}
+            valueOptions={profileData.valueOptions}
             behavioralQuestion1={behavioralQuestion1}
             behavioralQuestion2={behavioralQuestion2}
         />

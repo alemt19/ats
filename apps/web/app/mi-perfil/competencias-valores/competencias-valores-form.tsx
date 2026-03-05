@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Sparkles, Upload, X } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Button } from "react/components/ui/button"
 import {
@@ -60,6 +61,7 @@ type MultiDatalistFieldProps = {
   onChangeValues: (values: string[]) => void
   suggestionItems?: string[]
   onAddSuggestion?: (value: string) => void
+  onAddAllSuggestions?: () => void
   disabled?: boolean
 }
 
@@ -100,44 +102,6 @@ function getCvType(urlOrName?: string): "pdf" | "docx" | null {
   return null
 }
 
-async function getSuggestionsFromDummyLlm(input: {
-  behavioralAns1: string
-  behavioralAns2: string
-  cvName: string
-}): Promise<SuggestionPayload> {
-  await new Promise((resolve) => setTimeout(resolve, 900))
-
-  const baseText = `${input.behavioralAns1} ${input.behavioralAns2} ${input.cvName}`.toLowerCase()
-
-  const technical = ["TypeScript", "NestJS", "PostgreSQL"]
-  const soft = ["Comunicación", "Trabajo en equipo"]
-  const values = ["Responsabilidad", "Integridad"]
-
-  if (baseText.includes("lider") || baseText.includes("coord")) {
-    soft.push("Liderazgo")
-    values.push("Compromiso")
-  }
-
-  if (baseText.includes("cliente") || baseText.includes("servicio")) {
-    soft.push("Empatía")
-    values.push("Colaboración")
-  }
-
-  if (baseText.includes("api") || baseText.includes("backend")) {
-    technical.push("Node.js")
-  }
-
-  if (baseText.includes("react") || baseText.includes("frontend")) {
-    technical.push("React")
-  }
-
-  return {
-    technical_skills: dedupe(technical),
-    soft_skills: dedupe(soft),
-    values: dedupe(values),
-  }
-}
-
 function MultiDatalistField({
   fieldName,
   label,
@@ -147,6 +111,7 @@ function MultiDatalistField({
   onChangeValues,
   suggestionItems = [],
   onAddSuggestion,
+  onAddAllSuggestions,
   disabled = false,
 }: MultiDatalistFieldProps) {
   const [draft, setDraft] = React.useState("")
@@ -244,7 +209,18 @@ function MultiDatalistField({
 
       {suggestionItems.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Sugerencias para {label}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">Sugerencias para {label}</p>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              disabled={disabled}
+              onClick={onAddAllSuggestions}
+            >
+              Agregar todas
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {suggestionItems.map((item) => {
               const alreadyAdded = selectedValues.some(
@@ -301,6 +277,7 @@ export default function CompetenciasValoresForm({
   const [cvDisplayName, setCvDisplayName] = React.useState(initialCvFileName)
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = React.useState(false)
   const [suggestions, setSuggestions] = React.useState<SuggestionPayload | null>(null)
+  const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
   const form = useForm<CompetenciasValoresInitialData>({
     defaultValues: {
@@ -394,6 +371,15 @@ export default function CompetenciasValoresForm({
     [form]
   )
 
+  const addAllSuggestionsToField = React.useCallback(
+    (fieldName: MultiFieldName, suggestionItems: string[]) => {
+      const currentValues = form.getValues(fieldName)
+      const mergedValues = dedupe([...currentValues, ...suggestionItems])
+      form.setValue(fieldName, mergedValues, { shouldDirty: true })
+    },
+    [form]
+  )
+
   const handleCvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
@@ -427,24 +413,63 @@ export default function CompetenciasValoresForm({
     setIsGeneratingSuggestions(true)
 
     try {
-      const payload = await getSuggestionsFromDummyLlm({
-        behavioralAns1,
-        behavioralAns2,
-        cvName: cvDisplayName,
+      if (cvFile && getCvType(cvFile.name) !== "pdf") {
+        toast.error("Para sugerir habilidades y valores, el CV cargado debe ser PDF")
+        return
+      }
+
+      if (!cvFile && initialCvUrl && getCvType(initialCvUrl) !== "pdf") {
+        toast.error("Para sugerir habilidades y valores, el CV guardado debe ser PDF")
+        return
+      }
+
+      const formData = new FormData()
+      formData.append("user_id", userId)
+      formData.append("behavioral_question_1", behavioralQuestion1)
+      formData.append("behavioral_question_2", behavioralQuestion2)
+      formData.append("behavioral_ans_1", behavioralAns1)
+      formData.append("behavioral_ans_2", behavioralAns2)
+
+      if (cvFile) {
+        formData.append("cv", cvFile)
+      } else if (initialCvUrl) {
+        formData.append("cv_existing_url", initialCvUrl)
+      }
+
+      const response = await fetch("/api/candidates/competencias-valores/sugerencias", {
+        method: "POST",
+        body: formData,
       })
 
-      setSuggestions(payload)
+      const payload = (await response.json().catch(() => null)) as
+        | (SuggestionPayload & { message?: string })
+        | null
+
+      if (!response.ok) {
+        throw new Error(payload?.message ?? "No se pudieron generar sugerencias")
+      }
+
+      const normalizedPayload: SuggestionPayload = {
+        technical_skills: Array.isArray(payload?.technical_skills)
+          ? dedupe(payload.technical_skills)
+          : [],
+        soft_skills: Array.isArray(payload?.soft_skills) ? dedupe(payload.soft_skills) : [],
+        values: Array.isArray(payload?.values) ? dedupe(payload.values) : [],
+      }
+
+      setSuggestions(normalizedPayload)
+      toast.success("Sugerencias generadas")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudieron generar sugerencias"
+      toast.error(message)
     } finally {
       setIsGeneratingSuggestions(false)
     }
   }
 
-  const onSubmit = (values: CompetenciasValoresInitialData) => {
+  const onSubmit = async (values: CompetenciasValoresInitialData) => {
     const formData = new FormData()
 
-    formData.append("userId", userId)
-    formData.append("behavioral_question_1", behavioralQuestion1)
-    formData.append("behavioral_question_2", behavioralQuestion2)
     formData.append("behavioral_ans_1", values.behavioral_ans_1)
     formData.append("behavioral_ans_2", values.behavioral_ans_2)
     formData.append("technical_skills", JSON.stringify(values.technical_skills))
@@ -457,19 +482,27 @@ export default function CompetenciasValoresForm({
       formData.append("cv_existing_url", initialCvUrl)
     }
 
-    console.log("Payload para backend (multipart/form-data):", {
-      userId,
-      behavioral_question_1: behavioralQuestion1,
-      behavioral_question_2: behavioralQuestion2,
-      behavioral_ans_1: values.behavioral_ans_1,
-      behavioral_ans_2: values.behavioral_ans_2,
-      technical_skills: values.technical_skills,
-      soft_skills: values.soft_skills,
-      values: values.values,
-      cv_file_name: cvFile?.name,
-      cv_existing_url: !cvFile ? initialCvUrl : undefined,
-      formData,
-    })
+    try {
+      const response = await fetch(`${apiBaseUrl}/api/candidates/me/competencias-valores`, {
+        method: "PATCH",
+        credentials: "include",
+        body: formData,
+      })
+
+      const payload = (await response.json().catch(() => null)) as
+        | { message?: string }
+        | null
+
+      if (!response.ok) {
+        throw new Error(payload?.message ?? "No se pudieron guardar los cambios")
+      }
+
+      toast.success("Competencias y valores actualizados")
+      setCvFile(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudieron guardar los cambios"
+      toast.error(message)
+    }
   }
 
   return (
@@ -593,7 +626,7 @@ export default function CompetenciasValoresForm({
                   <Sparkles className="size-4" />
                   {isGeneratingSuggestions
                     ? "Generando sugerencias..."
-                    : "Sugererir habilidades y valores"}
+                    : "Sugerir habilidades y valores"}
                 </Button>
               </div>
             </CardContent>
@@ -623,6 +656,9 @@ export default function CompetenciasValoresForm({
                 onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
                 suggestionItems={suggestions?.technical_skills ?? []}
                 onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
+                onAddAllSuggestions={() =>
+                  addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
+                }
                 disabled={!isSkillsSectionUnlocked}
               />
 
@@ -635,6 +671,9 @@ export default function CompetenciasValoresForm({
                 onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
                 suggestionItems={suggestions?.soft_skills ?? []}
                 onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
+                onAddAllSuggestions={() =>
+                  addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
+                }
                 disabled={!isSkillsSectionUnlocked}
               />
 
@@ -647,6 +686,9 @@ export default function CompetenciasValoresForm({
                 onChangeValues={(values) => setMultiFieldValue("values", values)}
                 suggestionItems={suggestions?.values ?? []}
                 onAddSuggestion={(value) => addSuggestionToField("values", value)}
+                onAddAllSuggestions={() =>
+                  addAllSuggestionsToField("values", suggestions?.values ?? [])
+                }
                 disabled={!isSkillsSectionUnlocked}
               />
               </div>
@@ -654,7 +696,9 @@ export default function CompetenciasValoresForm({
           </Card>
 
           <CardFooter className="justify-end px-0">
-            <Button type="submit">Guardar cambios</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar cambios"}
+            </Button>
           </CardFooter>
         </form>
       </Form>

@@ -54,3 +54,20 @@ The service listens on port 8000 by default.
   - `mision: string`
 - Response:
   - `values: string[]`
+
+## Candidate skills/values suggestions endpoint
+
+- Endpoint: `POST /api/candidates/suggest-skills-values`
+- Content type: `multipart/form-data`
+- Fields:
+  - `user_id: string`
+  - `behavioral_question_1: string`
+  - `behavioral_question_2: string`
+  - `behavioral_ans_1: string`
+  - `behavioral_ans_2: string`
+  - `cv: file (.pdf)` (optional if `cv_existing_url` exists)
+  - `cv_existing_url: string` (optional if `cv` exists)
+- Response:
+  - `technical_skills: string[]`
+  - `soft_skills: string[]`
+  - `values: string[]`
