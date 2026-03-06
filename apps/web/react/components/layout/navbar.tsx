@@ -56,6 +56,7 @@ export default function Navbar({
 		{ href: "/#como-funciona", label: "Como funciona" },
 		{ href: "/#beneficios", label: "Beneficios" },
 		{ href: "/#ofertas", label: "Ofertas" },
+		{ href: "/nosotros", label: "Nosotros" },
 	]
 
 	return (
@@ -93,7 +94,7 @@ export default function Navbar({
 							))}
 							<NavigationMenuItem>
 								<Button asChild variant="default" className="bg-blue-700 hover:bg-blue-800">
-									<Link href="ofertas" className="text-neutral-100">
+									<Link href="/ofertas" className="text-neutral-100">
 										<span>Postulate Ahora</span>
 									</Link>
 								</Button>
@@ -123,7 +124,7 @@ export default function Navbar({
 								))}
 								<SheetClose asChild>
 									<Button asChild className="mt-2 w-full bg-blue-700 hover:bg-blue-800">
-										<Link href="//ofertas">Postulate Ahora</Link>
+										<Link href="/ofertas">Postulate Ahora</Link>
 									</Button>
 								</SheetClose>
 							</div>
