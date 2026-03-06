@@ -398,7 +398,7 @@ export default function OfertasAdminClient({
     [query]
   )
 
-  const { data, isFetching } = useQuery<AdminOffersResponse>({
+  const { data, isFetching, isError: isOffersError, error: offersError } = useQuery<AdminOffersResponse>({
     queryKey,
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -422,7 +422,11 @@ export default function OfertasAdminClient({
     placeholderData: (previous) => previous,
   })
 
-  const { data: catalogsData } = useQuery<AdminOffersCatalogsResponse>({
+  const {
+    data: catalogsData,
+    isError: isCatalogsError,
+    error: catalogsError,
+  } = useQuery<AdminOffersCatalogsResponse>({
     queryKey: ["admin-offers-catalogs"],
     queryFn: async () => {
       const response = await fetch("/api/admin/ofertas/catalogos")
@@ -443,6 +447,10 @@ export default function OfertasAdminClient({
   const endItem = Math.min(query.page * query.pageSize, total)
 
   const catalogs = catalogsData ?? initialCatalogs
+
+  const offersErrorMessage = offersError instanceof Error ? offersError.message : "No se pudieron cargar las ofertas"
+  const catalogsErrorMessage =
+    catalogsError instanceof Error ? catalogsError.message : "No se pudieron cargar los catalogos"
 
   const onPageChange = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages || nextPage === query.page) {
@@ -519,6 +527,18 @@ export default function OfertasAdminClient({
         </CardHeader>
 
         <CardContent className="space-y-4">
+          {isOffersError ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              {offersErrorMessage}
+            </div>
+          ) : null}
+
+          {isCatalogsError ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+              {catalogsErrorMessage}
+            </div>
+          ) : null}
+
           {isFetching && !offers.length ? <TableSkeleton /> : null}
 
           <Table>

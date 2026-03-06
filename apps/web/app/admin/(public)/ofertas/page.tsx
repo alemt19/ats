@@ -1,4 +1,5 @@
 import OfertasAdminClient from "./ofertas-admin-client"
+import { headers } from "next/headers"
 import { getAdminOffersCatalogsServer, getAdminOffersServer } from "./offers-admin-service"
 import { normalizeAdminOffersQuery, type AdminOffersQueryParams } from "./offers-admin-types"
 
@@ -7,6 +8,7 @@ type AdminOfertasPageProps = {
 }
 
 export default async function AdminOfertasPage({ searchParams }: AdminOfertasPageProps) {
+	const cookie = (await headers()).get("cookie") ?? undefined
 	const resolvedSearchParams = await searchParams
 
 	const initialQuery = normalizeAdminOffersQuery({
@@ -40,8 +42,8 @@ export default async function AdminOfertasPage({ searchParams }: AdminOfertasPag
 	})
 
 	const [initialData, initialCatalogs] = await Promise.all([
-		getAdminOffersServer(initialQuery),
-		getAdminOffersCatalogsServer(),
+		getAdminOffersServer(initialQuery, cookie),
+		getAdminOffersCatalogsServer(cookie),
 	])
 
 	return (

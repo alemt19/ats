@@ -9,20 +9,26 @@ export const dynamic = "force-dynamic"
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
+  const cookie = request.headers.get("cookie") ?? undefined
 
-  const data = await getAdminOffersServer({
-    title: url.searchParams.get("title") ?? undefined,
-    category: url.searchParams.get("category") ?? undefined,
-    workplace_type: url.searchParams.get("workplace_type") ?? undefined,
-    employment_type: url.searchParams.get("employment_type") ?? undefined,
-    city: url.searchParams.get("city") ?? undefined,
-    state: url.searchParams.get("state") ?? undefined,
-    status: url.searchParams.get("status") ?? undefined,
-    page: url.searchParams.get("page") ?? undefined,
-    pageSize: url.searchParams.get("pageSize") ?? undefined,
-  })
+  try {
+    const data = await getAdminOffersServer({
+      title: url.searchParams.get("title") ?? undefined,
+      category: url.searchParams.get("category") ?? undefined,
+      workplace_type: url.searchParams.get("workplace_type") ?? undefined,
+      employment_type: url.searchParams.get("employment_type") ?? undefined,
+      city: url.searchParams.get("city") ?? undefined,
+      state: url.searchParams.get("state") ?? undefined,
+      status: url.searchParams.get("status") ?? undefined,
+      page: url.searchParams.get("page") ?? undefined,
+      pageSize: url.searchParams.get("pageSize") ?? undefined,
+    }, cookie)
 
-  return NextResponse.json(data)
+    return NextResponse.json(data)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "No se pudieron cargar las ofertas"
+    return NextResponse.json({ message }, { status: 500 })
+  }
 }
 
 function parseBackendMessage(payload: unknown): string | null {

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.producer';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
+import { AdminOffersQueryDto, CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
 import type { Prisma } from '../../generated/prisma/client';
 import type { job_status_enum } from '../../generated/prisma/enums';
 
@@ -83,6 +83,34 @@ export class JobsService {
         return 'Archivado';
       default:
         return status;
+    }
+  }
+
+  private getWorkplaceDisplayName(value: string) {
+    switch (value) {
+      case 'remote':
+        return 'Remoto';
+      case 'onsite':
+        return 'Presencial';
+      case 'hybrid':
+        return 'Hibrido';
+      default:
+        return value;
+    }
+  }
+
+  private getEmploymentDisplayName(value: string) {
+    switch (value) {
+      case 'full_time':
+        return 'Tiempo completo';
+      case 'part_time':
+        return 'Medio tiempo';
+      case 'contract':
+        return 'Contrato';
+      case 'internship':
+        return 'Pasantia';
+      default:
+        return value;
     }
   }
 
@@ -354,6 +382,222 @@ export class JobsService {
   async getAdminOfferDetail(userId: string, offerId: number) {
     const job = await this.findAdminOfferOrThrow(userId, offerId);
     return this.toAdminOfferDetailPayload(job);
+  }
+
+  async listAdminOffers(userId: string, query: AdminOffersQueryDto) {
+    const admin = await this.getCurrentAdmin(userId);
+    const companyId = admin.company_id as number;
+
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+    const skip = (page - 1) * pageSize;
+
+    const where: Prisma.jobsWhereInput = {
+      company_id: companyId,
+    };
+
+    if (query.title?.trim()) {
+      where.title = {
+        contains: query.title.trim(),
+        mode: 'insensitive',
+      };
+    }
+
+    if (query.workplace_type && query.workplace_type !== 'all') {
+      where.workplace_type = query.workplace_type as any;
+    }
+
+    if (query.employment_type && query.employment_type !== 'all') {
+      where.employment_type = query.employment_type as any;
+    }
+
+    if (query.city && query.city !== 'all') {
+      where.city = {
+        equals: query.city,
+        mode: 'insensitive',
+      };
+    }
+
+    if (query.state && query.state !== 'all') {
+      where.state = {
+        equals: query.state,
+        mode: 'insensitive',
+      };
+    }
+
+    if (query.status && query.status !== 'all') {
+      where.status = query.status as any;
+    }
+
+    if (query.category && query.category !== 'all') {
+      where.job_categories = {
+        name: {
+          equals: query.category,
+          mode: 'insensitive',
+        },
+      };
+    }
+
+    const [total, jobs, company] = await Promise.all([
+      this.prisma.jobs.count({ where }),
+      this.prisma.jobs.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { created_at: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          city: true,
+          state: true,
+          status: true,
+          workplace_type: true,
+          employment_type: true,
+          created_at: true,
+          job_categories: {
+            select: {
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              applications: true,
+            },
+          },
+        },
+      }),
+      this.prisma.companies.findUnique({
+        where: { id: companyId },
+        select: { name: true },
+      }),
+    ]);
+
+    return {
+      items: jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        company: company?.name?.trim() || 'Empresa',
+        category: job.job_categories?.name?.trim() || 'Sin categoria',
+        city: job.city?.trim() || '',
+        state: job.state?.trim() || '',
+        candidateCount: job._count.applications,
+        createdAt: (job.created_at ?? new Date()).toISOString().split('T')[0] || '',
+        status: (job.status ?? 'draft') as 'draft' | 'published' | 'closed' | 'archived',
+        workplace_type: job.workplace_type ?? 'onsite',
+        employment_type: job.employment_type ?? 'full_time',
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async getAdminOffersCatalogs(userId: string) {
+    const admin = await this.getCurrentAdmin(userId);
+    const companyId = admin.company_id as number;
+
+    const [categories, jobs, company] = await Promise.all([
+      this.prisma.job_categories.findMany({
+        orderBy: { name: 'asc' },
+        select: { name: true },
+      }),
+      this.prisma.jobs.findMany({
+        where: { company_id: companyId },
+        select: {
+          city: true,
+          state: true,
+          workplace_type: true,
+          employment_type: true,
+          status: true,
+        },
+      }),
+      this.prisma.companies.findUnique({
+        where: { id: companyId },
+        select: { city: true, state: true },
+      }),
+    ]);
+
+    const citySet = new Set<string>();
+    const stateSet = new Set<string>();
+    const workplaceSet = new Set<string>();
+    const employmentSet = new Set<string>();
+    const statusSet = new Set<string>();
+
+    if (company?.city?.trim()) {
+      citySet.add(company.city.trim());
+    }
+
+    if (company?.state?.trim()) {
+      stateSet.add(company.state.trim());
+    }
+
+    jobs.forEach((job) => {
+      if (job.city?.trim()) {
+        citySet.add(job.city.trim());
+      }
+
+      if (job.state?.trim()) {
+        stateSet.add(job.state.trim());
+      }
+
+      if (job.workplace_type) {
+        workplaceSet.add(job.workplace_type);
+      }
+
+      if (job.employment_type) {
+        employmentSet.add(job.employment_type);
+      }
+
+      if (job.status) {
+        statusSet.add(job.status);
+      }
+    });
+
+    if (workplaceSet.size === 0) {
+      workplaceSet.add('onsite');
+      workplaceSet.add('remote');
+      workplaceSet.add('hybrid');
+    }
+
+    if (employmentSet.size === 0) {
+      employmentSet.add('full_time');
+      employmentSet.add('part_time');
+      employmentSet.add('contract');
+      employmentSet.add('internship');
+    }
+
+    if (statusSet.size === 0) {
+      statusSet.add('draft');
+      statusSet.add('published');
+      statusSet.add('closed');
+      statusSet.add('archived');
+    }
+
+    return {
+      categories: categories
+        .map((category) => category.name?.trim() || '')
+        .filter((name) => Boolean(name)),
+      cities: Array.from(citySet).sort((a, b) => a.localeCompare(b)),
+      states: Array.from(stateSet).sort((a, b) => a.localeCompare(b)),
+      workplace_types: Array.from(workplaceSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({
+          technical_name: value,
+          display_name: this.getWorkplaceDisplayName(value),
+        })),
+      employment_types: Array.from(employmentSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({
+          technical_name: value,
+          display_name: this.getEmploymentDisplayName(value),
+        })),
+      statuses: Array.from(statusSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({
+          technical_name: value,
+          display_name: this.getStatusDisplayName(value),
+        })),
+    };
   }
 
   async updateAdminOffer(userId: string, offerId: number, dto: CreateAdminOfferDto) {

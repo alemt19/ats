@@ -8,6 +8,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -15,7 +16,7 @@ import {
 import type { Request } from 'express';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { BetterAuthGuard } from '../auth/auth.guard';
-import { CreateAdminOfferDto } from './dto/jobs.dto';
+import { AdminOffersQueryDto, CreateAdminOfferDto } from './dto/jobs.dto';
 import { JobsService } from './jobs.service';
 
 @Controller('admin/ofertas')
@@ -51,6 +52,24 @@ export class AdminOffersController {
     this.assertAdminScope(request);
     const userId = this.getUserIdFromSession(session);
     return this.jobsService.createAdminOffer(userId, dto);
+  }
+
+  @Get()
+  findAll(
+    @CurrentUser() session: unknown,
+    @Req() request: Request,
+    @Query() query: AdminOffersQueryDto,
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.jobsService.listAdminOffers(userId, query);
+  }
+
+  @Get('catalogs')
+  getCatalogs(@CurrentUser() session: unknown, @Req() request: Request) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.jobsService.getAdminOffersCatalogs(userId);
   }
 
   @Get(':id')

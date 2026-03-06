@@ -21,7 +21,20 @@ const CreateAdminOfferSchema = CreateJobSchema.omit({
 	soft_skills: z.array(z.string().trim()).optional().default([]),
 });
 
+const AdminOffersQuerySchema = z.object({
+	title: z.string().trim().optional(),
+	category: z.string().trim().optional(),
+	workplace_type: z.string().trim().optional(),
+	employment_type: z.string().trim().optional(),
+	city: z.string().trim().optional(),
+	state: z.string().trim().optional(),
+	status: z.string().trim().optional(),
+	page: z.preprocess((val) => (val === undefined ? 1 : Number(val)), z.number().int().min(1)).optional(),
+	pageSize: z.preprocess((val) => (val === undefined ? 10 : Number(val)), z.number().int().min(1).max(100)).optional(),
+});
+
 export class CreateJobDto extends createZodDto(CreateJobSchema) {}
 export class CreateAdminOfferDto extends createZodDto(CreateAdminOfferSchema) {}
+export class AdminOffersQueryDto extends createZodDto(AdminOffersQuerySchema) {}
 export class UpdateJobDto extends createZodDto(UpdateJobSchema) {}
 export class JobsQueryDto extends createZodDto(JobsQuerySchema) {}
