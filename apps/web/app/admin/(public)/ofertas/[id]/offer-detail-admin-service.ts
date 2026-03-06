@@ -13,6 +13,8 @@ import {
   normalizeAdminOfferCandidatesQuery,
 } from "./offer-detail-admin-types"
 
+const backendApiUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+
 type JobParameterCatalog = {
   technical_name: string
   display_name: string
@@ -80,6 +82,7 @@ function buildAdminOfferDetail(dummy: JobOfferDummy): AdminOfferDetail {
     weight_technical: 0.5,
     weight_soft: 0.3,
     weight_culture: 0.2,
+    category_id: 1,
     category: dummy.category,
     technical_skills: ["SQL", "Python", "Power BI"],
     soft_skills: ["Comunicación", "Pensamiento crítico"],
@@ -204,7 +207,33 @@ export async function getApplicationStatusOptionsServer(): Promise<CandidateStat
   }
 }
 
-export async function getAdminOfferDetailServer(offerId: number) {
+export async function getAdminOfferDetailServer(offerId: number, cookie?: string) {
+  try {
+    const response = await fetch(`${backendApiUrl}/api/admin/ofertas/${offerId}`, {
+      method: "GET",
+      headers: {
+        ...(cookie ? { cookie } : {}),
+      },
+      cache: "no-store",
+    })
+
+    if (response.ok) {
+      const payload = (await response.json()) as
+        | { data?: { offer: AdminOfferDetail; status_display_name: string } }
+        | { offer: AdminOfferDetail; status_display_name: string }
+
+      if (payload && typeof payload === "object" && "data" in payload && payload.data) {
+        return payload.data
+      }
+
+      if (payload && typeof payload === "object" && "offer" in payload) {
+        return payload
+      }
+    }
+  } catch {
+    // Fallback to dummy data if backend is unavailable.
+  }
+
   try {
     const [jobOffers, parameters] = await Promise.all([
       readJsonFile<JobOfferDummy[]>("job_offers_dummy.json"),
@@ -244,6 +273,7 @@ export async function getAdminOfferDetailServer(offerId: number) {
       weight_technical: 0.5,
       weight_soft: 0.3,
       weight_culture: 0.2,
+      category_id: 1,
       category: "Tecnología",
       technical_skills: ["SQL", "Python", "Power BI"],
       soft_skills: ["Comunicación", "Pensamiento crítico"],

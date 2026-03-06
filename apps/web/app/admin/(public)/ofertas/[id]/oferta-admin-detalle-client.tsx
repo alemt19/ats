@@ -13,6 +13,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 
 import CrearOfertaForm, {
   type CrearOfertaCatalogs,
@@ -500,7 +501,7 @@ export default function OfertaAdminDetalleClient({
       weight_technical: String(offer.weight_technical),
       weight_soft: String(offer.weight_soft),
       weight_culture: String(offer.weight_culture),
-      category: offer.category,
+      category: String(offer.category_id),
       technical_skills: offer.technical_skills,
       soft_skills: offer.soft_skills,
     }),
@@ -513,7 +514,7 @@ export default function OfertaAdminDetalleClient({
         <h1 className="text-4xl font-bold tracking-tight">{offer.title}</h1>
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
           <Badge variant={offerStatusBadgeVariant(offer.status)}>{statusDisplayName}</Badge>
-          <span>Publicada hace {formatPublishedDate(offer.published_at)}</span>
+          <span>Creado {formatPublishedDate(offer.published_at)}</span>
         </div>
       </div>
 
@@ -530,17 +531,48 @@ export default function OfertaAdminDetalleClient({
           <CrearOfertaForm
             catalogs={formCatalogs}
             initialValues={initialFormValues}
+            mode="edit"
             showPageHeader={false}
             offerCardTitle="Editar Oferta de Empleo"
             submitLabel="Guardar cambios"
-            onSubmitValues={(values) => {
-              console.log("Payload editar oferta:", {
-                ...values,
-                salary: Number(values.salary),
+            onSubmitValues={async (values) => {
+              const payload = {
+                title: values.title.trim(),
+                description: values.description.trim(),
+                status: values.status,
+                city: values.city.trim(),
+                address: values.address.trim(),
+                state: values.state.trim(),
+                workplace_type: values.workplace_type,
+                employment_type: values.employment_type,
+                position: values.position.trim(),
+                salary: values.salary.trim(),
                 weight_technical: Number(values.weight_technical),
                 weight_soft: Number(values.weight_soft),
                 weight_culture: Number(values.weight_culture),
+                category_id: Number(values.category),
+                technical_skills: values.technical_skills,
+                soft_skills: values.soft_skills,
+              }
+
+              const response = await fetch(`/api/admin/ofertas/${offerId}`, {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
               })
+
+              const responsePayload = (await response.json().catch(() => null)) as
+                | { message?: string }
+                | null
+
+              if (!response.ok) {
+                throw new Error(responsePayload?.message ?? "No se pudo guardar la oferta")
+              }
+
+              toast.success("Oferta actualizada")
+              router.refresh()
             }}
           />
         </TabsContent>

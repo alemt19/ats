@@ -82,8 +82,14 @@ async function tryGetAdminCompany(cookie?: string): Promise<CompanySummary | nul
     | ApiEnvelope<AdminCompanyConfigResponse>
     | null
 
-  const data = payload && typeof payload === "object" && "data" in payload ? payload.data : payload
-  const initialData = data?.initialData
+  let initialData: AdminCompanyConfigResponse["initialData"] | undefined
+
+  if (payload && typeof payload === "object" && "data" in payload) {
+    const envelope = payload as ApiEnvelope<AdminCompanyConfigResponse>
+    initialData = envelope.data?.initialData
+  } else {
+    initialData = (payload as AdminCompanyConfigResponse | null)?.initialData
+  }
 
   return toCompanySummary({
     name: initialData?.name,

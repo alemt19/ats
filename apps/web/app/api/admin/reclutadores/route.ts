@@ -14,7 +14,7 @@ function isInvalidPayload(payload: RecruiterPayload) {
     payload.name.trim().length === 0 ||
     payload.lastname.trim().length === 0 ||
     payload.email.trim().length === 0 ||
-    payload.password.trim().length === 0 ||
+    (payload.password ?? "").trim().length === 0 ||
     payload.role.trim().length === 0 ||
     payload.state.trim().length === 0 ||
     payload.city.trim().length === 0 ||

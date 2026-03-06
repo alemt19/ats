@@ -1,8 +1,11 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 
 import OfertaAdminDetalleClient from "./oferta-admin-detalle-client"
+import { getAdminCategoriesServer } from "../../categorias/categories-admin-service"
+import { getCompanyConfigServer } from "../../configuracion/company-config-service"
 import {
   getAdminOfferCandidatesServer,
   getAdminOfferDetailServer,
@@ -30,8 +33,9 @@ type SkillsCatalog = {
   soft_skills: string[]
 }
 
-type FixedLocationCatalog = {
-  state: string
+type CategoryOption = {
+  id: number
+  name: string
 }
 
 type StateItem = {
@@ -68,22 +72,35 @@ function getParameterOptions(
 
 async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
   try {
-    const [parameters, categories, skillsCatalog, fixedLocation, states, cities] = await Promise.all([
+    const cookie = (await headers()).get("cookie") ?? undefined
+
+    const [parameters, skillsCatalog, states, cities, categoriesResult, companyConfig] = await Promise.all([
       readJsonFile<JobParameter[]>("job_parameters.json"),
-      readJsonFile<string[]>("job_categories_dummy.json"),
       readJsonFile<SkillsCatalog>("job_skills_catalog_dummy.json"),
-      readJsonFile<FixedLocationCatalog>("job_location_fixed_dummy.json"),
       readJsonFile<StateItem[]>("state.json"),
       readJsonFile<CityItem[]>("city.json"),
+      getAdminCategoriesServer({ page: 1, pageSize: 100 }, cookie),
+      getCompanyConfigServer(cookie),
     ])
 
-    const fixedStateId = states.find((state) => state.name === fixedLocation.state)?.id
+    const categories: CategoryOption[] = categoriesResult.items
+      .map((category) => ({
+        id: category.id,
+        name: category.name.trim(),
+      }))
+      .filter((category) => Number.isFinite(category.id) && category.id > 0 && category.name.length > 0)
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    const companyState = companyConfig.initialData.state.trim()
+    const companyCity = companyConfig.initialData.city.trim()
+
+    const fixedStateId = states.find((state) => state.name === companyState)?.id
 
     if (!fixedStateId) {
-      throw new Error("No se encontró el estado fijo en el catálogo de estados")
+      throw new Error("No se encontro el estado de la company en el catalogo")
     }
 
-    const cityOptions = Array.from(
+    const cityOptionsByState = Array.from(
       new Set(
         cities
           .filter((city) => city.state_id === fixedStateId)
@@ -92,9 +109,9 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       )
     ).sort((a, b) => a.localeCompare(b))
 
-    if (cityOptions.length === 0) {
-      throw new Error("No hay ciudades para el estado fijo")
-    }
+    const cityOptions = Array.from(new Set([...cityOptionsByState, companyCity])).sort((a, b) =>
+      a.localeCompare(b)
+    )
 
     return {
       statuses: getParameterOptions(parameters, "status"),
@@ -102,7 +119,7 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       employmentTypes: getParameterOptions(parameters, "employment_type"),
       categories,
       fixedLocation: {
-        state: fixedLocation.state,
+        state: companyState,
       },
       cityOptions,
       technicalSkillOptions: skillsCatalog.technical_skills,
@@ -118,20 +135,20 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       workplaceTypes: [
         { technical_name: "onsite", display_name: "Presencial" },
         { technical_name: "remote", display_name: "Remoto" },
-        { technical_name: "hybrid", display_name: "Híbrido" },
+        { technical_name: "hybrid", display_name: "Hibrido" },
       ],
       employmentTypes: [
         { technical_name: "full_time", display_name: "Tiempo completo" },
         { technical_name: "part_time", display_name: "Medio tiempo" },
         { technical_name: "contract", display_name: "Contrato" },
       ],
-      categories: ["Tecnología"],
+      categories: [{ id: 1, name: "Tecnologia" }],
       fixedLocation: {
         state: "Carabobo",
       },
       cityOptions: ["Valencia"],
       technicalSkillOptions: ["SQL", "Python", "Power BI"],
-      softSkillOptions: ["Comunicación", "Pensamiento crítico", "Trabajo en equipo"],
+      softSkillOptions: ["Comunicacion", "Pensamiento critico", "Trabajo en equipo"],
     }
   }
 }
@@ -140,6 +157,7 @@ export default async function AdminOfertaDetallePage({
   params,
   searchParams,
 }: AdminOfertaDetallePageProps) {
+  const cookie = (await headers()).get("cookie") ?? undefined
   const resolvedParams = await params
   const resolvedSearchParams = await searchParams
   const offerId = Number(resolvedParams.id)
@@ -189,7 +207,7 @@ export default async function AdminOfertaDetallePage({
 
   const [detailResult, formCatalogs, candidateStatusOptions, initialCandidatesData] =
     await Promise.all([
-      getAdminOfferDetailServer(offerId),
+      getAdminOfferDetailServer(offerId, cookie),
       getOfferFormCatalogsServer(),
       getApplicationStatusOptionsServer(),
       getAdminOfferCandidatesServer(offerId, initialCandidatesQuery),

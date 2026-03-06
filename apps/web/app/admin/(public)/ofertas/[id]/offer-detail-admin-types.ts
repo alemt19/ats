@@ -18,6 +18,7 @@ export type AdminOfferDetail = {
   weight_technical: number
   weight_soft: number
   weight_culture: number
+  category_id: number
   category: string
   technical_skills: string[]
   soft_skills: string[]

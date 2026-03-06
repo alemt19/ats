@@ -3,7 +3,11 @@
 import {
   Body,
   Controller,
+  Get,
+  Param,
+  ParseIntPipe,
   Post,
+  Put,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -47,5 +51,28 @@ export class AdminOffersController {
     this.assertAdminScope(request);
     const userId = this.getUserIdFromSession(session);
     return this.jobsService.createAdminOffer(userId, dto);
+  }
+
+  @Get(':id')
+  findOne(
+    @CurrentUser() session: unknown,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.jobsService.getAdminOfferDetail(userId, id);
+  }
+
+  @Put(':id')
+  update(
+    @CurrentUser() session: unknown,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateAdminOfferDto,
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.jobsService.updateAdminOffer(userId, id, dto);
   }
 }

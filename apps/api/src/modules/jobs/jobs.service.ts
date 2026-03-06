@@ -10,8 +10,36 @@ import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.pr
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
 import type { Prisma } from '../../generated/prisma/client';
+import type { job_status_enum } from '../../generated/prisma/enums';
 
 type JobAttributeType = 'hard_skill' | 'soft_skill';
+
+type AdminOfferRecord = {
+  id: number;
+  title: string;
+  description: string;
+  status: string | null;
+  city: string | null;
+  state: string | null;
+  address: string | null;
+  workplace_type: string | null;
+  employment_type: string | null;
+  position: string | null;
+  salary: string | null;
+  weight_technical: number | null;
+  weight_soft: number | null;
+  weight_culture: number | null;
+  created_at: Date | null;
+  category_id: number | null;
+  job_categories: { id: number; name: string | null } | null;
+  job_attributes: Array<{
+    global_attributes: {
+      name: string;
+      type: 'hard_skill' | 'soft_skill' | 'value' | null;
+    } | null;
+  }>;
+  _count: { applications: number };
+};
 
 @Injectable()
 export class JobsService {
@@ -32,7 +60,130 @@ export class JobsService {
       unique.add(normalized);
     });
 
-    return Array.from(unique);
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }
+
+  private areNormalizedListsEqual(valuesA: string[], valuesB: string[]) {
+    if (valuesA.length !== valuesB.length) {
+      return false;
+    }
+
+    return valuesA.every((value, index) => value === valuesB[index]);
+  }
+
+  private getStatusDisplayName(status: string) {
+    switch (status) {
+      case 'draft':
+        return 'Borrador';
+      case 'published':
+        return 'Publicado';
+      case 'closed':
+        return 'Cerrado';
+      case 'archived':
+        return 'Archivado';
+      default:
+        return status;
+    }
+  }
+
+  private toAdminOfferDetailPayload(job: AdminOfferRecord) {
+    const technicalSkills = job.job_attributes
+      .map((link) => link.global_attributes)
+      .filter(
+        (attribute): attribute is { name: string; type: 'hard_skill' } =>
+          Boolean(attribute?.name && attribute.type === 'hard_skill'),
+      )
+      .map((attribute) => attribute.name);
+
+    const softSkills = job.job_attributes
+      .map((link) => link.global_attributes)
+      .filter(
+        (attribute): attribute is { name: string; type: 'soft_skill' } =>
+          Boolean(attribute?.name && attribute.type === 'soft_skill'),
+      )
+      .map((attribute) => attribute.name);
+
+    return {
+      offer: {
+        id: job.id,
+        title: job.title,
+        description: job.description,
+        status: job.status ?? 'draft',
+        city: job.city ?? '',
+        state: job.state ?? '',
+        address: job.address ?? '',
+        workplace_type: job.workplace_type ?? '',
+        employment_type: job.employment_type ?? '',
+        position: job.position ?? '',
+        salary: Number(job.salary ?? 0),
+        weight_technical: job.weight_technical ?? 0,
+        weight_soft: job.weight_soft ?? 0,
+        weight_culture: job.weight_culture ?? 0,
+        category_id: job.category_id ?? 0,
+        category: job.job_categories?.name?.trim() ?? '',
+        technical_skills: technicalSkills,
+        soft_skills: softSkills,
+        published_at: (job.created_at ?? new Date()).toISOString(),
+        candidates_count: job._count.applications,
+      },
+      status_display_name: this.getStatusDisplayName(job.status ?? 'draft'),
+    };
+  }
+
+  private async findAdminOfferOrThrow(userId: string, offerId: number) {
+    const admin = await this.getCurrentAdmin(userId);
+
+    const job = await this.prisma.jobs.findFirst({
+      where: {
+        id: offerId,
+        company_id: admin.company_id,
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        status: true,
+        city: true,
+        state: true,
+        address: true,
+        workplace_type: true,
+        employment_type: true,
+        position: true,
+        salary: true,
+        weight_technical: true,
+        weight_soft: true,
+        weight_culture: true,
+        created_at: true,
+        category_id: true,
+        job_categories: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        job_attributes: {
+          select: {
+            global_attributes: {
+              select: {
+                name: true,
+                type: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            applications: true,
+          },
+        },
+      },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Oferta no encontrada');
+    }
+
+    return job as AdminOfferRecord;
   }
 
   private async getCurrentAdmin(userId: string) {
@@ -198,6 +349,192 @@ export class JobsService {
     );
 
     return createdJob;
+  }
+
+  async getAdminOfferDetail(userId: string, offerId: number) {
+    const job = await this.findAdminOfferOrThrow(userId, offerId);
+    return this.toAdminOfferDetailPayload(job);
+  }
+
+  async updateAdminOffer(userId: string, offerId: number, dto: CreateAdminOfferDto) {
+    const existingOffer = await this.findAdminOfferOrThrow(userId, offerId);
+    const currentStatus = existingOffer.status ?? 'draft';
+    const nextStatus = dto.status ?? currentStatus;
+
+    if (currentStatus !== 'draft' && nextStatus === 'draft') {
+      throw new BadRequestException('No se puede volver una oferta a estado borrador');
+    }
+
+    if (currentStatus !== 'draft') {
+      const currentTechnicalSkills = this.normalizeAttributeNames(
+        existingOffer.job_attributes
+          .map((link) => link.global_attributes)
+          .filter(
+            (attribute): attribute is { name: string; type: 'hard_skill' } =>
+              Boolean(attribute?.name && attribute.type === 'hard_skill'),
+          )
+          .map((attribute) => attribute.name),
+      );
+
+      const currentSoftSkills = this.normalizeAttributeNames(
+        existingOffer.job_attributes
+          .map((link) => link.global_attributes)
+          .filter(
+            (attribute): attribute is { name: string; type: 'soft_skill' } =>
+              Boolean(attribute?.name && attribute.type === 'soft_skill'),
+          )
+          .map((attribute) => attribute.name),
+      );
+
+      const incomingTechnicalSkills = this.normalizeAttributeNames(dto.technical_skills ?? []);
+      const incomingSoftSkills = this.normalizeAttributeNames(dto.soft_skills ?? []);
+
+      const hasBlockedChanges =
+        dto.title.trim() !== existingOffer.title.trim() ||
+        String(dto.position ?? '').trim() !== (existingOffer.position ?? '').trim() ||
+        dto.weight_technical !== (existingOffer.weight_technical ?? 0) ||
+        dto.weight_soft !== (existingOffer.weight_soft ?? 0) ||
+        dto.weight_culture !== (existingOffer.weight_culture ?? 0) ||
+        !this.areNormalizedListsEqual(incomingTechnicalSkills, currentTechnicalSkills) ||
+        !this.areNormalizedListsEqual(incomingSoftSkills, currentSoftSkills);
+
+      if (hasBlockedChanges) {
+        throw new BadRequestException(
+          'En ofertas no borrador solo se puede editar descripcion, estado (sin volver a borrador), salario, ciudad, direccion, modalidad, tipo de empleo y categoria',
+        );
+      }
+    }
+
+    const admin = await this.getCurrentAdmin(userId);
+    const company = await this.prisma.companies.findUnique({
+      where: { id: admin.company_id! },
+      select: { state: true },
+    });
+
+    if (!company) {
+      throw new BadRequestException('No se encontro la empresa del admin');
+    }
+
+    if (!dto.category_id) {
+      throw new BadRequestException('La categoria es obligatoria');
+    }
+
+    const categoryExists = await this.prisma.job_categories.findUnique({
+      where: { id: dto.category_id },
+      select: { id: true },
+    });
+
+    if (!categoryExists) {
+      throw new BadRequestException('La categoria seleccionada no existe');
+    }
+
+    const groupedByType: Record<JobAttributeType, string[]> = {
+      hard_skill: this.normalizeAttributeNames(dto.technical_skills ?? []),
+      soft_skill: this.normalizeAttributeNames(dto.soft_skills ?? []),
+    };
+
+    const selectedAttributeIds: number[] = [];
+    const createdAttributes: Array<{ id: number; name: string }> = [];
+
+    for (const [type, names] of Object.entries(groupedByType) as Array<
+      [JobAttributeType, string[]]
+    >) {
+      for (const name of names) {
+        const uniqueWhere = {
+          name_type: {
+            name,
+            type,
+          },
+        } as const;
+
+        let attribute = await this.prisma.global_attributes.findUnique({
+          where: uniqueWhere,
+          select: {
+            id: true,
+            name: true,
+          },
+        });
+
+        if (!attribute) {
+          try {
+            attribute = await this.prisma.global_attributes.create({
+              data: {
+                name,
+                type,
+              },
+              select: {
+                id: true,
+                name: true,
+              },
+            });
+
+            createdAttributes.push(attribute);
+          } catch (error) {
+            attribute = await this.prisma.global_attributes.findUnique({
+              where: uniqueWhere,
+              select: {
+                id: true,
+                name: true,
+              },
+            });
+
+            if (!attribute) {
+              throw error;
+            }
+          }
+        }
+
+        selectedAttributeIds.push(attribute.id);
+      }
+    }
+
+    const uniqueAttributeIds = Array.from(new Set(selectedAttributeIds));
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.jobs.update({
+        where: { id: offerId },
+        data: {
+          title: dto.title,
+          description: dto.description,
+          status: nextStatus as job_status_enum,
+          city: dto.city,
+          state: company.state,
+          address: dto.address,
+          workplace_type: dto.workplace_type,
+          employment_type: dto.employment_type,
+          position: dto.position,
+          salary: dto.salary,
+          weight_technical: dto.weight_technical,
+          weight_soft: dto.weight_soft,
+          weight_culture: dto.weight_culture,
+          category_id: dto.category_id,
+        },
+      });
+
+      await tx.job_attributes.deleteMany({
+        where: { job_id: offerId },
+      });
+
+      if (uniqueAttributeIds.length > 0) {
+        await tx.job_attributes.createMany({
+          data: uniqueAttributeIds.map((attributeId) => ({
+            job_id: offerId,
+            attribute_id: attributeId,
+            is_mandatory: false,
+          })),
+          skipDuplicates: true,
+        });
+      }
+    });
+
+    await this.embeddingsQueueProducer.enqueueAttributes(
+      createdAttributes.map((attribute) => ({
+        attributeId: attribute.id,
+        name: attribute.name,
+      })),
+    );
+
+    return this.getAdminOfferDetail(userId, offerId);
   }
 
   /**

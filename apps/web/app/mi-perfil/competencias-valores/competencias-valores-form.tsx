@@ -96,7 +96,9 @@ function areListsEqual(valuesA: string[], valuesB: string[]) {
     return false
   }
 
-  return normalizedA.every((value, index) => normalizeValue(value) === normalizeValue(normalizedB[index]))
+  return normalizedA.every(
+    (value, index) => normalizeValue(value) === normalizeValue(normalizedB[index] ?? "")
+  )
 }
 
 function getCvType(urlOrName?: string): "pdf" | "docx" | null {

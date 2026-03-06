@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Sparkles, X } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 
@@ -60,12 +61,13 @@ export type CrearOfertaFormValues = {
 type CrearOfertaFormProps = {
   catalogs: CrearOfertaCatalogs
   initialValues?: Partial<CrearOfertaFormValues>
+  mode?: "create" | "edit"
   pageTitle?: string
   pageDescription?: string
   showPageHeader?: boolean
   offerCardTitle?: string
   submitLabel?: string
-  onSubmitValues?: (values: CrearOfertaFormValues) => void
+  onSubmitValues?: (values: CrearOfertaFormValues) => Promise<void> | void
 }
 
 type SkillsSuggestionPayload = {
@@ -287,6 +289,7 @@ function MultiDatalistField({
 export default function CrearOfertaForm({
   catalogs,
   initialValues,
+  mode = "create",
   pageTitle = "Crear oferta de trabajo",
   pageDescription =
     "Completa los datos principales de la vacante y luego agrega habilidades blandas y técnicas.",
@@ -295,6 +298,7 @@ export default function CrearOfertaForm({
   submitLabel = "Crear oferta",
   onSubmitValues,
 }: CrearOfertaFormProps) {
+  const router = useRouter()
   const { statuses, workplaceTypes, employmentTypes, categories, fixedLocation, cityOptions } = catalogs
   const draftStatus = React.useMemo(
     () => statuses.find((option) => option.technical_name === "draft"),
@@ -308,7 +312,7 @@ export default function CrearOfertaForm({
     () => ({
       title: initialValues?.title ?? "",
       description: initialValues?.description ?? "",
-      status: "draft",
+      status: mode === "create" ? "draft" : (initialValues?.status ?? "draft"),
       city: initialValues?.city ?? cityOptions[0] ?? "",
       address: initialValues?.address ?? "",
       state: initialValues?.state ?? fixedLocation.state,
@@ -323,7 +327,7 @@ export default function CrearOfertaForm({
       soft_skills: initialValues?.soft_skills ?? [],
       technical_skills: initialValues?.technical_skills ?? [],
     }),
-    [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, workplaceTypes]
+    [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, mode, workplaceTypes]
   )
 
   const form = useForm<CrearOfertaFormValues>({
@@ -357,6 +361,9 @@ export default function CrearOfertaForm({
   const hasAllWeights =
     technicalWeightValue !== null && softWeightValue !== null && cultureWeightValue !== null
 
+  const persistedStatus = initialValues?.status ?? defaultValues.status
+  const isRestrictedEditMode = mode === "edit" && persistedStatus !== "draft"
+
   const weightSum = hasAllWeights
     ? technicalWeightValue + softWeightValue + cultureWeightValue
     : null
@@ -376,6 +383,14 @@ export default function CrearOfertaForm({
     parseSalaryOrNull(salary) !== null &&
     category.trim().length > 0 &&
     isWeightSumValid
+
+  const selectableStatuses = React.useMemo(() => {
+    if (!isRestrictedEditMode) {
+      return statuses
+    }
+
+    return statuses.filter((option) => option.technical_name !== "draft")
+  }, [isRestrictedEditMode, statuses])
 
   const setMultiFieldValue = React.useCallback(
     (fieldName: MultiFieldName, values: string[]) => {
@@ -449,7 +464,7 @@ export default function CrearOfertaForm({
 
   const onSubmit = async (values: CrearOfertaFormValues) => {
     if (onSubmitValues) {
-      onSubmitValues(values)
+      await onSubmitValues(values)
       return
     }
 
@@ -478,6 +493,11 @@ export default function CrearOfertaForm({
       soft_skills: dedupe(values.soft_skills),
     }
 
+    if (mode === "edit" && persistedStatus !== "draft" && payload.status === "draft") {
+      toast.error("No se puede volver una oferta a borrador")
+      return
+    }
+
     try {
       const response = await fetch("/api/admin/ofertas", {
         method: "POST",
@@ -493,7 +513,25 @@ export default function CrearOfertaForm({
         throw new Error(responsePayload?.message ?? "No se pudo crear la oferta")
       }
 
+      const createdOffer =
+        responsePayload &&
+        typeof responsePayload === "object" &&
+        "data" in responsePayload &&
+        responsePayload.data &&
+        typeof responsePayload.data === "object"
+          ? (responsePayload.data as { id?: number })
+          : (responsePayload as { id?: number })
+
+      const createdOfferId = Number(createdOffer?.id)
+
       toast.success("Oferta creada en borrador")
+
+      if (Number.isFinite(createdOfferId) && createdOfferId > 0) {
+        router.push(`/admin/ofertas/${createdOfferId}`)
+        router.refresh()
+        return
+      }
+
       form.reset({
         ...defaultValues,
         status: "draft",
@@ -533,7 +571,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Título</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Backend Engineer" {...field} />
+                        <Input placeholder="Ej. Backend Engineer" disabled={isRestrictedEditMode} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -548,7 +586,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Puesto</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Senior" {...field} />
+                        <Input placeholder="Ej. Senior" disabled={isRestrictedEditMode} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -581,20 +619,32 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <div className="flex items-center gap-2">
                         <FormLabel>Estado</FormLabel>
-                        <Badge variant={getStatusBadgeVariant("draft")}>
-                          {draftStatus?.display_name ?? getDisplayName(statuses, "draft")}
+                        <Badge
+                          variant={getStatusBadgeVariant(
+                            mode === "create" ? "draft" : (field.value || "draft")
+                          )}
+                        >
+                          {mode === "create"
+                            ? (draftStatus?.display_name ?? getDisplayName(statuses, "draft"))
+                            : getDisplayName(statuses, field.value || "draft")}
                         </Badge>
                       </div>
-                      <Select value="draft" disabled onValueChange={field.onChange}>
+                      <Select
+                        value={mode === "create" ? "draft" : field.value}
+                        disabled={mode === "create"}
+                        onValueChange={field.onChange}
+                      >
                         <FormControl>
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Borrador" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="draft">
-                            {draftStatus?.display_name ?? "Borrador"}
-                          </SelectItem>
+                          {selectableStatuses.map((option) => (
+                            <SelectItem key={option.technical_name} value={option.technical_name}>
+                              {option.display_name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </FormItem>
@@ -795,7 +845,13 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Peso de habilidades técnicas</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          disabled={isRestrictedEditMode}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -813,7 +869,13 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Peso de habilidades Blandas</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          disabled={isRestrictedEditMode}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -831,7 +893,13 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Peso de alineación cultural</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          disabled={isRestrictedEditMode}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -859,7 +927,7 @@ export default function CrearOfertaForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!isSkillsSectionUnlocked || isGeneratingSuggestions}
+                  disabled={!isSkillsSectionUnlocked || isGeneratingSuggestions || isRestrictedEditMode}
                   onClick={handleSuggestSkills}
                 >
                   <Sparkles className="size-4" />
@@ -867,13 +935,25 @@ export default function CrearOfertaForm({
                 </Button>
               </div>
 
-              {!isSkillsSectionUnlocked ? (
+              {!isSkillsSectionUnlocked && !isRestrictedEditMode ? (
                 <p className="text-sm text-muted-foreground">
                   Completa todos los campos anteriores y asegúrate de que la suma de pesos sea 1 para habilitar esta sección.
                 </p>
               ) : null}
 
-              <div className={isSkillsSectionUnlocked ? "space-y-6" : "pointer-events-none space-y-6 opacity-60"}>
+              {isRestrictedEditMode ? (
+                <p className="text-sm text-muted-foreground">
+                  En ofertas que no estan en borrador no se pueden modificar habilidades ni pesos.
+                </p>
+              ) : null}
+
+              <div
+                className={
+                  isSkillsSectionUnlocked && !isRestrictedEditMode
+                    ? "space-y-6"
+                    : "pointer-events-none space-y-6 opacity-60"
+                }
+              >
                 <MultiDatalistField
                   fieldName="technical_skills"
                   label="Habilidades técnicas"
@@ -886,7 +966,7 @@ export default function CrearOfertaForm({
                   onAddAllSuggestions={() =>
                     addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
                   }
-                  disabled={!isSkillsSectionUnlocked}
+                  disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
                 />
 
                 <MultiDatalistField
@@ -901,7 +981,7 @@ export default function CrearOfertaForm({
                   onAddAllSuggestions={() =>
                     addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
                   }
-                  disabled={!isSkillsSectionUnlocked}
+                  disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
                 />
               </div>
             </CardContent>
@@ -909,7 +989,7 @@ export default function CrearOfertaForm({
 
           <CardFooter className="justify-end px-0">
             <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Creando..." : submitLabel}
+              {form.formState.isSubmitting ? "Guardando..." : submitLabel}
             </Button>
           </CardFooter>
         </form>
