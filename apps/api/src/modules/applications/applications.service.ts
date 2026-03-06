@@ -35,6 +35,40 @@ export class ApplicationsService {
     });
   }
 
+  async findMyApplicationByJob(userId: string, jobId: number) {
+    const candidate = await this.prisma.candidates.findUnique({
+      where: { user_id: userId },
+      select: { id: true },
+    });
+
+    if (!candidate) {
+      return {
+        alreadyApplied: false,
+      };
+    }
+
+    const application = await this.prisma.applications.findFirst({
+      where: {
+        candidate_id: candidate.id,
+        job_id: jobId,
+      },
+      select: {
+        status: true,
+      },
+    });
+
+    if (!application?.status) {
+      return {
+        alreadyApplied: false,
+      };
+    }
+
+    return {
+      alreadyApplied: true,
+      statusTechnicalName: application.status,
+    };
+  }
+
   /**
    * Retrieve a single application by id
    */

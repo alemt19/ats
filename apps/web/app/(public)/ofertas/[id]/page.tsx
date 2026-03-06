@@ -1,10 +1,11 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { ArrowLeft, BriefcaseBusiness, CalendarDays, MapPin, Wallet } from "lucide-react"
 
-import { getSession } from "../../../../auth"
+import { getSession, hasAuthAccess } from "../../../../auth"
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "react/components/ui/card"
@@ -40,11 +41,22 @@ type JobOfferDetail = {
 	position: string
 	salary: number | string
 	updated_at: string
+	status?: string | null
+}
+
+type OfferEnvelope = {
+	success?: boolean
+	data?: JobOfferDetail
 }
 
 type ApplicationInfoResponse = {
 	alreadyApplied: boolean
 	statusTechnicalName?: string
+}
+
+type ApplicationInfoEnvelope = {
+	success?: boolean
+	data?: ApplicationInfoResponse
 }
 
 type OfertasDetailPageProps = {
@@ -81,93 +93,76 @@ function buildStatusMap(statusItems: ApplicationStatusItem[]) {
 
 async function fetchOfferDetailServer(offerId: number): Promise<JobOfferDetail | null> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+	const endpoints = [`${apiBaseUrl}/api/jobs/${offerId}`, `${apiBaseUrl}/jobs/${offerId}`]
 
-	try {
-		const response = await fetch(`${apiBaseUrl}/jobs/${offerId}`, {
-			method: "GET",
-			cache: "no-store",
-		})
+	for (const endpoint of endpoints) {
+		try {
+			const response = await fetch(endpoint, {
+				method: "GET",
+				cache: "no-store",
+			})
 
-		if (response.ok) {
-			return (await response.json()) as JobOfferDetail
+			if (!response.ok) {
+				continue
+			}
+
+			const payload = (await response.json()) as JobOfferDetail | OfferEnvelope
+
+			if (payload && typeof payload === "object" && "data" in payload && payload.data) {
+				return payload.data
+			}
+
+			return payload as JobOfferDetail
+		} catch {
+			// Try next endpoint variant.
 		}
-	} catch {
-		// Fallback to mock data while backend endpoint is not implemented.
-	}
-    // delay de 500ms to simulate network latency
-    await new Promise((resolve) => setTimeout(resolve, 500))
-	const offers = await readJsonFile<
-		Array<{
-			id: number
-			title: string
-			city: string
-			state: string
-			position: string
-			salary: number
-			workplace_type: string
-			employment_type: string
-		}>
-	>("job_offers_dummy.json")
-
-	const offer = offers.find((item) => item.id === offerId)
-
-	if (!offer) {
-		return null
 	}
 
-	return {
-		id: offer.id,
-		title: offer.title,
-		description:
-			"Estamos buscando una persona comprometida que quiera crecer con el equipo y aportar con ideas para mejorar continuamente los resultados del área.",
-		city: offer.city,
-		state: offer.state,
-		address: "Av. Principal, Torre Empresarial, Piso 4",
-		workplace_type: offer.workplace_type,
-		employment_type: offer.employment_type,
-		position: offer.position,
-		salary: offer.salary,
-		updated_at: new Date(Date.now() - offer.id * 86_400_000).toISOString(),
-	}
+	return null
 }
 
 async function fetchApplicationInfoServer(
-	userId: string,
 	offerId: number,
+	cookieHeader: string,
 	accessToken?: string
 ): Promise<ApplicationInfoResponse> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+	const endpoints = [
+		`${apiBaseUrl}/api/applications/me/${offerId}`,
+		`${apiBaseUrl}/applications/me/${offerId}`,
+	]
 
-	try {
-		const response = await fetch(`${apiBaseUrl}/applications/me/${offerId}`, {
-			method: "GET",
-			headers: {
-				...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-				"x-user-id": userId,
-			},
-			cache: "no-store",
-		})
+	for (const endpoint of endpoints) {
+		try {
+			const response = await fetch(endpoint, {
+				method: "GET",
+				headers: {
+					cookie: cookieHeader,
+					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+				},
+				cache: "no-store",
+			})
 
-		if (response.ok) {
-			return (await response.json()) as ApplicationInfoResponse
+			if (!response.ok) {
+				continue
+			}
+
+			const payload = (await response.json()) as
+				| ApplicationInfoResponse
+				| ApplicationInfoEnvelope
+
+			if (payload && typeof payload === "object" && "data" in payload && payload.data) {
+				return payload.data
+			}
+
+			return payload as ApplicationInfoResponse
+		} catch {
+			// Try next endpoint variant.
 		}
-	} catch {
-		// Fallback to mock data while backend endpoint is not implemented.
 	}
-
-	const dummyAppliedByOffer: Record<number, string> = {
-		1: "applied",
-		3: "contacted",
-		8: "rejected",
-	}
-
-	const statusTechnicalName = userId ? dummyAppliedByOffer[offerId] : undefined
 
 	return {
-		alreadyApplied: Boolean(statusTechnicalName),
-		statusTechnicalName,
-        // alreadyApplied: true,
-		// statusTechnicalName: 'contacted',
+		alreadyApplied: false,
 	}
 }
 
@@ -194,20 +189,53 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 	}
 
 	const session = await getSession()
+	const requestHeaders = await headers()
+	const cookieHeader = requestHeaders.get("cookie") ?? ""
 	const userId = session?.user?.id ?? ""
+	const isLoggedIn = Boolean(userId)
+	const isCandidate = isLoggedIn ? await hasAuthAccess("candidate") : false
 	const accessToken = session?.accessToken
 
-	const [offerDetail, jobParameters, applicationStatusItems, applicationInfo] =
+	const [offerDetail, jobParameters, applicationStatusItems] =
 		await Promise.all([
 			fetchOfferDetailServer(offerId),
 			readJsonFile<OfferParameter[]>("job_parameters.json"),
 			readJsonFile<ApplicationStatusItem[]>("application_status.json"),
-			fetchApplicationInfoServer(userId, offerId, accessToken),
 		])
 
 	if (!offerDetail) {
 		notFound()
 	}
+
+	if ((offerDetail.status ?? "").toLowerCase() !== "published") {
+		return (
+			<section className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 sm:px-6">
+				<div>
+					<Button asChild variant="ghost" className="-ml-2">
+						<Link href="/ofertas">
+							<ArrowLeft className="size-4" />
+							Volver atrás
+						</Link>
+					</Button>
+				</div>
+
+				<Card>
+					<CardHeader>
+						<CardTitle className="text-2xl">Oferta no disponible</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<p className="text-sm text-muted-foreground">
+							Esta oferta no se encuentra disponible para postulaciones en este momento.
+						</p>
+					</CardContent>
+				</Card>
+			</section>
+		)
+	}
+
+	const applicationInfo = isCandidate
+		? await fetchApplicationInfoServer(offerId, cookieHeader, accessToken)
+		: { alreadyApplied: false }
 
 	const statusMap = buildStatusMap(applicationStatusItems)
 	const appliedStatusDisplayName = statusMap.get("applied") ?? "Postulado"
@@ -247,7 +275,7 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					<p className="text-sm leading-relaxed text-muted-foreground">
+					<p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
 						{offerDetail.description}
 					</p>
 
@@ -281,7 +309,8 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 					<Separator />
 
 					<PostularseButton
-						isLoggedIn={Boolean(session?.user?.id)}
+						isLoggedIn={isLoggedIn}
+						isCandidate={isCandidate}
 						alreadyApplied={applicationInfo.alreadyApplied}
 						initialStatusTechnicalName={applicationInfo.statusTechnicalName}
 						initialStatusDisplayName={currentStatusDisplayName}
