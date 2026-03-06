@@ -84,6 +84,21 @@ function dedupe(values: string[]) {
   return Array.from(unique)
 }
 
+function normalizeList(values: string[]) {
+  return dedupe(values.map((value) => value.trim())).sort((a, b) => a.localeCompare(b))
+}
+
+function areListsEqual(valuesA: string[], valuesB: string[]) {
+  const normalizedA = normalizeList(valuesA)
+  const normalizedB = normalizeList(valuesB)
+
+  if (normalizedA.length !== normalizedB.length) {
+    return false
+  }
+
+  return normalizedA.every((value, index) => normalizeValue(value) === normalizeValue(normalizedB[index]))
+}
+
 function getCvType(urlOrName?: string): "pdf" | "docx" | null {
   if (!urlOrName) {
     return null
@@ -277,6 +292,11 @@ export default function CompetenciasValoresForm({
   const [cvDisplayName, setCvDisplayName] = React.useState(initialCvFileName)
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = React.useState(false)
   const [suggestions, setSuggestions] = React.useState<SuggestionPayload | null>(null)
+  const savedListsRef = React.useRef({
+    technical_skills: normalizeList(initialData.technical_skills ?? []),
+    soft_skills: normalizeList(initialData.soft_skills ?? []),
+    values: normalizeList(initialData.values ?? []),
+  })
   const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
   const form = useForm<CompetenciasValoresInitialData>({
@@ -468,6 +488,11 @@ export default function CompetenciasValoresForm({
   }
 
   const onSubmit = async (values: CompetenciasValoresInitialData) => {
+    const skillsOrValuesChanged =
+      !areListsEqual(values.technical_skills, savedListsRef.current.technical_skills) ||
+      !areListsEqual(values.soft_skills, savedListsRef.current.soft_skills) ||
+      !areListsEqual(values.values, savedListsRef.current.values)
+
     const formData = new FormData()
 
     formData.append("behavioral_ans_1", values.behavioral_ans_1)
@@ -498,6 +523,20 @@ export default function CompetenciasValoresForm({
       }
 
       toast.success("Competencias y valores actualizados")
+
+      if (skillsOrValuesChanged) {
+        toast.info("Si tienes postulaciones activas", {
+          description:
+            "Para que tus cambios en habilidades y valores se reflejen en los puntajes, debes volver a postular.",
+        })
+      }
+
+      savedListsRef.current = {
+        technical_skills: normalizeList(values.technical_skills),
+        soft_skills: normalizeList(values.soft_skills),
+        values: normalizeList(values.values),
+      }
+
       setCvFile(null)
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudieron guardar los cambios"

@@ -62,6 +62,29 @@ function buildDefaultSelections(
   }, {})
 }
 
+function normalizeSelectionValue(value: string | null | undefined) {
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  return value.trim().toLowerCase()
+}
+
+function hasPreferenceChanges(
+  categories: CulturePreferenceCategory[],
+  currentPreferences: Record<string, string>,
+  savedPreferences: Record<string, string>
+) {
+  return categories.some((category) => {
+    const key = category.technical_name
+
+    return (
+      normalizeSelectionValue(currentPreferences[key]) !==
+      normalizeSelectionValue(savedPreferences[key])
+    )
+  })
+}
+
 export default function PreferenciasCulturalesForm({
   categories,
   initialSelections,
@@ -77,7 +100,15 @@ export default function PreferenciasCulturalesForm({
     },
   })
 
+  const savedPreferencesRef = React.useRef(defaultSelections)
+
   const onSubmit = async (values: CulturePreferenceFormValues) => {
+    const preferencesEdited = hasPreferenceChanges(
+      categories,
+      values.preferences,
+      savedPreferencesRef.current
+    )
+
     const payload = {
       dress_code: values.preferences.dress_code || null,
       collaboration_style: values.preferences.collaboration_style || null,
@@ -102,6 +133,15 @@ export default function PreferenciasCulturalesForm({
       }
 
       toast.success("Preferencias culturales actualizadas")
+
+      if (preferencesEdited) {
+        toast.info("Si tienes postulaciones activas", {
+          description:
+            "Para que tus cambios en preferencias culturales se reflejen en los puntajes, debes volver a postular.",
+        })
+      }
+
+      savedPreferencesRef.current = { ...values.preferences }
     } catch {
       toast.error("No se pudieron guardar los cambios")
     }
