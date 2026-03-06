@@ -2,9 +2,16 @@
 
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
-import { CreateJobSchema, UpdateJobSchema, JobSchema, PaginationSchema, JobStatusSchema } from '@repo/schema';
+import { CreateJobSchema, UpdateJobSchema, JobSchema, JobStatusSchema } from '@repo/schema';
 
-const JobsQuerySchema = PaginationSchema.extend({
+const JobsQuerySchema = z.object({
+	title: z.string().trim().optional(),
+	category: z.string().trim().optional(),
+	workplace_type: z.string().trim().optional(),
+	employment_type: z.string().trim().optional(),
+	city: z.string().trim().optional(),
+	page: z.preprocess((val) => (val === undefined ? 1 : Number(val)), z.number().int().min(1)).optional(),
+	pageSize: z.preprocess((val) => (val === undefined ? 10 : Number(val)), z.number().int().min(1).max(100)).optional(),
 	company_id: z.preprocess((val) => (val === undefined ? undefined : Number(val)), z.number().int()).optional(),
 	status: JobStatusSchema.optional(),
 });

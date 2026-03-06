@@ -852,6 +852,177 @@ export class JobsService {
     }));
   }
 
+  async listPublicOffers(query: {
+    title?: string;
+    category?: string;
+    workplace_type?: string;
+    employment_type?: string;
+    city?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+    const skip = (page - 1) * pageSize;
+
+    const where: Prisma.jobsWhereInput = {
+      status: 'published',
+    };
+
+    if (query.title?.trim()) {
+      const title = query.title.trim();
+      where.OR = [
+        {
+          title: {
+            contains: title,
+            mode: 'insensitive',
+          },
+        },
+        {
+          position: {
+            contains: title,
+            mode: 'insensitive',
+          },
+        },
+      ];
+    }
+
+    if (query.category && query.category !== 'all') {
+      where.job_categories = {
+        name: {
+          equals: query.category,
+          mode: 'insensitive',
+        },
+      };
+    }
+
+    if (query.workplace_type && query.workplace_type !== 'all') {
+      where.workplace_type = query.workplace_type as any;
+    }
+
+    if (query.employment_type && query.employment_type !== 'all') {
+      where.employment_type = query.employment_type as any;
+    }
+
+    if (query.city && query.city !== 'all') {
+      where.city = {
+        equals: query.city,
+        mode: 'insensitive',
+      };
+    }
+
+    const [total, jobs] = await Promise.all([
+      this.prisma.jobs.count({ where }),
+      this.prisma.jobs.findMany({
+        where,
+        skip,
+        take: pageSize,
+        orderBy: { created_at: 'desc' },
+        select: {
+          id: true,
+          title: true,
+          city: true,
+          state: true,
+          position: true,
+          salary: true,
+          workplace_type: true,
+          employment_type: true,
+          job_categories: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    return {
+      items: jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        category: job.job_categories?.name?.trim() || 'Sin categoria',
+        city: job.city?.trim() || '',
+        state: job.state?.trim() || '',
+        position: job.position?.trim() || '',
+        salary: Number.parseFloat(job.salary ?? '0') || 0,
+        workplace_type: job.workplace_type ?? 'onsite',
+        employment_type: job.employment_type ?? 'full_time',
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async getPublicOffersCatalogs() {
+    const [categories, jobs] = await Promise.all([
+      this.prisma.job_categories.findMany({
+        orderBy: { name: 'asc' },
+        select: { name: true },
+      }),
+      this.prisma.jobs.findMany({
+        where: {
+          status: 'published',
+        },
+        select: {
+          city: true,
+          workplace_type: true,
+          employment_type: true,
+        },
+      }),
+    ]);
+
+    const citySet = new Set<string>();
+    const workplaceSet = new Set<string>();
+    const employmentSet = new Set<string>();
+
+    jobs.forEach((job) => {
+      if (job.city?.trim()) {
+        citySet.add(job.city.trim());
+      }
+
+      if (job.workplace_type) {
+        workplaceSet.add(job.workplace_type);
+      }
+
+      if (job.employment_type) {
+        employmentSet.add(job.employment_type);
+      }
+    });
+
+    if (workplaceSet.size === 0) {
+      workplaceSet.add('onsite');
+      workplaceSet.add('remote');
+      workplaceSet.add('hybrid');
+    }
+
+    if (employmentSet.size === 0) {
+      employmentSet.add('full_time');
+      employmentSet.add('part_time');
+      employmentSet.add('contract');
+      employmentSet.add('internship');
+    }
+
+    return {
+      categories: categories
+        .map((category) => category.name?.trim() || '')
+        .filter((name) => Boolean(name)),
+      cities: Array.from(citySet).sort((a, b) => a.localeCompare(b)),
+      workplace_types: Array.from(workplaceSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({
+          technical_name: value,
+          display_name: this.getWorkplaceDisplayName(value),
+        })),
+      employment_types: Array.from(employmentSet)
+        .sort((a, b) => a.localeCompare(b))
+        .map((value) => ({
+          technical_name: value,
+          display_name: this.getEmploymentDisplayName(value),
+        })),
+    };
+  }
+
   /**
    * Retrieve a single job by id
    */

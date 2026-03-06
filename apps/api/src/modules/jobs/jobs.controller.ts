@@ -25,13 +25,12 @@ export class JobsController {
 
   @Get()
   findAll(@Query() dto: JobsQueryDto) {
-    const { skip, take, company_id: companyId, status } = dto;
-    return this.jobsService.findAll(
-      skip,
-      take,
-      companyId,
-      status,
-    );
+    return this.jobsService.listPublicOffers(dto);
+  }
+
+  @Get('catalogs')
+  findCatalogs() {
+    return this.jobsService.getPublicOffersCatalogs();
   }
 
   @Get('latest')

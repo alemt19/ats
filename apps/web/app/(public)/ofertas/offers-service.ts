@@ -1,14 +1,9 @@
 import "server-only"
 
-import path from "node:path"
-import { readFile } from "node:fs/promises"
-
 import {
-  type EmploymentType,
   type JobOffer,
   type OffersQueryParams,
   type OffersResponse,
-  type WorkplaceType,
   normalizeOffersQuery,
 } from "./offers-types"
 
@@ -21,7 +16,26 @@ type BackendOffersResponse =
       page?: number
       pageSize?: number
     }
+  | {
+      success?: boolean
+      data?:
+        | JobOffer[]
+        | {
+            items?: JobOffer[]
+            total?: number
+            page?: number
+            pageSize?: number
+          }
+    }
   | JobOffer[]
+
+type OffersWithMetadata = {
+  items?: JobOffer[]
+  data?: JobOffer[]
+  total?: number
+  page?: number
+  pageSize?: number
+}
 
 function toSearchParams(query: OffersQueryParams) {
   const searchParams = new URLSearchParams()
@@ -52,54 +66,17 @@ function toSearchParams(query: OffersQueryParams) {
   return searchParams
 }
 
-async function readJsonFile<T>(relativePath: string): Promise<T> {
-  const fullPath = path.join(process.cwd(), "public", "data", relativePath)
-  const fileContents = await readFile(fullPath, "utf-8")
-  return JSON.parse(fileContents) as T
-}
-
-function applyFallbackFiltering(allOffers: JobOffer[], query: OffersQueryParams): OffersResponse {
-  const normalizedTitle = query.title.toLowerCase()
-
-  const filtered = allOffers.filter((offer) => {
-    const titleOrPositionMatch = normalizedTitle
-      ? offer.title.toLowerCase().includes(normalizedTitle) ||
-        offer.position.toLowerCase().includes(normalizedTitle)
-      : true
-
-    const categoryMatch = query.category === "all" ? true : offer.category === query.category
-    const workplaceMatch =
-      query.workplace_type === "all"
-        ? true
-        : offer.workplace_type === (query.workplace_type as WorkplaceType)
-    const employmentMatch =
-      query.employment_type === "all"
-        ? true
-        : offer.employment_type === (query.employment_type as EmploymentType)
-    const cityMatch = query.city === "all" ? true : offer.city === query.city
-
-    return (
-      titleOrPositionMatch &&
-      categoryMatch &&
-      workplaceMatch &&
-      employmentMatch &&
-      cityMatch
-    )
-  })
-
-  const total = filtered.length
-  const start = (query.page - 1) * query.pageSize
-  const items = filtered.slice(start, start + query.pageSize)
-
-  return {
-    items,
-    total,
-    page: query.page,
-    pageSize: query.pageSize,
-  }
-}
-
 function parseBackendResponse(payload: BackendOffersResponse, query: OffersQueryParams): OffersResponse {
+  if (
+    typeof payload === "object" &&
+    payload !== null &&
+    "data" in payload &&
+    payload.data &&
+    !Array.isArray(payload.data)
+  ) {
+    return parseBackendResponse(payload.data as BackendOffersResponse, query)
+  }
+
   if (Array.isArray(payload)) {
     const total = payload.length
     return {
@@ -111,20 +88,22 @@ function parseBackendResponse(payload: BackendOffersResponse, query: OffersQuery
   }
 
   if ("items" in payload && Array.isArray(payload.items)) {
+    const payloadWithMetadata = payload as OffersWithMetadata
     return {
       items: payload.items,
-      total: payload.total ?? payload.items.length,
-      page: payload.page ?? query.page,
-      pageSize: payload.pageSize ?? query.pageSize,
+      total: payloadWithMetadata.total ?? payload.items.length,
+      page: payloadWithMetadata.page ?? query.page,
+      pageSize: payloadWithMetadata.pageSize ?? query.pageSize,
     }
   }
 
   if ("data" in payload && Array.isArray(payload.data)) {
+    const payloadWithMetadata = payload as OffersWithMetadata
     return {
       items: payload.data,
-      total: payload.total ?? payload.data.length,
-      page: payload.page ?? query.page,
-      pageSize: payload.pageSize ?? query.pageSize,
+      total: payloadWithMetadata.total ?? payload.data.length,
+      page: payloadWithMetadata.page ?? query.page,
+      pageSize: payloadWithMetadata.pageSize ?? query.pageSize,
     }
   }
 
@@ -141,22 +120,26 @@ export async function getOffersServer(queryInput?:
 ): Promise<OffersResponse> {
   const query = normalizeOffersQuery(queryInput)
   const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+  const endpoints = [
+    `${apiBaseUrl}/api/jobs?${toSearchParams(query).toString()}`,
+    `${apiBaseUrl}/jobs?${toSearchParams(query).toString()}`,
+  ]
 
-  try {
-    const response = await fetch(`${apiBaseUrl}/jobs?${toSearchParams(query).toString()}`, {
-      method: "GET",
-      cache: "no-store",
-    })
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "GET",
+        cache: "no-store",
+      })
 
-    if (response.ok) {
-      const payload = (await response.json()) as BackendOffersResponse
-      return parseBackendResponse(payload, query)
+      if (response.ok) {
+        const payload = (await response.json()) as BackendOffersResponse
+        return parseBackendResponse(payload, query)
+      }
+    } catch {
+      // Try next endpoint variant.
     }
-  } catch {
-    // Fallback to mock data while backend endpoint is not implemented.
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 350))
-  const allOffers = await readJsonFile<JobOffer[]>("job_offers_dummy.json")
-  return applyFallbackFiltering(allOffers, query)
+  throw new Error("No se pudieron cargar las ofertas desde el backend")
 }
