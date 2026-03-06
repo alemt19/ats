@@ -66,34 +66,34 @@ export default async function LatestOffersSection() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {latestOffers.map((oferta) => (
-            <Card key={oferta.id} className="gap-3 rounded-2xl py-4 shadow-none">
+          {latestOffers.map((offer) => (
+            <Card key={offer.id} className="gap-3 rounded-2xl py-4 shadow-none">
               <CardHeader className="pb-0">
-                <CardTitle className="text-xl text-neutral-800">{oferta.title}</CardTitle>
+                <CardTitle className="text-xl text-neutral-800">{offer.title}</CardTitle>
               </CardHeader>
 
               <CardContent className="space-y-2">
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Tag className="size-4" />
-                  <span>{oferta.category}</span>
+                  <span>{offer.category}</span>
                 </p>
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <MapPin className="size-4" />
                   <span>
-                    {oferta.city}, {oferta.state}
+                    {offer.city}, {offer.state}
                   </span>
                 </p>
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
                   <BriefcaseBusiness className="size-4" />
-                  <span>{oferta.position}</span>
+                  <span>{offer.position}</span>
                 </p>
                 <p className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
                   <Wallet className="size-4" />
-                  <span>${oferta.salary} / mes</span>
+                  <span>${offer.salary} / mes</span>
                 </p>
 
-                <Button className="mt-4 w-full bg-blue-700 hover:bg-blue-800">
-                  Ver más
+                <Button asChild className="mt-4 w-full bg-blue-700 hover:bg-blue-800">
+                  <Link href={`/ofertas/${offer.id}`}>Ver más</Link>
                 </Button>
               </CardContent>
             </Card>
