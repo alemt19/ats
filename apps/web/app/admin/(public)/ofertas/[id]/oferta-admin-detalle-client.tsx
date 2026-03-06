@@ -686,14 +686,14 @@ export default function OfertaAdminDetalleClient({
                       </SheetContent>
                     </Sheet>
 
-                    <Button onClick={() => refreshMutation.mutate()} disabled={refreshMutation.isPending}>
+                    {/* <Button onClick={() => refreshMutation.mutate()} disabled={refreshMutation.isPending}>
                       {refreshMutation.isPending ? (
                         <Loader2 className="mr-2 size-4 animate-spin" />
                       ) : (
                         <RefreshCcw className="mr-2 size-4" />
                       )}
                       Refrescar análisis
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
               </CardHeader>

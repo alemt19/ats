@@ -1,8 +1,5 @@
 import "server-only"
 
-import path from "node:path"
-import { readFile } from "node:fs/promises"
-
 import {
   type Candidate,
   type CandidateListItem,
@@ -11,106 +8,114 @@ import {
   normalizeCandidatesQuery,
 } from "./candidates-admin-types"
 
-type CandidateDummyRecord = {
-  id?: unknown
-  name?: unknown
-  lastname?: unknown
-  profile_picture?: unknown
-  email?: unknown
-  dni?: unknown
-  phone?: unknown
-  country?: unknown
-  state?: unknown
-  city?: unknown
-  address?: unknown
-  contact_page?: unknown
-  cv_url?: unknown
-  behavioral_ans_1?: unknown
-  behavioral_ans_2?: unknown
-  technical_skills?: unknown
-  soft_skills?: unknown
-  values?: unknown
-  cultural_preferences?: unknown
+type BackendEnvelope<T> = {
+  success?: boolean
+  timestamp?: string
+  data?: T
+  message?: string
 }
 
-async function readJsonFile<T>(relativePath: string): Promise<T> {
-  const fullPath = path.join(process.cwd(), "public", "data", relativePath)
-  const fileContents = await readFile(fullPath, "utf-8")
-  return JSON.parse(fileContents) as T
+type CandidateAttribute = {
+  global_attributes?: {
+    name?: string | null
+    type?: "hard_skill" | "soft_skill" | "value" | null
+  } | null
 }
 
-function parseStringArray(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return []
+type BackendCandidateRecord = {
+  id?: number
+  name?: string | null
+  lastname?: string | null
+  profile_picture?: string | null
+  email?: string | null
+  dni?: string | null
+  phone?: string | null
+  country?: string | null
+  state?: string | null
+  city?: string | null
+  address?: string | null
+  contact_page?: string | null
+  cv_file_url?: string | null
+  behavioral_ans_1?: string | null
+  behavioral_ans_2?: string | null
+  dress_code?: string | null
+  collaboration_style?: string | null
+  work_pace?: string | null
+  level_of_autonomy?: string | null
+  dealing_with_management?: string | null
+  level_of_monitoring?: string | null
+  user?: {
+    email?: string | null
+  } | null
+  candidate_attributes?: CandidateAttribute[]
+}
+
+function unwrapEnvelope<T>(payload: T | BackendEnvelope<T>): T {
+  if (payload && typeof payload === "object" && "data" in payload && payload.data) {
+    return payload.data
   }
 
-  return value
-    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
-    .filter((entry) => entry.length > 0)
+  return payload as T
 }
 
-function normalizeCandidate(item: CandidateDummyRecord, fallbackId: number): Candidate {
-  const idValue = Number(item.id)
+function safeText(value: unknown) {
+  return typeof value === "string" ? value.trim() : ""
+}
+
+function mapAttributeNames(
+  attributes: CandidateAttribute[] | undefined,
+  expectedType: "hard_skill" | "soft_skill" | "value"
+) {
+  return (attributes ?? [])
+    .map((item) => item.global_attributes)
+    .filter((attribute) => Boolean(attribute?.name && attribute.type === expectedType))
+    .map((attribute) => safeText(attribute?.name))
+    .filter((entry) => entry.length > 0)
+    .sort((a, b) => a.localeCompare(b, "es"))
+}
+
+function mapCandidate(record: BackendCandidateRecord): Candidate {
+  const technicalSkills = mapAttributeNames(record.candidate_attributes, "hard_skill")
+  const softSkills = mapAttributeNames(record.candidate_attributes, "soft_skill")
+  const values = mapAttributeNames(record.candidate_attributes, "value")
+
+  const culturalPreferences: Record<string, string> = {}
+  const cultureKeys = [
+    "dress_code",
+    "collaboration_style",
+    "work_pace",
+    "level_of_autonomy",
+    "dealing_with_management",
+    "level_of_monitoring",
+  ] as const
+
+  for (const key of cultureKeys) {
+    const value = safeText(record[key])
+    if (value) {
+      culturalPreferences[key] = value
+    }
+  }
 
   return {
-    id: Number.isFinite(idValue) && idValue > 0 ? idValue : fallbackId,
-    name: typeof item.name === "string" ? item.name.trim() : "",
-    lastname: typeof item.lastname === "string" ? item.lastname.trim() : "",
-    profile_picture: typeof item.profile_picture === "string" ? item.profile_picture.trim() : undefined,
-    email: typeof item.email === "string" ? item.email.trim() : "",
-    dni: typeof item.dni === "string" ? item.dni.trim() : "",
-    phone: typeof item.phone === "string" ? item.phone.trim() : "",
-    country: typeof item.country === "string" ? item.country.trim() : "",
-    state: typeof item.state === "string" ? item.state.trim() : "",
-    city: typeof item.city === "string" ? item.city.trim() : "",
-    address: typeof item.address === "string" ? item.address.trim() : "",
-    contact_page: typeof item.contact_page === "string" ? item.contact_page.trim() : "",
-    cv_url: typeof item.cv_url === "string" ? item.cv_url.trim() : "",
-    behavioral_ans_1: typeof item.behavioral_ans_1 === "string" ? item.behavioral_ans_1.trim() : "",
-    behavioral_ans_2: typeof item.behavioral_ans_2 === "string" ? item.behavioral_ans_2.trim() : "",
-    technical_skills: parseStringArray(item.technical_skills),
-    soft_skills: parseStringArray(item.soft_skills),
-    values: parseStringArray(item.values),
-    cultural_preferences:
-      item.cultural_preferences && typeof item.cultural_preferences === "object"
-        ? (item.cultural_preferences as Record<string, string>)
-        : {},
-  }
-}
-
-async function getAllCandidates(): Promise<Candidate[]> {
-  try {
-    const payload = await readJsonFile<CandidateDummyRecord[]>("candidates_admin_dummy.json")
-
-    if (!Array.isArray(payload)) {
-      return []
-    }
-
-    return payload.map((item, index) => normalizeCandidate(item, index + 1))
-  } catch {
-    return [
-      {
-        id: 101,
-        name: "Ana",
-        lastname: "Pérez",
-        profile_picture: "https://i.pravatar.cc/150?img=5",
-        email: "ana.perez@email.com",
-        dni: "V-22334455",
-        phone: "+58 412 123 4567",
-        country: "Venezuela",
-        state: "Distrito Capital",
-        city: "Caracas",
-        address: "Av. Libertador",
-        contact_page: "https://portfolio.anaperez.dev",
-        cv_url: "https://herramientas.datos.gov.co/sites/default/files/2021-08/Pruebas_3.pdf",
-        behavioral_ans_1: "Respuesta conductual 1",
-        behavioral_ans_2: "Respuesta conductual 2",
-        technical_skills: ["React"],
-        soft_skills: ["Comunicación"],
-        values: ["Responsabilidad"],
-        cultural_preferences: {},
-      },
-    ]
+    id: Number(record.id ?? 0),
+    name: safeText(record.name),
+    lastname: safeText(record.lastname),
+    profile_picture: safeText(record.profile_picture) || undefined,
+    email: safeText(record.user?.email) || safeText(record.email),
+    dni: safeText(record.dni),
+    phone: safeText(record.phone) || undefined,
+    country: safeText(record.country) || undefined,
+    state: safeText(record.state) || undefined,
+    city: safeText(record.city) || undefined,
+    address: safeText(record.address) || undefined,
+    contact_page: safeText(record.contact_page) || undefined,
+    cv_url: safeText(record.cv_file_url) || undefined,
+    behavioral_ans_1: safeText(record.behavioral_ans_1),
+    behavioral_ans_2: safeText(record.behavioral_ans_2),
+    technical_skills: technicalSkills,
+    soft_skills: softSkills,
+    values,
+    cultural_preferences: culturalPreferences,
   }
 }
 
@@ -152,11 +157,96 @@ function applyFilters(candidates: CandidateListItem[], query: CandidatesQueryPar
   }
 }
 
+async function fetchCandidatesFromBackend(): Promise<Candidate[]> {
+  const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+  const endpoints = [`${apiBaseUrl}/api/candidates`, `${apiBaseUrl}/candidates`]
+  const take = 100
+
+  for (const baseEndpoint of endpoints) {
+    try {
+      let skip = 0
+      const allRecords: BackendCandidateRecord[] = []
+
+      while (true) {
+        const pageEndpoint = `${baseEndpoint}?skip=${skip}&take=${take}`
+        const response = await fetch(pageEndpoint, {
+          method: "GET",
+          cache: "no-store",
+        })
+
+        if (!response.ok) {
+          allRecords.length = 0
+          break
+        }
+
+        const payload = (await response.json()) as
+          | BackendCandidateRecord[]
+          | BackendEnvelope<BackendCandidateRecord[]>
+
+        const records = unwrapEnvelope(payload)
+
+        if (!Array.isArray(records)) {
+          allRecords.length = 0
+          break
+        }
+
+        allRecords.push(...records)
+
+        if (records.length < take) {
+          return allRecords.map(mapCandidate).filter((candidate) => candidate.id > 0)
+        }
+
+        skip += take
+      }
+    } catch {
+      // Try next endpoint variant.
+    }
+  }
+
+  throw new Error("No se pudieron cargar los candidatos desde el backend")
+}
+
+async function fetchCandidateByIdFromBackend(candidateId: number): Promise<Candidate | null> {
+  const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+  const endpoints = [
+    `${apiBaseUrl}/api/candidates/${candidateId}`,
+    `${apiBaseUrl}/candidates/${candidateId}`,
+  ]
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "GET",
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return null
+        }
+
+        continue
+      }
+
+      const payload = (await response.json()) as
+        | BackendCandidateRecord
+        | BackendEnvelope<BackendCandidateRecord>
+
+      const record = unwrapEnvelope(payload)
+      return mapCandidate(record)
+    } catch {
+      // Try next endpoint variant.
+    }
+  }
+
+  throw new Error("No se pudo cargar el candidato desde el backend")
+}
+
 export async function getCandidatesServer(
   queryInput?: Partial<Record<keyof CandidatesQueryParams, string | number | undefined>>
 ): Promise<CandidatesResponse> {
   const query = normalizeCandidatesQuery(queryInput)
-  const allCandidates = await getAllCandidates()
+  const allCandidates = await fetchCandidatesFromBackend()
   const listItems = allCandidates.map(mapListItem)
   return applyFilters(listItems, query)
 }
@@ -166,6 +256,5 @@ export async function getCandidateByIdServer(candidateId: number): Promise<Candi
     return null
   }
 
-  const allCandidates = await getAllCandidates()
-  return allCandidates.find((candidate) => candidate.id === candidateId) ?? null
+  return fetchCandidateByIdFromBackend(candidateId)
 }

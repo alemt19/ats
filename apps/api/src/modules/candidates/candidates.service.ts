@@ -383,6 +383,23 @@ export class CandidatesService {
       skip,
       take,
       orderBy: { created_at: 'desc' },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        candidate_attributes: {
+          select: {
+            global_attributes: {
+              select: {
+                name: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -392,6 +409,23 @@ export class CandidatesService {
   async findOne(id: number) {
     const candidate = await this.prisma.candidates.findUnique({
       where: { id },
+      include: {
+        user: {
+          select: {
+            email: true,
+          },
+        },
+        candidate_attributes: {
+          select: {
+            global_attributes: {
+              select: {
+                name: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!candidate) {
       throw new NotFoundException(`Candidate with ID ${id} not found`);

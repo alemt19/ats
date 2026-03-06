@@ -17,7 +17,16 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ message: "Candidato no encontrado" }, { status: 404 })
   }
 
-  const candidate = await getCandidateByIdServer(numericId)
+  let candidate = null
+
+  try {
+    candidate = await getCandidateByIdServer(numericId)
+  } catch {
+    return NextResponse.json(
+      { message: "No se pudo cargar el candidato" },
+      { status: 502 }
+    )
+  }
 
   if (!candidate) {
     return NextResponse.json({ message: "Candidato no encontrado" }, { status: 404 })
