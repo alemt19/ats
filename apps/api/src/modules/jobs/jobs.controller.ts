@@ -34,6 +34,13 @@ export class JobsController {
     );
   }
 
+  @Get('latest')
+  findLatestPublished(@Query('limit') limit?: string) {
+    const parsedLimit = Number(limit);
+    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 10) : 3;
+    return this.jobsService.findLatestPublishedOffers(safeLimit);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.jobsService.findOne(id);

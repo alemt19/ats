@@ -19,54 +19,38 @@ type JobOffer = {
   salary: number
 }
 
-const ofertasDummy: JobOffer[] = [
-  {
-    id: 1,
-    title: "Desarrollador Full-Stack",
-    category: "Tecnología",
-    city: "Caracas",
-    state: "Distrito Capital",
-    position: "Programador",
-    salary: 700,
-  },
-  {
-    id: 2,
-    title: "Especialista en Marketing Digital",
-    category: "Marketing",
-    city: "Valencia",
-    state: "Carabobo",
-    position: "Analista",
-    salary: 600,
-  },
-  {
-    id: 3,
-    title: "Gerente de Ventas",
-    category: "Comercial",
-    city: "Maracaibo",
-    state: "Maracaibo",
-    position: "Lider de area",
-    salary: 1500,
-  },
-]
+type LatestOffersPayload =
+  | JobOffer[]
+  | {
+      data?: JobOffer[]
+    }
 
 async function fetchLatestOffersServer(): Promise<JobOffer[]> {
   const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
-  try {
-    const response = await fetch(`${apiBaseUrl}/jobs/latest`, {
+  const endpoints = [`${apiBaseUrl}/api/jobs/latest?limit=3`, `${apiBaseUrl}/jobs/latest?limit=3`]
+
+  for (const endpoint of endpoints) {
+    const response = await fetch(endpoint, {
       method: "GET",
       cache: "no-store",
     })
 
-    if (response.ok) {
-      return (await response.json()) as JobOffer[]
+    if (!response.ok) {
+      continue
     }
-  } catch {
-    // Fallback to mock data while backend endpoint is not implemented.
+
+    const payload = (await response.json().catch(() => null)) as LatestOffersPayload | null
+    if (Array.isArray(payload)) {
+      return payload
+    }
+
+    if (payload && typeof payload === "object" && "data" in payload && Array.isArray(payload.data)) {
+      return payload.data
+    }
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 1500))
-  return ofertasDummy
+  return []
 }
 
 export default async function LatestOffersSection() {
@@ -114,6 +98,12 @@ export default async function LatestOffersSection() {
               </CardContent>
             </Card>
           ))}
+
+          {latestOffers.length === 0 ? (
+            <p className="text-muted-foreground md:col-span-2 lg:col-span-3 text-center">
+              No hay ofertas publicadas por el momento.
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-8 flex justify-center">

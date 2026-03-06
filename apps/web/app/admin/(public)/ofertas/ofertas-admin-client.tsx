@@ -99,9 +99,9 @@ function formatDate(value: string) {
 function statusLabel(status: string) {
   switch (status) {
     case "published":
-      return "Activa"
+      return "Publicada"
     case "draft":
-      return "Pausada"
+      return "Borrador"
     case "closed":
       return "Cerrada"
     case "archived":

@@ -813,6 +813,45 @@ export class JobsService {
     });
   }
 
+  async findLatestPublishedOffers(limit = 3) {
+    const items = await this.prisma.jobs.findMany({
+      where: {
+        status: 'published' as any,
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+      take: Math.min(Math.max(limit, 1), 10),
+      select: {
+        id: true,
+        title: true,
+        city: true,
+        state: true,
+        position: true,
+        salary: true,
+        workplace_type: true,
+        employment_type: true,
+        job_categories: {
+          select: {
+            name: true,
+          },
+        },
+      },
+    });
+
+    return items.map((job) => ({
+      id: job.id,
+      title: job.title,
+      category: job.job_categories?.name?.trim() || 'Sin categoria',
+      city: job.city?.trim() || '',
+      state: job.state?.trim() || '',
+      position: job.position?.trim() || '',
+      salary: Number.parseFloat(job.salary ?? '0') || 0,
+      workplace_type: job.workplace_type ?? 'onsite',
+      employment_type: job.employment_type ?? 'full_time',
+    }));
+  }
+
   /**
    * Retrieve a single job by id
    */
