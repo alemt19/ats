@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Sparkles, X } from "lucide-react"
 import { useForm } from "react-hook-form"
+import { toast } from "sonner"
 
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
@@ -19,11 +20,16 @@ type JobParameterOption = {
   display_name: string
 }
 
+type CategoryOption = {
+  id: number
+  name: string
+}
+
 export type CrearOfertaCatalogs = {
   statuses: JobParameterOption[]
   workplaceTypes: JobParameterOption[]
   employmentTypes: JobParameterOption[]
-  categories: string[]
+  categories: CategoryOption[]
   fixedLocation: {
     state: string
   }
@@ -76,6 +82,7 @@ type MultiDatalistFieldProps = {
   onChangeValues: (values: string[]) => void
   suggestionItems?: string[]
   onAddSuggestion?: (value: string) => void
+  onAddAllSuggestions?: () => void
   disabled?: boolean
 }
 
@@ -140,6 +147,7 @@ function MultiDatalistField({
   onChangeValues,
   suggestionItems = [],
   onAddSuggestion,
+  onAddAllSuggestions,
   disabled = false,
 }: MultiDatalistFieldProps) {
   const [draft, setDraft] = React.useState("")
@@ -233,7 +241,18 @@ function MultiDatalistField({
 
       {suggestionItems.length > 0 ? (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Sugerencias para {label}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground">Sugerencias para {label}</p>
+            <Button
+              type="button"
+              size="xs"
+              variant="outline"
+              disabled={disabled}
+              onClick={onAddAllSuggestions}
+            >
+              Agregar todas
+            </Button>
+          </div>
           <div className="flex flex-wrap gap-2">
             {suggestionItems.map((item) => {
               const alreadyAdded = selectedValues.some(
@@ -277,6 +296,10 @@ export default function CrearOfertaForm({
   onSubmitValues,
 }: CrearOfertaFormProps) {
   const { statuses, workplaceTypes, employmentTypes, categories, fixedLocation, cityOptions } = catalogs
+  const draftStatus = React.useMemo(
+    () => statuses.find((option) => option.technical_name === "draft"),
+    [statuses]
+  )
 
   const [isGeneratingSuggestions, setIsGeneratingSuggestions] = React.useState(false)
   const [suggestions, setSuggestions] = React.useState<SkillsSuggestionPayload | null>(null)
@@ -285,7 +308,7 @@ export default function CrearOfertaForm({
     () => ({
       title: initialValues?.title ?? "",
       description: initialValues?.description ?? "",
-      status: initialValues?.status ?? statuses[0]?.technical_name ?? "draft",
+      status: "draft",
       city: initialValues?.city ?? cityOptions[0] ?? "",
       address: initialValues?.address ?? "",
       state: initialValues?.state ?? fixedLocation.state,
@@ -296,11 +319,11 @@ export default function CrearOfertaForm({
       weight_technical: initialValues?.weight_technical ?? "",
       weight_soft: initialValues?.weight_soft ?? "",
       weight_culture: initialValues?.weight_culture ?? "",
-      category: initialValues?.category ?? categories[0] ?? "",
+      category: initialValues?.category ?? String(categories[0]?.id ?? ""),
       soft_skills: initialValues?.soft_skills ?? [],
       technical_skills: initialValues?.technical_skills ?? [],
     }),
-    [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, statuses, workplaceTypes]
+    [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, workplaceTypes]
   )
 
   const form = useForm<CrearOfertaFormValues>({
@@ -377,6 +400,17 @@ export default function CrearOfertaForm({
     [form]
   )
 
+  const addAllSuggestionsToField = React.useCallback(
+    (fieldName: MultiFieldName, suggestionItems: string[]) => {
+      const currentValues = form.getValues(fieldName)
+      form.setValue(fieldName, dedupe([...currentValues, ...suggestionItems]), {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    },
+    [form]
+  )
+
   const handleSuggestSkills = React.useCallback(async () => {
     setIsGeneratingSuggestions(true)
 
@@ -393,38 +427,82 @@ export default function CrearOfertaForm({
         }),
       })
 
+      const payload = (await response.json().catch(() => null)) as
+        | (SkillsSuggestionPayload & { message?: string })
+        | null
+
       if (!response.ok) {
-        throw new Error("No se pudo obtener sugerencias")
+        throw new Error(payload?.message ?? "No se pudo obtener sugerencias")
       }
 
-      const payload = (await response.json()) as SkillsSuggestionPayload
       setSuggestions({
-        technical_skills: dedupe(payload.technical_skills),
-        soft_skills: dedupe(payload.soft_skills),
+        technical_skills: dedupe(Array.isArray(payload?.technical_skills) ? payload.technical_skills : []),
+        soft_skills: dedupe(Array.isArray(payload?.soft_skills) ? payload.soft_skills : []),
       })
+      toast.success("Sugerencias generadas")
     } catch {
-      setSuggestions({
-        technical_skills: ["TypeScript", "Node.js"],
-        soft_skills: ["Comunicación", "Trabajo en equipo"],
-      })
+      toast.error("No se pudo obtener sugerencias")
     } finally {
       setIsGeneratingSuggestions(false)
     }
   }, [description, position, title])
 
-  const onSubmit = (values: CrearOfertaFormValues) => {
+  const onSubmit = async (values: CrearOfertaFormValues) => {
     if (onSubmitValues) {
       onSubmitValues(values)
       return
     }
 
-    console.log("Payload crear oferta:", {
-      ...values,
-      salary: Number(values.salary),
+    const categoryId = Number(values.category)
+    if (!Number.isFinite(categoryId) || categoryId <= 0) {
+      toast.error("Debes seleccionar una categoria valida")
+      return
+    }
+
+    const payload = {
+      title: values.title.trim(),
+      description: values.description.trim(),
+      status: "draft",
+      city: values.city.trim(),
+      address: values.address.trim(),
+      state: fixedLocation.state,
+      workplace_type: values.workplace_type,
+      employment_type: values.employment_type,
+      position: values.position.trim(),
+      salary: values.salary.trim(),
       weight_technical: Number(values.weight_technical),
       weight_soft: Number(values.weight_soft),
       weight_culture: Number(values.weight_culture),
-    })
+      category_id: categoryId,
+      technical_skills: dedupe(values.technical_skills),
+      soft_skills: dedupe(values.soft_skills),
+    }
+
+    try {
+      const response = await fetch("/api/admin/ofertas", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+
+      const responsePayload = (await response.json().catch(() => null)) as { message?: string } | null
+
+      if (!response.ok) {
+        throw new Error(responsePayload?.message ?? "No se pudo crear la oferta")
+      }
+
+      toast.success("Oferta creada en borrador")
+      form.reset({
+        ...defaultValues,
+        status: "draft",
+      })
+      setSuggestions(null)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo crear la oferta"
+      toast.error(message)
+    }
   }
 
   return (
@@ -499,30 +577,26 @@ export default function CrearOfertaForm({
                 <FormField
                   control={form.control}
                   name="status"
-                  rules={{ required: "El estado es obligatorio." }}
                   render={({ field }) => (
                     <FormItem>
                       <div className="flex items-center gap-2">
                         <FormLabel>Estado</FormLabel>
-                        <Badge variant={getStatusBadgeVariant(field.value)}>
-                          {getDisplayName(statuses, field.value)}
+                        <Badge variant={getStatusBadgeVariant("draft")}>
+                          {draftStatus?.display_name ?? getDisplayName(statuses, "draft")}
                         </Badge>
                       </div>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select value="draft" disabled onValueChange={field.onChange}>
                         <FormControl>
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecciona estado" />
+                            <SelectValue placeholder="Borrador" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {statuses.map((option) => (
-                            <SelectItem key={option.technical_name} value={option.technical_name}>
-                              {option.display_name}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="draft">
+                            {draftStatus?.display_name ?? "Borrador"}
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
@@ -687,8 +761,8 @@ export default function CrearOfertaForm({
                         </FormControl>
                         <SelectContent>
                           {categories.map((option) => (
-                            <SelectItem key={option} value={option}>
-                              {option}
+                            <SelectItem key={option.id} value={String(option.id)}>
+                              {option.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -809,6 +883,9 @@ export default function CrearOfertaForm({
                   onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
                   suggestionItems={suggestions?.technical_skills ?? []}
                   onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
+                  onAddAllSuggestions={() =>
+                    addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
+                  }
                   disabled={!isSkillsSectionUnlocked}
                 />
 
@@ -821,6 +898,9 @@ export default function CrearOfertaForm({
                   onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
                   suggestionItems={suggestions?.soft_skills ?? []}
                   onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
+                  onAddAllSuggestions={() =>
+                    addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
+                  }
                   disabled={!isSkillsSectionUnlocked}
                 />
               </div>
@@ -828,7 +908,9 @@ export default function CrearOfertaForm({
           </Card>
 
           <CardFooter className="justify-end px-0">
-            <Button type="submit">{submitLabel}</Button>
+            <Button type="submit" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Creando..." : submitLabel}
+            </Button>
           </CardFooter>
         </form>
       </Form>

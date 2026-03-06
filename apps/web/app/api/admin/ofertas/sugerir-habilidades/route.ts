@@ -1,13 +1,6 @@
-import path from "node:path"
-import { readFile } from "node:fs/promises"
-
 import { NextResponse } from "next/server"
 
-type SuggestionCase = {
-  technical_skills: string[]
-  soft_skills: string[]
-  keywords: string[]
-}
+const fastapiApiUrl = process.env.FASTAPI_API_URL ?? "http://localhost:8000"
 
 type SuggestionRequest = {
   title?: string
@@ -15,54 +8,70 @@ type SuggestionRequest = {
   position?: string
 }
 
-async function readJsonFile<T>(relativePath: string): Promise<T> {
-  const fullPath = path.join(process.cwd(), "public", "data", relativePath)
-  const fileContents = await readFile(fullPath, "utf-8")
-  return JSON.parse(fileContents) as T
-}
-
-function dedupe(values: string[]) {
-  const unique = new Set<string>()
-
-  values.forEach((value) => {
-    const clean = value.trim()
-
-    if (!clean) {
-      return
-    }
-
-    unique.add(clean)
-  })
-
-  return Array.from(unique)
+type SuggestionResponse = {
+  technical_skills?: string[]
+  soft_skills?: string[]
+  message?: string
 }
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
+function parseMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null
+  }
+
+  if ("detail" in payload && typeof payload.detail === "string") {
+    return payload.detail
+  }
+
+  if ("message" in payload && typeof payload.message === "string") {
+    return payload.message
+  }
+
+  return null
+}
+
 export async function POST(request: Request) {
   try {
     const body = (await request.json()) as SuggestionRequest
-    const text = `${body.title ?? ""} ${body.description ?? ""} ${body.position ?? ""}`.toLowerCase()
+    const title = body.title?.trim() ?? ""
+    const position = body.position?.trim() ?? ""
+    const description = body.description?.trim() ?? ""
 
-    const cases = await readJsonFile<SuggestionCase[]>("job_skill_suggestions_dummy.json")
+    if (!title || !position || !description) {
+      return NextResponse.json(
+        { message: "Titulo, puesto y descripcion son obligatorios" },
+        { status: 400 }
+      )
+    }
 
-    const matchedCase =
-      cases.find((item) => item.keywords.some((keyword) => text.includes(keyword.toLowerCase()))) ?? cases[0]
+    const response = await fetch(`${fastapiApiUrl}/api/jobs/suggest-skills`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title,
+        puesto: position,
+        description,
+      }),
+      cache: "no-store",
+    })
 
-    await new Promise((resolve) => setTimeout(resolve, 900))
+    const payload = (await response.json().catch(() => null)) as SuggestionResponse | null
+
+    if (!response.ok) {
+      const message = parseMessage(payload) ?? "No se pudo obtener sugerencias"
+      return NextResponse.json({ message }, { status: response.status })
+    }
 
     return NextResponse.json({
-      technical_skills: dedupe(matchedCase?.technical_skills ?? []),
-      soft_skills: dedupe(matchedCase?.soft_skills ?? []),
+      technical_skills: Array.isArray(payload?.technical_skills) ? payload.technical_skills : [],
+      soft_skills: Array.isArray(payload?.soft_skills) ? payload.soft_skills : [],
     })
   } catch {
-    return NextResponse.json(
-      {
-        technical_skills: ["TypeScript", "Node.js"],
-        soft_skills: ["Comunicación", "Trabajo en equipo"],
-      },
-      { status: 200 }
-    )
+    return NextResponse.json({ message: "Error inesperado al sugerir habilidades" }, { status: 500 })
   }
 }

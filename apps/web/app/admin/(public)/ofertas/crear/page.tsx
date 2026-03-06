@@ -25,6 +25,22 @@ type SkillsCatalog = {
 	soft_skills: string[]
 }
 
+type CategoryOption = {
+	id: number
+	name: string
+}
+
+type StateItem = {
+	id: string
+	name: string
+}
+
+type CityItem = {
+	id: string
+	name: string
+	state_id: string
+}
+
 type PreferenceFieldName =
 	| "dress_code"
 	| "colaboration_style"
@@ -96,15 +112,30 @@ function getParameterOptions(
 }
 
 async function fetchCreateOfferCatalogsServer(input: {
-	categories: string[]
+	categories: CategoryOption[]
 	companyState: string
 	companyCity: string
 }): Promise<CrearOfertaCatalogs> {
 	try {
-		const [parameters, skillsCatalog] = await Promise.all([
+		const [parameters, skillsCatalog, states, cities] = await Promise.all([
 			readJsonFile<JobParameter[]>("job_parameters.json"),
 			readJsonFile<SkillsCatalog>("job_skills_catalog_dummy.json"),
+			readJsonFile<StateItem[]>("state.json"),
+			readJsonFile<CityItem[]>("city.json"),
 		])
+
+		const fixedStateId = states.find((state) => state.name === input.companyState)?.id
+		const citiesByState = fixedStateId
+			? cities.filter((city) => city.state_id === fixedStateId).map((city) => city.name.trim())
+			: []
+
+		const cityOptions = Array.from(
+			new Set(
+				[...citiesByState, input.companyCity]
+					.map((cityName) => cityName.trim())
+					.filter((cityName) => cityName.length > 0)
+			)
+		).sort((a, b) => a.localeCompare(b))
 
 		return {
 			statuses: getParameterOptions(parameters, "status"),
@@ -114,7 +145,7 @@ async function fetchCreateOfferCatalogsServer(input: {
 			fixedLocation: {
 				state: input.companyState,
 			},
-			cityOptions: [input.companyCity],
+			cityOptions,
 			technicalSkillOptions: skillsCatalog.technical_skills,
 			softSkillOptions: skillsCatalog.soft_skills,
 		}
@@ -132,11 +163,11 @@ async function fetchCreateOfferCatalogsServer(input: {
 				{ technical_name: "full_time", display_name: "Tiempo completo" },
 				{ technical_name: "contract", display_name: "Contrato" },
 			],
-			categories: ["Tecnología"],
+			categories: [{ id: 1, name: "Tecnología" }],
 			fixedLocation: {
-				state: "Distrito Capital",
+				state: input.companyState || "Distrito Capital",
 			},
-			cityOptions: ["Caracas"],
+			cityOptions: [input.companyCity || "Caracas"],
 			technicalSkillOptions: ["TypeScript", "React", "Node.js"],
 			softSkillOptions: ["Comunicación", "Trabajo en equipo", "Resolución de problemas"],
 		}
@@ -153,7 +184,7 @@ export default async function CrearOfertaPage() {
 
 	const blockers: string[] = []
 	let missingCompanyItems: string[] = []
-	let categoryNames: string[] = []
+	let categoryOptions: CategoryOption[] = []
 	let companyState = ""
 	let companyCity = ""
 
@@ -175,15 +206,15 @@ export default async function CrearOfertaPage() {
 	}
 
 	if (categoriesResult.status === "fulfilled") {
-		categoryNames = Array.from(
-			new Set(
-				categoriesResult.value.items
-					.map((category) => category.name.trim())
-					.filter((categoryName) => categoryName.length > 0)
-			)
-		).sort((a, b) => a.localeCompare(b))
+		categoryOptions = categoriesResult.value.items
+			.map((category) => ({
+				id: category.id,
+				name: category.name.trim(),
+			}))
+			.filter((category) => Number.isFinite(category.id) && category.id > 0 && category.name.length > 0)
+			.sort((a, b) => a.name.localeCompare(b.name))
 
-		if (categoryNames.length === 0) {
+		if (categoryOptions.length === 0) {
 			blockers.push("Debe existir al menos una categoria")
 		}
 	} else {
@@ -257,7 +288,7 @@ export default async function CrearOfertaPage() {
 	}
 
 	const catalogs = await fetchCreateOfferCatalogsServer({
-		categories: categoryNames,
+		categories: categoryOptions,
 		companyState,
 		companyCity,
 	})
