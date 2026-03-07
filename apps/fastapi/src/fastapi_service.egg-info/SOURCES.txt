@@ -19,3 +19,8 @@ src/fastapi_service/company_values/prompt_builder.py
 src/fastapi_service/company_values/router.py
 src/fastapi_service/company_values/schemas.py
 src/fastapi_service/company_values/service.py
+src/fastapi_service/job_offer_skills/__init__.py
+src/fastapi_service/job_offer_skills/prompt_builder.py
+src/fastapi_service/job_offer_skills/router.py
+src/fastapi_service/job_offer_skills/schemas.py
+src/fastapi_service/job_offer_skills/service.py
