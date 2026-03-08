@@ -14,19 +14,23 @@ import {
   Put,
   Req,
   UnauthorizedException,
-  UploadedFile,
   UseGuards,
-  UseInterceptors,
+	UploadedFile,
+	UseInterceptors,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CompaniesService } from './companies.service';
-import { CompaniesQueryDto, CreateCompanyDto, UpdateCompanyDto } from './dto/companies.dto';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SupabaseStorageService } from '../../common/storage/supabase-storage.service';
 import { UpdateCompanyConfigDto } from './dto/company-config.dto';
+import {
+	CompaniesQueryDto,
+	CreateCompanyDto,
+	UpdateCompanyDto,
+} from './dto/companies.dto';
 
 @Controller()
 export class CompaniesController {
@@ -133,4 +137,13 @@ export class CompaniesController {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.companiesService.remove(id);
   }
+
+	@Post(':id/logo')
+	@UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+	uploadLogo(
+		@Param('id', ParseIntPipe) id: number,
+		@UploadedFile() file: Express.Multer.File,
+	) {
+		return this.companiesService.uploadLogo(id, file);
+	}
 }

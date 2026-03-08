@@ -16,7 +16,7 @@ import { QueuesModule } from './common/queues/queues.module';
 	imports: [
 		StorageModule,
 		QueuesModule,
-		PrismaModule, 
+		PrismaModule,
 		AuthModule,
 		JobsModule,
 		CandidatesModule,
@@ -24,6 +24,7 @@ import { QueuesModule } from './common/queues/queues.module';
 		ApplicationsModule,
 		RecruitersModule,
 		JobCategoriesModule,
+		QueuesModule,
 	],
 })
 export class AppModule {}

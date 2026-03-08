@@ -5,6 +5,10 @@ import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.pr
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
 import { UpdateMyCompetenciasValoresDto } from './dto/competencias-valores.dto';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { StorageService } from '../../common/storage/storage.service';
+import { CV_PARSE_QUEUE } from '../queues/queues.constants';
 
 type CandidateAttributeType = 'hard_skill' | 'soft_skill' | 'value';
 
@@ -27,6 +31,9 @@ export class CandidatesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingsQueueProducer: EmbeddingsQueueProducer,
+		private readonly storage: StorageService,
+		@InjectQueue(CV_PARSE_QUEUE)
+		private readonly cvParseQueue: Queue,
   ) {}
 
   private normalizeAttributeNames(values: string[]) {
@@ -366,14 +373,15 @@ export class CandidatesService {
     return updatedCandidate;
   }
 
-  /**
-   * Create a new candidate
-   */
-  async create(dto: CreateCandidateDto) {
-    return this.prisma.candidates.create({
-      data: dto,
-    });
-  }
+  
+	/**
+	 * Create a new candidate
+	 */
+	async create(dto: CreateCandidateDto) {
+		return this.prisma.candidates.create({
+			data: dto,
+		});
+	}
 
   /**
    * Retrieve multiple candidates with pagination
@@ -433,24 +441,37 @@ export class CandidatesService {
     return candidate;
   }
 
-  /**
-   * Update an existing candidate by id
-   */
-  async update(id: number, dto: UpdateCandidateDto) {
-    await this.findOne(id);
-    return this.prisma.candidates.update({
-      where: { id },
-      data: dto,
-    });
-  }
+	/**
+	 * Update an existing candidate by id
+	 */
+	async update(id: number, dto: UpdateCandidateDto) {
+		await this.findOne(id);
+		return this.prisma.candidates.update({
+			where: { id },
+			data: dto,
+		});
+	}
 
-  /**
-   * Delete a candidate by id
-   */
-  async remove(id: number) {
-    await this.findOne(id);
-    return this.prisma.candidates.delete({
-      where: { id },
-    });
-  }
+	async uploadCv(id: number, file: Express.Multer.File) {
+		await this.findOne(id);
+		const upload = await this.storage.uploadCandidateCv(id, file);
+		await this.cvParseQueue.add('parse-cv', {
+			candidate_id: id,
+			storage_path: upload.path,
+		});
+		return this.prisma.candidates.update({
+			where: { id },
+			data: { cv_file_url: upload.publicUrl },
+		});
+	}
+
+	/**
+	 * Delete a candidate by id
+	 */
+	async remove(id: number) {
+		await this.findOne(id);
+		return this.prisma.candidates.delete({
+			where: { id },
+		});
+	}
 }

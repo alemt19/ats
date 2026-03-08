@@ -16,13 +16,13 @@ import {
   UnauthorizedException,
   UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { CandidatesService } from './candidates.service';
 import { CandidatesQueryDto, CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
 import { UpdateMyCompetenciasValoresDto } from './dto/competencias-valores.dto';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
 import type { Request } from 'express';
 import { SupabaseStorageService } from '../../common/storage/supabase-storage.service';
 
@@ -41,19 +41,16 @@ export class CandidatesController {
     return userId;
   }
 
-  @Post()
-  create(@Body() dto: CreateCandidateDto) {
-    return this.candidatesService.create(dto);
-  }
+	@Post()
+	create(@Body() dto: CreateCandidateDto) {
+		return this.candidatesService.create(dto);
+	}
 
-  @Get()
-  findAll(@Query() dto: CandidatesQueryDto) {
-    const { skip, take } = dto;
-    return this.candidatesService.findAll(
-      skip,
-      take,
-    );
-  }
+	@Get()
+	findAll(@Query() dto: CandidatesQueryDto) {
+		const { skip, take } = dto;
+		return this.candidatesService.findAll(skip, take);
+	}
 
   @UseGuards(BetterAuthGuard)
   @Get('me')
@@ -161,13 +158,25 @@ export class CandidatesController {
     return this.candidatesService.findOne(id);
   }
 
-  @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCandidateDto) {
-    return this.candidatesService.update(id, dto);
-  }
+	@Patch(':id')
+	update(
+		@Param('id', ParseIntPipe) id: number,
+		@Body() dto: UpdateCandidateDto,
+	) {
+		return this.candidatesService.update(id, dto);
+	}
 
-  @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.candidatesService.remove(id);
-  }
+	@Post(':id/cv')
+	@UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+	uploadCv(
+		@Param('id', ParseIntPipe) id: number,
+		@UploadedFile() file: Express.Multer.File,
+	) {
+		return this.candidatesService.uploadCv(id, file);
+	}
+
+	@Delete(':id')
+	remove(@Param('id', ParseIntPipe) id: number) {
+		return this.candidatesService.remove(id);
+	}
 }

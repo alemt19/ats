@@ -1,9 +1,13 @@
 README.md
 pyproject.toml
 src/fastapi_service/__init__.py
+src/fastapi_service/config.py
+src/fastapi_service/cv_parser.py
 src/fastapi_service/embedding_worker.py
 src/fastapi_service/environment.py
 src/fastapi_service/main.py
+src/fastapi_service/supabase_client.py
+src/fastapi_service/worker.py
 src/fastapi_service.egg-info/PKG-INFO
 src/fastapi_service.egg-info/SOURCES.txt
 src/fastapi_service.egg-info/dependency_links.txt

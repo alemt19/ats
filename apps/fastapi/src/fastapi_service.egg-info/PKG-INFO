@@ -5,6 +5,9 @@ Summary: FastAPI microservice for ATS
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
 Requires-Dist: fastapi>=0.115.0
+Requires-Dist: bullmq>=2.0.0
+Requires-Dist: pypdf>=5.4.0
+Requires-Dist: supabase>=2.10.0
 Requires-Dist: uvicorn[standard]>=0.30.0
 Requires-Dist: bullmq>=2.16.0
 Requires-Dist: google-genai>=1.0.0
