@@ -1,8 +1,8 @@
 import { Suspense } from "react"
 import path from "node:path"
 import { readFile } from "node:fs/promises"
+import { headers } from "next/headers"
 
-import { getSession } from "../../../auth"
 import PostulacionesList, {
 	type ApplicationStatusCatalogItem,
 	type JobApplication,
@@ -33,62 +33,9 @@ function normalizeStatusCatalog(
 		.filter((item) => item.technical_name.length > 0)
 }
 
-const applicationsDummy: JobApplication[] = [
-	{
-		id: 1,
-		title: "Desarrollador Full-Stack",
-		category: "Tecnologia",
-		city: "Caracas",
-		state: "Distrito Capital",
-		position: "Programador",
-		salary: 700,
-		status: "applied",
-	},
-	{
-		id: 2,
-		title: "Especialista en Marketing Digital",
-		category: "Marketing",
-		city: "Valencia",
-		state: "Carabobo",
-		position: "Analista",
-		salary: 600,
-		status: "contacted",
-	},
-	{
-		id: 3,
-		title: "Gerente de Ventas",
-		category: "Comercial",
-		city: "Maracaibo",
-		state: "Zulia",
-		position: "Lider de area",
-		salary: 1500,
-		status: "rejected",
-	},
-	{
-		id: 4,
-		title: "Product Manager",
-		category: "Tecnologia",
-		city: "Maracay",
-		state: "Aragua",
-		position: "Product Manager",
-		salary: 1200,
-		status: "applied",
-	},
-	{
-		id: 5,
-		title: "Analista de Datos",
-		category: "Datos",
-		city: "Barquisimeto",
-		state: "Lara",
-		position: "Analista",
-		salary: 900,
-		status: "contacted",
-	},
-]
 
 async function fetchApplicationsServer(
-	userId: string,
-	accessToken?: string
+	cookie: string
 ): Promise<JobApplication[]> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
@@ -96,8 +43,7 @@ async function fetchApplicationsServer(
 		const response = await fetch(`${apiBaseUrl}/applications/me`, {
 			method: "GET",
 			headers: {
-				...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-				"x-user-id": userId,
+				cookie,
 			},
 			cache: "no-store",
 		})
@@ -106,20 +52,17 @@ async function fetchApplicationsServer(
 			return (await response.json()) as JobApplication[]
 		}
 	} catch {
-		// Fallback to mock data while backend endpoint is not implemented.
+		// Fallback to empty list if backend is unavailable.
 	}
 
-	await new Promise((resolve) => setTimeout(resolve, 1500))
-	return applicationsDummy
+	return []
 }
 
 async function PostulacionesData() {
-	const session = await getSession()
-	const userId = session?.user?.id ?? "user_123"
-	const accessToken = session?.accessToken
+	const cookie = (await headers()).get("cookie") ?? ""
 
 	const [applications, statusCatalogRaw] = await Promise.all([
-		fetchApplicationsServer(userId, accessToken),
+		fetchApplicationsServer(cookie),
 		readJsonFile<RawStatusCatalogItem[]>("application_status.json"),
 	])
 
