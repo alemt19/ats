@@ -18,8 +18,9 @@ export async function POST(
   }
 
   const body = (await request.json()) as Partial<AdminOfferCandidatesQueryParams>
+  const cookie = request.headers.get("cookie") ?? undefined
 
-  const data = await refreshAdminOfferCandidatesServer(offerId, body)
+  const data = await refreshAdminOfferCandidatesServer(offerId, body, cookie)
 
   return NextResponse.json(data)
 }

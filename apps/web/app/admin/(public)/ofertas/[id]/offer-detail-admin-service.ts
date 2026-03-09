@@ -290,22 +290,52 @@ export async function getAdminOfferDetailServer(offerId: number, cookie?: string
 
 export async function getAdminOfferCandidatesServer(
   offerId: number,
-  queryInput?: Partial<Record<keyof AdminOfferCandidatesQueryParams, string | number | undefined>>
+  queryInput?: Partial<Record<keyof AdminOfferCandidatesQueryParams, string | number | undefined>>,
+  cookie?: string
 ) {
   const query = normalizeAdminOfferCandidatesQuery(queryInput)
 
-  await new Promise((resolve) => setTimeout(resolve, 350))
-  const candidates = buildCandidatesBase(offerId)
-  return applyCandidateFilters(candidates, query)
+  try {
+    const searchParams = new URLSearchParams()
+    searchParams.set("search", query.search)
+    searchParams.set("technical_min", String(query.technical_min))
+    searchParams.set("technical_max", String(query.technical_max))
+    searchParams.set("soft_min", String(query.soft_min))
+    searchParams.set("soft_max", String(query.soft_max))
+    searchParams.set("culture_min", String(query.culture_min))
+    searchParams.set("culture_max", String(query.culture_max))
+    searchParams.set("final_min", String(query.final_min))
+    searchParams.set("final_max", String(query.final_max))
+    searchParams.set("status", query.status)
+    searchParams.set("page", String(query.page))
+    searchParams.set("pageSize", String(query.pageSize))
+
+    const response = await fetch(
+      `${backendApiUrl}/api/admin/ofertas/${offerId}/candidatos?${searchParams.toString()}`,
+      {
+        headers: { ...(cookie ? { cookie } : {}) },
+        cache: "no-store",
+      }
+    )
+
+    if (response.ok) {
+      const payload = await response.json()
+      // NestJS ResponseInterceptor wraps data: { success, data: {...}, timestamp }
+      const result = (payload?.data ?? payload) as AdminOfferCandidatesResponse
+      return result
+    }
+  } catch {
+    // fall through to empty result
+  }
+
+  return { items: [], total: 0, page: query.page, pageSize: query.pageSize }
 }
 
 export async function refreshAdminOfferCandidatesServer(
   offerId: number,
-  queryInput?: Partial<Record<keyof AdminOfferCandidatesQueryParams, string | number | undefined>>
+  queryInput?: Partial<Record<keyof AdminOfferCandidatesQueryParams, string | number | undefined>>,
+  cookie?: string
 ) {
-  const query = normalizeAdminOfferCandidatesQuery(queryInput)
-
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  const refreshedCandidates = remapCandidatesForRefresh(buildCandidatesBase(offerId))
-  return applyCandidateFilters(refreshedCandidates, query)
+  // Refresh is a re-fetch of current live data
+  return getAdminOfferCandidatesServer(offerId, queryInput, cookie)
 }

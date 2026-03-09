@@ -17,6 +17,7 @@ export async function GET(
   }
 
   const url = new URL(request.url)
+  const cookie = request.headers.get("cookie") ?? undefined
 
   const data = await getAdminOfferCandidatesServer(offerId, {
     search: url.searchParams.get("search") ?? undefined,
@@ -31,7 +32,7 @@ export async function GET(
     status: url.searchParams.get("status") ?? undefined,
     page: url.searchParams.get("page") ?? undefined,
     pageSize: url.searchParams.get("pageSize") ?? undefined,
-  })
+  }, cookie)
 
   return NextResponse.json(data)
 }

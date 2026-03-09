@@ -210,7 +210,7 @@ export default async function AdminOfertaDetallePage({
       getAdminOfferDetailServer(offerId, cookie),
       getOfferFormCatalogsServer(),
       getApplicationStatusOptionsServer(),
-      getAdminOfferCandidatesServer(offerId, initialCandidatesQuery),
+      getAdminOfferCandidatesServer(offerId, initialCandidatesQuery, cookie),
     ])
 
   if (!detailResult) {
