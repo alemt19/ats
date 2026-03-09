@@ -19,12 +19,32 @@ model applications {
   status                String?     @default("applied") @db.VarChar(50)
   created_at            DateTime?   @default(now()) @db.Timestamp(6)
   updated_at            DateTime?   @default(now()) @db.Timestamp(6)
+  evaluation_status     evaluation_status_enum? @default(pending)
   candidates            candidates? @relation(fields: [candidate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   jobs                  jobs?       @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   notes                 notes[]
+  similar_jobs          application_similar_jobs[]
 
   @@unique([job_id, candidate_id], map: "applications_job_id_candidate_id_idx")
   @@index([ai_feedback], map: "idx_applications_ai_feedback", type: Gin)
+}
+
+model application_similar_jobs {
+  id                    Int          @id @default(autoincrement())
+  application_id        Int
+  similar_job_id        Int
+  similarity_score      Float
+  match_technical_score Float?
+  match_soft_score      Float?
+  match_culture_score   Float?
+  overall_score         Float?
+  rank                  Int
+  created_at            DateTime?    @default(now()) @db.Timestamp(6)
+  applications          applications @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  jobs                  jobs         @relation(fields: [similar_job_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([application_id, similar_job_id])
+  @@index([application_id], map: "idx_similar_jobs_application_id")
 }
 
 model candidate_attributes {
@@ -156,9 +176,10 @@ model jobs {
   weight_culture    Float?                 @default(0.3)
   created_at        DateTime?              @default(now()) @db.Timestamp(6)
   updated_at        DateTime?              @default(now()) @db.Timestamp(6)
-  applications      applications[]
-  job_attributes    job_attributes[]
-  job_categories    job_categories?        @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  applications              applications[]
+  application_similar_jobs  application_similar_jobs[]
+  job_attributes            job_attributes[]
+  job_categories            job_categories?        @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   companies         companies?             @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([summary_embedding], map: "idx_jobs_summary_embedding")
@@ -280,6 +301,13 @@ enum attribute_type_enum {
   hard_skill
   soft_skill
   value
+}
+
+enum evaluation_status_enum {
+  pending
+  processing
+  completed
+  failed
 }
 
 enum colaboration_style_enum {
