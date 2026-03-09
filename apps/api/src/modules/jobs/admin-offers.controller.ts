@@ -16,7 +16,7 @@ import {
 import type { Request } from 'express';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { BetterAuthGuard } from '../auth/auth.guard';
-import { AdminOffersQueryDto, CreateAdminOfferDto } from './dto/jobs.dto';
+import { AdminOffersQueryDto, CreateAdminOfferDto, AdminOfferCandidatesQueryDto } from './dto/jobs.dto';
 import { JobsService } from './jobs.service';
 
 @Controller('admin/ofertas')
@@ -93,5 +93,29 @@ export class AdminOffersController {
     this.assertAdminScope(request);
     const userId = this.getUserIdFromSession(session);
     return this.jobsService.updateAdminOffer(userId, id, dto);
+  }
+
+  @Get(':id/candidatos')
+  getOfferCandidates(
+    @CurrentUser() session: unknown,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Query() query: AdminOfferCandidatesQueryDto,
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.jobsService.getAdminOfferCandidates(userId, id, query);
+  }
+
+  @Get(':id/candidatos/:applicationId')
+  getOfferCandidateDetail(
+    @CurrentUser() session: unknown,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('applicationId', ParseIntPipe) applicationId: number,
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.jobsService.getAdminOfferCandidateDetail(userId, id, applicationId);
   }
 }

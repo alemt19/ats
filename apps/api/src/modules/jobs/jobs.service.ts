@@ -7,8 +7,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.producer';
+import { JobSummaryQueueProducer } from '../../common/queues/job-summary-queue.producer';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AdminOffersQueryDto, CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
+import { AdminOfferCandidatesQueryDto, AdminOffersQueryDto, CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
 import type { Prisma } from '../../generated/prisma/client';
 import type { job_status_enum } from '../../generated/prisma/enums';
 
@@ -46,6 +47,7 @@ export class JobsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingsQueueProducer: EmbeddingsQueueProducer,
+    private readonly jobSummaryQueueProducer: JobSummaryQueueProducer,
   ) {}
 
   private normalizeAttributeNames(values: string[]) {
@@ -375,6 +377,10 @@ export class JobsService {
         name: attribute.name,
       })),
     );
+
+    await this.jobSummaryQueueProducer.enqueueJobSummaryEmbedding({
+      jobId: createdJob.id,
+    });
 
     return createdJob;
   }
@@ -778,6 +784,10 @@ export class JobsService {
       })),
     );
 
+    await this.jobSummaryQueueProducer.enqueueJobSummaryEmbedding({
+      jobId: offerId,
+    });
+
     return this.getAdminOfferDetail(userId, offerId);
   }
 
@@ -1055,5 +1065,197 @@ export class JobsService {
     return this.prisma.jobs.delete({
       where: { id },
     });
+  }
+
+  /**
+   * List candidates who applied to an admin offer with AI scores and filters
+   */
+  async getAdminOfferCandidates(userId: string, offerId: number, query: AdminOfferCandidatesQueryDto) {
+    const admin = await this.getCurrentAdmin(userId);
+
+    const jobExists = await this.prisma.jobs.findFirst({
+      where: { id: offerId, company_id: admin.company_id },
+      select: { id: true },
+    });
+    if (!jobExists) throw new NotFoundException('Oferta no encontrada');
+
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 8;
+    const search = (query.search ?? '').trim().toLowerCase();
+    const status = (query.status ?? 'all').trim();
+
+    // Score ranges arrive as 0-100 percentages; DB stores 0-1 floats
+    const techMin = (query.technical_min ?? 0) / 100;
+    const techMax = (query.technical_max ?? 100) / 100;
+    const softMin = (query.soft_min ?? 0) / 100;
+    const softMax = (query.soft_max ?? 100) / 100;
+    const cultMin = (query.culture_min ?? 0) / 100;
+    const cultMax = (query.culture_max ?? 100) / 100;
+    const finalMin = (query.final_min ?? 0) / 100;
+    const finalMax = (query.final_max ?? 100) / 100;
+
+    const isDefaultRange = (min: number, max: number) => min === 0 && max === 1;
+
+    const where: Prisma.applicationsWhereInput = {
+      job_id: offerId,
+      ...(status !== 'all' ? { status } : {}),
+      ...(search
+        ? {
+            candidates: {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { lastname: { contains: search, mode: 'insensitive' } },
+              ],
+            },
+          }
+        : {}),
+      ...(isDefaultRange(techMin, techMax) ? {} : { match_technical_score: { gte: techMin, lte: techMax } }),
+      ...(isDefaultRange(softMin, softMax) ? {} : { match_soft_score: { gte: softMin, lte: softMax } }),
+      ...(isDefaultRange(cultMin, cultMax) ? {} : { match_culture_score: { gte: cultMin, lte: cultMax } }),
+      ...(isDefaultRange(finalMin, finalMax) ? {} : { overall_score: { gte: finalMin, lte: finalMax } }),
+    };
+
+    const [total, items] = await Promise.all([
+      this.prisma.applications.count({ where }),
+      this.prisma.applications.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        orderBy: { overall_score: 'desc' },
+        select: {
+          id: true,
+          candidate_id: true,
+          match_technical_score: true,
+          match_soft_score: true,
+          match_culture_score: true,
+          overall_score: true,
+          status: true,
+          candidates: {
+            select: { name: true, lastname: true },
+          },
+        },
+      }),
+    ]);
+
+    const toPercent = (val: number | null) => Math.round((val ?? 0) * 100);
+
+    return {
+      items: items.map((app) => ({
+        application_id: String(app.id),
+        candidate_id: String(app.candidate_id ?? ''),
+        first_name: app.candidates?.name ?? '',
+        last_name: app.candidates?.lastname ?? '',
+        technical_score: toPercent(app.match_technical_score),
+        soft_score: toPercent(app.match_soft_score),
+        culture_score: toPercent(app.match_culture_score),
+        final_score: toPercent(app.overall_score),
+        status: app.status ?? 'applied',
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  /**
+   * Get full detail of a candidate-application for admin review
+   */
+  async getAdminOfferCandidateDetail(userId: string, offerId: number, applicationId: number) {
+    const admin = await this.getCurrentAdmin(userId);
+
+    const application = await this.prisma.applications.findFirst({
+      where: {
+        id: applicationId,
+        job_id: offerId,
+        jobs: { company_id: admin.company_id },
+      },
+      select: {
+        id: true,
+        status: true,
+        match_technical_score: true,
+        match_soft_score: true,
+        match_culture_score: true,
+        overall_score: true,
+        ai_feedback: true,
+        jobs: { select: { title: true } },
+        candidates: {
+          select: {
+            id: true,
+            name: true,
+            lastname: true,
+            profile_picture: true,
+            phone: true,
+            state: true,
+            country: true,
+            contact_page: true,
+            cv_file_url: true,
+            behavioral_ans_1: true,
+            behavioral_ans_2: true,
+            dress_code: true,
+            collaboration_style: true,
+            work_pace: true,
+            level_of_autonomy: true,
+            dealing_with_management: true,
+            level_of_monitoring: true,
+            user: { select: { email: true } },
+            candidate_attributes: {
+              select: {
+                global_attributes: { select: { name: true, type: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!application) throw new NotFoundException('Aplicación no encontrada');
+    const c = application.candidates;
+    if (!c) throw new NotFoundException('Candidato no encontrado');
+
+    const attrs = c.candidate_attributes.map((ca) => ca.global_attributes).filter(Boolean);
+    const technicalSkills = attrs.filter((a) => a?.type === 'hard_skill').map((a) => a!.name);
+    const softSkills = attrs.filter((a) => a?.type === 'soft_skill').map((a) => a!.name);
+    const values = attrs.filter((a) => a?.type === 'value').map((a) => a!.name);
+
+    const culturalPreferences: Record<string, string> = {};
+    if (c.dress_code) culturalPreferences['dress_code'] = c.dress_code;
+    if (c.collaboration_style) culturalPreferences['collaboration_style'] = c.collaboration_style;
+    if (c.work_pace) culturalPreferences['work_pace'] = c.work_pace;
+    if (c.level_of_autonomy) culturalPreferences['level_of_autonomy'] = c.level_of_autonomy;
+    if (c.dealing_with_management) culturalPreferences['dealing_with_management'] = c.dealing_with_management;
+    if (c.level_of_monitoring) culturalPreferences['level_of_monitoring'] = c.level_of_monitoring;
+
+    const toPercent = (val: number | null) => Math.round((val ?? 0) * 100);
+
+    const aiSummary =
+      application.ai_feedback && typeof application.ai_feedback === 'object'
+        ? ((application.ai_feedback as Record<string, unknown>)['summary'] as string | undefined)
+        : undefined;
+
+    return {
+      candidate_id: c.id,
+      application_id: application.id,
+      name: c.name ?? '',
+      lastname: c.lastname ?? '',
+      profile_picture: c.profile_picture ?? undefined,
+      email: c.user?.email ?? '',
+      phone: c.phone ?? undefined,
+      contact_page: c.contact_page ?? undefined,
+      state: c.state ?? undefined,
+      country: c.country ?? undefined,
+      offer_title: application.jobs?.title ?? '',
+      ai_summary: aiSummary ?? null,
+      application_status: application.status ?? 'applied',
+      technical_score: toPercent(application.match_technical_score),
+      soft_score: toPercent(application.match_soft_score),
+      culture_score: toPercent(application.match_culture_score),
+      technical_skills: technicalSkills,
+      soft_skills: softSkills,
+      values,
+      cultural_preferences: culturalPreferences,
+      cv_url: c.cv_file_url ?? undefined,
+      behavioral_ans_1: c.behavioral_ans_1 ?? '',
+      behavioral_ans_2: c.behavioral_ans_2 ?? '',
+    };
   }
 }

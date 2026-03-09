@@ -62,6 +62,17 @@ export class ApplicationsController {
   }
 
   @UseGuards(BetterAuthGuard)
+  @Get('me')
+  findMyApplications(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+  ) {
+    this.assertCandidateScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.applicationsService.findMyApplications(userId);
+  }
+
+  @UseGuards(BetterAuthGuard)
   @Get('me/:jobId')
   findMyApplicationByJob(
     @CurrentUser() session: any,
@@ -76,6 +87,11 @@ export class ApplicationsController {
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.applicationsService.findOne(id);
+  }
+
+  @Get(':id/similar-jobs')
+  findSimilarJobs(@Param('id', ParseIntPipe) id: number) {
+    return this.applicationsService.findSimilarJobs(id);
   }
 
   @Patch(':id')
