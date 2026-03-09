@@ -41,7 +41,15 @@
       "cache": false,
       "persistent": true
     },
-    "dev:worker": {
+    "worker:embeddings": {
+      "cache": false,
+      "persistent": true
+    },
+    "worker:summary": {
+      "cache": false,
+      "persistent": true
+    },
+    "worker:evaluation": {
       "cache": false,
       "persistent": true
     }
