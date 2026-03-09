@@ -8,6 +8,7 @@ import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 
 type PostularseButtonProps = {
+  jobId: number
   isLoggedIn: boolean
   isCandidate: boolean
   alreadyApplied: boolean
@@ -24,6 +25,7 @@ type ProfileCompletionResponse = {
 }
 
 export default function PostularseButton({
+  jobId,
   isLoggedIn,
   isCandidate,
   alreadyApplied,
@@ -109,7 +111,27 @@ export default function PostularseButton({
         return
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 700))
+      const applyRes = await fetch(`/api/ofertas/${jobId}/aplicar`, {
+        method: "POST",
+        cache: "no-store",
+      })
+
+      if (applyRes.status === 409) {
+        // Already applied — just update local state to reflect that
+        setIsApplied(true)
+        setStatusTechnicalName(appliedStatusTechnicalName)
+        setStatusDisplayName(appliedStatusDisplayName)
+        toast.info("Ya te has postulado a esta oferta")
+        return
+      }
+
+      if (!applyRes.ok) {
+        const payload = await applyRes.json().catch(() => null)
+        const msg = (payload as { message?: string } | null)?.message ?? "No se pudo completar la postulación"
+        toast.error(msg)
+        return
+      }
+
       setIsApplied(true)
       setStatusTechnicalName(appliedStatusTechnicalName)
       setStatusDisplayName(appliedStatusDisplayName)

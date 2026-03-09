@@ -309,6 +309,7 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 					<Separator />
 
 					<PostularseButton
+						jobId={offerId}
 						isLoggedIn={isLoggedIn}
 						isCandidate={isCandidate}
 						alreadyApplied={applicationInfo.alreadyApplied}
