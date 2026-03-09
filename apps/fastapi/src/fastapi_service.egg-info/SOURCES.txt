@@ -5,6 +5,7 @@ src/fastapi_service/config.py
 src/fastapi_service/cv_parser.py
 src/fastapi_service/embedding_worker.py
 src/fastapi_service/environment.py
+src/fastapi_service/job_summary_worker.py
 src/fastapi_service/main.py
 src/fastapi_service/supabase_client.py
 src/fastapi_service/worker.py
@@ -23,6 +24,9 @@ src/fastapi_service/company_values/prompt_builder.py
 src/fastapi_service/company_values/router.py
 src/fastapi_service/company_values/schemas.py
 src/fastapi_service/company_values/service.py
+src/fastapi_service/evaluation/__init__.py
+src/fastapi_service/evaluation/algorithm.py
+src/fastapi_service/evaluation/worker.py
 src/fastapi_service/job_offer_skills/__init__.py
 src/fastapi_service/job_offer_skills/prompt_builder.py
 src/fastapi_service/job_offer_skills/router.py
