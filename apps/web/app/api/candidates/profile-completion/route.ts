@@ -89,7 +89,7 @@ function pickMissingFields(
 }
 
 async function fetchCandidateProfile(cookieHeader: string) {
-  const endpoints = [`${backendApiUrl}/api/candidates/me`, `${backendApiUrl}/candidates/me`]
+  const endpoints = [`${backendApiUrl}/api/candidates/me`]
 
   for (const endpoint of endpoints) {
     try {
@@ -120,10 +120,7 @@ async function fetchCandidateProfile(cookieHeader: string) {
 }
 
 async function fetchCompetenciasValores(cookieHeader: string) {
-  const endpoints = [
-    `${backendApiUrl}/api/candidates/me/competencias-valores`,
-    `${backendApiUrl}/candidates/me/competencias-valores`,
-  ]
+  const endpoints = [`${backendApiUrl}/api/candidates/me/competencias-valores`]
 
   for (const endpoint of endpoints) {
     try {
