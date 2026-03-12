@@ -107,17 +107,57 @@ export default function MisDatosForm({
 
   const normalize = (value: string) => value.trim().toLowerCase()
 
+  const findCountryByStoredValue = (value?: string) => {
+    if (!value) {
+      return undefined
+    }
+
+    return countries.find(
+      (country) => country.id === value || normalize(country.name) === normalize(value)
+    )
+  }
+
+  const findStateByStoredValue = (value?: string, countryId?: string) => {
+    if (!value) {
+      return undefined
+    }
+
+    return states.find((state) => {
+      if (countryId && state.country_id !== countryId) {
+        return false
+      }
+
+      return state.id === value || normalize(state.name) === normalize(value)
+    })
+  }
+
+  const findCityByStoredValue = (value?: string, stateId?: string) => {
+    if (!value) {
+      return undefined
+    }
+
+    return cities.find((city) => {
+      if (stateId && city.state_id !== stateId) {
+        return false
+      }
+
+      return city.id === value || normalize(city.name) === normalize(value)
+    })
+  }
+
   const venezuela = countries.find((country) => normalize(country.name) === "venezuela")
-  const resolvedCountryId = initialProfile.country ?? venezuela?.id ?? ""
+  const resolvedCountry = findCountryByStoredValue(initialProfile.country) ?? venezuela
+  const resolvedCountryId = resolvedCountry?.id ?? ""
   const carabobo = states.find(
     (state) =>
       normalize(state.name) === "carabobo" &&
       (!venezuela || state.country_id === venezuela.id)
   )
-  const resolvedStateId =
-    initialProfile.state ??
-    (resolvedCountryId === (venezuela?.id ?? "") ? carabobo?.id ?? "" : "")
-  const resolvedCountry = countries.find((country) => country.id === resolvedCountryId)
+  const resolvedState =
+    findStateByStoredValue(initialProfile.state, resolvedCountryId) ??
+    (resolvedCountryId === (venezuela?.id ?? "") ? carabobo : undefined)
+  const resolvedStateId = resolvedState?.id ?? ""
+  const resolvedCity = findCityByStoredValue(initialProfile.city, resolvedStateId)
   const resolvedPhone = stripCountryCode(initialProfile.phone ?? "", resolvedCountry?.phonecode)
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
@@ -135,7 +175,7 @@ export default function MisDatosForm({
       birth_date: toDateInputValue(initialProfile.birth_date),
       country: resolvedCountryId,
       state: resolvedStateId,
-      city: initialProfile.city ?? "",
+      city: resolvedCity?.id ?? "",
       address: initialProfile.address ?? "",
       contact_page: initialProfile.contact_page ?? "",
       phone: resolvedPhone,
@@ -199,14 +239,17 @@ export default function MisDatosForm({
 
     const normalizedLocalPhone = stripCountryCode(values.phone, selectedCountry?.phonecode)
 
+    const selectedState = availableStates.find((state) => state.id === values.state)
+    const selectedCity = availableCities.find((city) => city.id === values.city)
+
     const payload = {
       profile_picture: profilePicture,
       name: values.name || null,
       lastname: values.lastname || null,
       birth_date: values.birth_date || null,
-      country: values.country || null,
-      state: values.state || null,
-      city: values.city || null,
+      country: selectedCountry?.name || null,
+      state: selectedState?.name || null,
+      city: selectedCity?.name || null,
       address: values.address || null,
       contact_page: values.contact_page || null,
       phone: normalizedLocalPhone
