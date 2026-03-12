@@ -16,7 +16,7 @@ export default async function AdminConfiguracionPreferenciasCulturalesPage() {
 	const cookie = (await headers()).get("cookie") ?? undefined
 
 	const [cultureCategories, bootstrapData] = await Promise.all([
-		readJsonFile<CulturePreferenceCategory[]>("culture_preference.json"),
+		readJsonFile<CulturePreferenceCategory[]>("culture_preference_company.json"),
 		fetchCompanyConfigBootstrap(userId, accessToken, cookie),
 	])
 

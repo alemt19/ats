@@ -37,7 +37,7 @@ export default async function AdminCandidatoDetallePage({ params }: AdminCandida
 
 	const [candidate, culturePreferenceCatalog] = await Promise.all([
 		getCandidateByIdServer(candidateId),
-		readJsonFile<CulturePreferenceCategory[]>("culture_preference.json").catch(() => []),
+		readJsonFile<CulturePreferenceCategory[]>("culture_preference_candidate.json").catch(() => []),
 	])
 
 	if (!candidate) {

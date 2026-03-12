@@ -50,7 +50,7 @@ export default async function PreferenciasCulturalesPage() {
     const cookie = requestHeaders.get("cookie") ?? ""
 
     const [categories, initialSelections] = await Promise.all([
-        readJsonFile<CulturePreferenceCategory[]>("culture_preference.json"),
+        readJsonFile<CulturePreferenceCategory[]>("culture_preference_candidate.json"),
         fetchCulturePreferencesServer(cookie),
     ])
 

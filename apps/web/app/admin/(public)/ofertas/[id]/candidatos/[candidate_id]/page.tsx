@@ -86,7 +86,7 @@ async function getApplicationStatusOptionsServer() {
 }
 
 async function getCulturePreferenceCatalogServer() {
-	return readJsonFile<CulturePreferenceCategory[]>("culture_preference.json")
+	return readJsonFile<CulturePreferenceCategory[]>("culture_preference_candidate.json")
 }
 
 export default async function CandidateDetailPage({ params }: CandidateDetailPageProps) {
