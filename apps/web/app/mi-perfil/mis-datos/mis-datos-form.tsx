@@ -523,7 +523,7 @@ export default function MisDatosForm({
               name="dni"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>DNI</FormLabel>
+                  <FormLabel>Cedula</FormLabel>
                   <FormControl>
                     <Input placeholder="Documento de identidad" {...field} />
                   </FormControl>

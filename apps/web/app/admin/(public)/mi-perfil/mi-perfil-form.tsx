@@ -292,7 +292,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dni">DNI</Label>
+                <Label htmlFor="dni">Cedula</Label>
                 <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
               </div>
 

@@ -551,7 +551,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dni">DNI</Label>
+                <Label htmlFor="dni">Cedula</Label>
                 <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
               </div>
 

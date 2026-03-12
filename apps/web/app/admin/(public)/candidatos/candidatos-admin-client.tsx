@@ -166,7 +166,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
           <div className="relative w-full max-w-xl">
             <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <Input
-              placeholder="Buscar por nombre, correo o DNI"
+              placeholder="Buscar por nombre, correo o cedula"
               className="pl-9"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
@@ -182,7 +182,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Correo</TableHead>
-                <TableHead>DNI</TableHead>
+                <TableHead>Cedula</TableHead>
                 <TableHead className="w-20 text-right">Ver</TableHead>
               </TableRow>
             </TableHeader>
