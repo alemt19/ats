@@ -314,18 +314,21 @@ enum colaboration_style_enum {
   individual
   mixed
   highly_collaborative
+  indifferent
 }
 
 enum dealing_with_management_enum {
   strictly_professional
   friendly_and_approachable
   nearby
+  indifferent
 }
 
 enum dress_code_enum {
   formal
   semi_formal
   casual
+  indifferent
 }
 
 enum employment_enum {
@@ -346,6 +349,7 @@ enum level_of_autonomy_enum {
   high_control
   balanced
   total_freedom
+  indifferent
 }
 
 enum level_of_monitoring_enum {
@@ -354,12 +358,14 @@ enum level_of_monitoring_enum {
   weekly_goals
   biweekly_goals
   total_trust
+  indifferent
 }
 
 enum work_pace_enum {
   slow
   moderate
   accelerated
+  indifferent
 }
 
 enum workplace_enum {

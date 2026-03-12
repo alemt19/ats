@@ -93,32 +93,32 @@ export class CandidatesService {
       UPDATE "candidates"
       SET
         "dress_code" = CASE
-          WHEN "dress_code" IS NULL OR "dress_code"::text IN ('formal', 'semi_formal', 'casual')
+          WHEN "dress_code" IS NULL OR "dress_code"::text IN ('formal', 'semi_formal', 'casual', 'indifferent')
             THEN "dress_code"
           ELSE NULL
         END,
         "collaboration_style" = CASE
-          WHEN "collaboration_style" IS NULL OR "collaboration_style"::text IN ('individual', 'mixed', 'highly_collaborative')
+          WHEN "collaboration_style" IS NULL OR "collaboration_style"::text IN ('individual', 'mixed', 'highly_collaborative', 'indifferent')
             THEN "collaboration_style"
           ELSE NULL
         END,
         "work_pace" = CASE
-          WHEN "work_pace" IS NULL OR "work_pace"::text IN ('slow', 'moderate', 'accelerated')
+          WHEN "work_pace" IS NULL OR "work_pace"::text IN ('slow', 'moderate', 'accelerated', 'indifferent')
             THEN "work_pace"
           ELSE NULL
         END,
         "level_of_autonomy" = CASE
-          WHEN "level_of_autonomy" IS NULL OR "level_of_autonomy"::text IN ('high_control', 'balanced', 'total_freedom')
+          WHEN "level_of_autonomy" IS NULL OR "level_of_autonomy"::text IN ('high_control', 'balanced', 'total_freedom', 'indifferent')
             THEN "level_of_autonomy"
           ELSE NULL
         END,
         "dealing_with_management" = CASE
-          WHEN "dealing_with_management" IS NULL OR "dealing_with_management"::text IN ('strictly_professional', 'friendly_and_approachable', 'nearby')
+          WHEN "dealing_with_management" IS NULL OR "dealing_with_management"::text IN ('strictly_professional', 'friendly_and_approachable', 'nearby', 'indifferent')
             THEN "dealing_with_management"
           ELSE NULL
         END,
         "level_of_monitoring" = CASE
-          WHEN "level_of_monitoring" IS NULL OR "level_of_monitoring"::text IN ('daily_monitoring', 'frequent_monitoring', 'weekly_goals', 'biweekly_goals', 'total_trust')
+          WHEN "level_of_monitoring" IS NULL OR "level_of_monitoring"::text IN ('daily_monitoring', 'frequent_monitoring', 'weekly_goals', 'biweekly_goals', 'total_trust', 'indifferent')
             THEN "level_of_monitoring"
           ELSE NULL
         END
