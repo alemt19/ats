@@ -1,5 +1,4 @@
 import asyncio
-import io
 import os
 from dataclasses import dataclass
 from functools import lru_cache
@@ -9,8 +8,8 @@ from urllib.request import Request, urlopen
 import psycopg
 from google import genai
 from google.genai import types
-from pypdf import PdfReader
 
+from fastapi_service.cv_parser import extract_text_from_cv, resolve_cv_format
 from fastapi_service.environment import load_environment
 
 from .prompt_builder import build_candidate_profile_prompt
@@ -79,19 +78,7 @@ class CandidateProfileSuggestionService:
 
         return value.strip()
 
-    def _extract_pdf_text(self, content: bytes) -> str:
-        reader = PdfReader(io.BytesIO(content))
-        pages_text: list[str] = []
-
-        for page in reader.pages:
-            page_text = page.extract_text() or ""
-            clean = page_text.strip()
-            if clean:
-                pages_text.append(clean)
-
-        return "\n\n".join(pages_text).strip()
-
-    def _download_pdf_content(self, url: str) -> bytes:
+    def _download_file_content(self, url: str) -> bytes:
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
             raise SuggestionGenerationError("La URL del CV no es valida")
@@ -103,7 +90,7 @@ class CandidateProfileSuggestionService:
             },
         )
         with urlopen(request, timeout=20) as response:  # nosec B310
-            return response.read()
+            return bytes(response.read())
 
     def _normalize_terms(self, values: list[str]) -> list[str]:
         seen: set[str] = set()
@@ -130,19 +117,45 @@ class CandidateProfileSuggestionService:
         behavioral_ans_1: str,
         behavioral_ans_2: str,
         cv_file_content: bytes | None,
+        cv_file_name: str | None,
+        cv_file_content_type: str | None,
         cv_existing_url: str | None,
     ) -> CandidateProfileSuggestionResponse:
         cv_text = ""
 
         if cv_file_content:
-            cv_text = await asyncio.to_thread(self._extract_pdf_text, cv_file_content)
+            try:
+                cv_text = await asyncio.to_thread(
+                    extract_text_from_cv,
+                    cv_file_content,
+                    filename=cv_file_name,
+                    content_type=cv_file_content_type,
+                )
+            except ValueError as error:
+                raise SuggestionGenerationError(
+                    "Solo se permite CV en PDF o DOCX para sugerencias"
+                ) from error
         elif cv_existing_url:
             db_cv_text = await asyncio.to_thread(self._get_candidate_cv_text, user_id)
             if db_cv_text:
                 cv_text = db_cv_text
             else:
-                pdf_content = await asyncio.to_thread(self._download_pdf_content, cv_existing_url)
-                cv_text = await asyncio.to_thread(self._extract_pdf_text, pdf_content)
+                try:
+                    cv_format = resolve_cv_format(filename=cv_existing_url)
+                except ValueError as error:
+                    raise SuggestionGenerationError(
+                        "La URL del CV debe apuntar a un archivo PDF o DOCX"
+                    ) from error
+
+                file_content = await asyncio.to_thread(self._download_file_content, cv_existing_url)
+                cv_text = await asyncio.to_thread(
+                    extract_text_from_cv,
+                    file_content,
+                    filename=cv_existing_url,
+                    content_type="application/pdf"
+                    if cv_format == "pdf"
+                    else "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                )
 
         if not cv_text:
             raise SuggestionGenerationError("No se pudo obtener texto del CV para sugerir")

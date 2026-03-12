@@ -435,16 +435,6 @@ export default function CompetenciasValoresForm({
     setIsGeneratingSuggestions(true)
 
     try {
-      if (cvFile && getCvType(cvFile.name) !== "pdf") {
-        toast.error("Para sugerir habilidades y valores, el CV cargado debe ser PDF")
-        return
-      }
-
-      if (!cvFile && initialCvUrl && getCvType(initialCvUrl) !== "pdf") {
-        toast.error("Para sugerir habilidades y valores, el CV guardado debe ser PDF")
-        return
-      }
-
       const formData = new FormData()
       formData.append("user_id", userId)
       formData.append("behavioral_question_1", behavioralQuestion1)

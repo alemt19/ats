@@ -43,21 +43,29 @@ async def suggest_skills_values(
         )
 
     cv_content: bytes | None = None
+    cv_filename: str | None = None
+    cv_content_type: str | None = None
     if cv is not None:
         content_type = (cv.content_type or "").lower()
-        if content_type and content_type != "application/pdf":
+        allowed_content_types = {
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        }
+        if content_type and content_type not in allowed_content_types:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solo se permite CV en PDF para sugerencias",
+                detail="Solo se permite CV en PDF o DOCX para sugerencias",
             )
 
         filename = (cv.filename or "").lower()
-        if filename and not filename.endswith(".pdf"):
+        if filename and not (filename.endswith(".pdf") or filename.endswith(".docx")):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Solo se permite CV en PDF para sugerencias",
+                detail="Solo se permite CV en PDF o DOCX para sugerencias",
             )
 
+        cv_filename = cv.filename
+        cv_content_type = cv.content_type
         cv_content = await cv.read()
 
     if cv_content is None and not (cv_existing_url and cv_existing_url.strip()):
@@ -74,6 +82,8 @@ async def suggest_skills_values(
             behavioral_ans_1=behavioral_ans_1.strip(),
             behavioral_ans_2=behavioral_ans_2.strip(),
             cv_file_content=cv_content,
+            cv_file_name=cv_filename,
+            cv_file_content_type=cv_content_type,
             cv_existing_url=cv_existing_url.strip() if cv_existing_url else None,
         )
     except SuggestionConfigurationError as error:

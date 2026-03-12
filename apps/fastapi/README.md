@@ -65,7 +65,7 @@ The service listens on port 8000 by default.
   - `behavioral_question_2: string`
   - `behavioral_ans_1: string`
   - `behavioral_ans_2: string`
-  - `cv: file (.pdf)` (optional if `cv_existing_url` exists)
+  - `cv: file (.pdf | .docx)` (optional if `cv_existing_url` exists)
   - `cv_existing_url: string` (optional if `cv` exists)
 - Response:
   - `technical_skills: string[]`

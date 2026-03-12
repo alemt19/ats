@@ -5,7 +5,7 @@ from typing import Any
 from bullmq import Worker
 
 from .config import load_supabase_config, load_worker_config
-from .cv_parser import extract_text_from_pdf
+from .cv_parser import extract_text_from_cv
 from .supabase_client import get_supabase_client
 
 QUEUE_NAME = "cv-parse"
@@ -24,13 +24,20 @@ def _update_candidate_cv_text(candidate_id: int, text: str) -> None:
 
 async def process(job: Any, _job_token: str) -> dict[str, str]:
     data = job.data or {}
-    candidate_id = int(data.get("candidate_id"))
-    storage_path = data.get("storage_path")
-    if not storage_path or not candidate_id:
+    raw_candidate_id = data.get("candidate_id")
+    raw_storage_path = data.get("storage_path")
+
+    if raw_candidate_id is None or raw_storage_path is None:
         raise ValueError("candidate_id and storage_path are required")
 
-    pdf_bytes = _download_cv(storage_path)
-    text = extract_text_from_pdf(pdf_bytes)
+    candidate_id = int(raw_candidate_id)
+    storage_path = str(raw_storage_path)
+
+    if not storage_path or candidate_id <= 0:
+        raise ValueError("candidate_id and storage_path are required")
+
+    file_bytes = _download_cv(storage_path)
+    text = extract_text_from_cv(file_bytes, filename=storage_path)
     _update_candidate_cv_text(candidate_id, text)
 
     return {"status": "ok", "candidate_id": str(candidate_id)}

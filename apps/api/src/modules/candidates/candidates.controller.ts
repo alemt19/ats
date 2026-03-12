@@ -167,7 +167,31 @@ export class CandidatesController {
 	}
 
 	@Post(':id/cv')
-	@UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+	@UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 10 * 1024 * 1024,
+      },
+      fileFilter: (
+        _req: Request,
+        file: Express.Multer.File,
+        callback: (error: Error | null, acceptFile: boolean) => void,
+      ) => {
+        const isPdf =
+          file.mimetype === 'application/pdf' || file.originalname.toLowerCase().endsWith('.pdf');
+        const isDocx =
+          file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+          file.originalname.toLowerCase().endsWith('.docx');
+
+        if (!isPdf && !isDocx) {
+          return callback(new BadRequestException('Only PDF or DOCX files are allowed'), false);
+        }
+
+        callback(null, true);
+      },
+    }),
+  )
 	uploadCv(
 		@Param('id', ParseIntPipe) id: number,
 		@UploadedFile() file: Express.Multer.File,
