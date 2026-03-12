@@ -21,6 +21,11 @@ type JobParameterOption = {
   display_name: string
 }
 
+type SkillItem = {
+  name: string
+  is_mandatory: boolean
+}
+
 type CategoryOption = {
   id: number
   name: string
@@ -56,6 +61,8 @@ export type CrearOfertaFormValues = {
   category: string
   soft_skills: string[]
   technical_skills: string[]
+  mandatory_soft_skills: string[]
+  mandatory_technical_skills: string[]
 }
 
 type CrearOfertaFormProps = {
@@ -81,7 +88,9 @@ type MultiDatalistFieldProps = {
   placeholder: string
   options: string[]
   selectedValues: string[]
+  mandatoryValues: string[]
   onChangeValues: (values: string[]) => void
+  onToggleMandatory: (value: string) => void
   suggestionItems?: string[]
   onAddSuggestion?: (value: string) => void
   onAddAllSuggestions?: () => void
@@ -146,7 +155,9 @@ function MultiDatalistField({
   placeholder,
   options,
   selectedValues,
+  mandatoryValues,
   onChangeValues,
+  onToggleMandatory,
   suggestionItems = [],
   onAddSuggestion,
   onAddAllSuggestions,
@@ -252,9 +263,20 @@ function MultiDatalistField({
           selectedValues.map((value) => (
             <span
               key={value}
-              className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm"
+              className="inline-flex items-center gap-2 rounded-md border bg-muted px-2 py-1 text-sm"
             >
-              {value}
+              <span>{value}</span>
+              <Button
+                type="button"
+                variant={mandatoryValues.some((item) => normalizeValue(item) === normalizeValue(value)) ? "default" : "outline"}
+                size="xs"
+                disabled={disabled}
+                onClick={() => onToggleMandatory(value)}
+              >
+                {mandatoryValues.some((item) => normalizeValue(item) === normalizeValue(value))
+                  ? "Obligatoria"
+                  : "Estándar"}
+              </Button>
               <Button
                 type="button"
                 variant="ghost"
@@ -354,6 +376,8 @@ export default function CrearOfertaForm({
       category: initialValues?.category ?? String(categories[0]?.id ?? ""),
       soft_skills: initialValues?.soft_skills ?? [],
       technical_skills: initialValues?.technical_skills ?? [],
+      mandatory_soft_skills: initialValues?.mandatory_soft_skills ?? [],
+      mandatory_technical_skills: initialValues?.mandatory_technical_skills ?? [],
     }),
     [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, mode, workplaceTypes]
   )
@@ -382,6 +406,8 @@ export default function CrearOfertaForm({
   const category = form.watch("category")
   const softSkills = form.watch("soft_skills")
   const technicalSkills = form.watch("technical_skills")
+  const mandatorySoftSkills = form.watch("mandatory_soft_skills")
+  const mandatoryTechnicalSkills = form.watch("mandatory_technical_skills")
 
   const technicalWeightValue = parseFloatOrNull(weightTechnical)
   const softWeightValue = parseFloatOrNull(weightSoft)
@@ -423,7 +449,41 @@ export default function CrearOfertaForm({
 
   const setMultiFieldValue = React.useCallback(
     (fieldName: MultiFieldName, values: string[]) => {
-      form.setValue(fieldName, dedupe(values), { shouldDirty: true, shouldValidate: true })
+      const dedupedValues = dedupe(values)
+      form.setValue(fieldName, dedupedValues, { shouldDirty: true, shouldValidate: true })
+
+      const mandatoryFieldName =
+        fieldName === "technical_skills" ? "mandatory_technical_skills" : "mandatory_soft_skills"
+      const currentMandatoryValues = form.getValues(mandatoryFieldName)
+      form.setValue(
+        mandatoryFieldName,
+        currentMandatoryValues.filter((value) =>
+          dedupedValues.some((selectedValue) => normalizeValue(selectedValue) === normalizeValue(value))
+        ),
+        { shouldDirty: true, shouldValidate: true }
+      )
+    },
+    [form]
+  )
+
+  const toggleMandatoryValue = React.useCallback(
+    (fieldName: MultiFieldName, value: string) => {
+      const mandatoryFieldName =
+        fieldName === "technical_skills" ? "mandatory_technical_skills" : "mandatory_soft_skills"
+      const currentMandatoryValues = form.getValues(mandatoryFieldName)
+      const exists = currentMandatoryValues.some(
+        (currentValue) => normalizeValue(currentValue) === normalizeValue(value)
+      )
+
+      form.setValue(
+        mandatoryFieldName,
+        exists
+          ? currentMandatoryValues.filter(
+              (currentValue) => normalizeValue(currentValue) !== normalizeValue(value)
+            )
+          : [...currentMandatoryValues, value],
+        { shouldDirty: true, shouldValidate: true }
+      )
     },
     [form]
   )
@@ -520,6 +580,18 @@ export default function CrearOfertaForm({
       category_id: categoryId,
       technical_skills: dedupe(values.technical_skills),
       soft_skills: dedupe(values.soft_skills),
+      technical_skill_items: dedupe(values.technical_skills).map((name) => ({
+        name,
+        is_mandatory: values.mandatory_technical_skills.some(
+          (mandatoryValue) => normalizeValue(mandatoryValue) === normalizeValue(name)
+        ),
+      })),
+      soft_skill_items: dedupe(values.soft_skills).map((name) => ({
+        name,
+        is_mandatory: values.mandatory_soft_skills.some(
+          (mandatoryValue) => normalizeValue(mandatoryValue) === normalizeValue(name)
+        ),
+      })),
     }
 
     if (mode === "edit" && persistedStatus !== "draft" && payload.status === "draft") {
@@ -989,7 +1061,9 @@ export default function CrearOfertaForm({
                   placeholder="Selecciona o escribe una habilidad técnica"
                   options={catalogs.technicalSkillOptions}
                   selectedValues={technicalSkills}
+                  mandatoryValues={mandatoryTechnicalSkills}
                   onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
+                  onToggleMandatory={(value) => toggleMandatoryValue("technical_skills", value)}
                   suggestionItems={suggestions?.technical_skills ?? []}
                   onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
                   onAddAllSuggestions={() =>
@@ -1004,7 +1078,9 @@ export default function CrearOfertaForm({
                   placeholder="Selecciona o escribe una habilidad blanda"
                   options={catalogs.softSkillOptions}
                   selectedValues={softSkills}
+                  mandatoryValues={mandatorySoftSkills}
                   onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
+                  onToggleMandatory={(value) => toggleMandatoryValue("soft_skills", value)}
                   suggestionItems={suggestions?.soft_skills ?? []}
                   onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
                   onAddAllSuggestions={() =>

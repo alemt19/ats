@@ -21,6 +21,24 @@ const CreateAdminOfferSchema = CreateJobSchema.omit({
 	state: true,
 	summary: true,
 }).extend({
+	technical_skill_items: z
+		.array(
+			z.object({
+				name: z.string().trim().min(1),
+				is_mandatory: z.boolean().optional().default(false),
+			})
+		)
+		.optional()
+		.default([]),
+	soft_skill_items: z
+		.array(
+			z.object({
+				name: z.string().trim().min(1),
+				is_mandatory: z.boolean().optional().default(false),
+			})
+		)
+		.optional()
+		.default([]),
 	status: JobStatusSchema.optional(),
 	state: z.string().trim().optional(),
 	summary: z.string().trim().optional(),

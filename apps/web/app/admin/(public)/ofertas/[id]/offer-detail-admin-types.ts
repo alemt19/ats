@@ -22,6 +22,8 @@ export type AdminOfferDetail = {
   category: string
   technical_skills: string[]
   soft_skills: string[]
+  technical_skill_items: Array<{ name: string; is_mandatory: boolean }>
+  soft_skill_items: Array<{ name: string; is_mandatory: boolean }>
   published_at: string
   candidates_count: number
 }

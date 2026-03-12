@@ -15,6 +15,11 @@ import type { job_status_enum } from '../../generated/prisma/enums';
 
 type JobAttributeType = 'hard_skill' | 'soft_skill';
 
+type AdminSkillItemInput = {
+  name: string;
+  is_mandatory?: boolean;
+};
+
 type AdminOfferRecord = {
   id: number;
   title: string;
@@ -34,6 +39,7 @@ type AdminOfferRecord = {
   category_id: number | null;
   job_categories: { id: number; name: string | null } | null;
   job_attributes: Array<{
+    is_mandatory: boolean | null;
     global_attributes: {
       name: string;
       type: 'hard_skill' | 'soft_skill' | 'value' | null;
@@ -96,6 +102,68 @@ export class JobsService {
     return valuesA.every((value, index) => value === valuesB[index]);
   }
 
+  private normalizeAdminSkillItems(
+    items: AdminSkillItemInput[] | undefined,
+    fallbackNames: string[] | undefined,
+  ) {
+    const normalizedMap = new Map<string, { name: string; is_mandatory: boolean }>();
+
+    for (const item of items ?? []) {
+      const cleanName = String(item.name).trim();
+      const normalizedName = cleanName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('es');
+
+      if (!cleanName || !normalizedName) {
+        continue;
+      }
+
+      const existing = normalizedMap.get(normalizedName);
+      normalizedMap.set(normalizedName, {
+        name: existing?.name ?? cleanName,
+        is_mandatory: Boolean(existing?.is_mandatory || item.is_mandatory),
+      });
+    }
+
+    for (const fallbackName of fallbackNames ?? []) {
+      const cleanName = String(fallbackName).trim();
+      const normalizedName = cleanName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('es');
+
+      if (!cleanName || !normalizedName || normalizedMap.has(normalizedName)) {
+        continue;
+      }
+
+      normalizedMap.set(normalizedName, {
+        name: cleanName,
+        is_mandatory: false,
+      });
+    }
+
+    return Array.from(normalizedMap.values()).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  }
+
+  private areNormalizedSkillItemsEqual(
+    itemsA: Array<{ name: string; is_mandatory: boolean }>,
+    itemsB: Array<{ name: string; is_mandatory: boolean }>,
+  ) {
+    if (itemsA.length !== itemsB.length) {
+      return false;
+    }
+
+    return itemsA.every((item, index) => {
+      const other = itemsB[index];
+      if (!other) {
+        return false;
+      }
+
+      return item.name === other.name && item.is_mandatory === other.is_mandatory;
+    });
+  }
+
   private getStatusDisplayName(status: string) {
     switch (status) {
       case 'draft':
@@ -140,21 +208,27 @@ export class JobsService {
   }
 
   private toAdminOfferDetailPayload(job: AdminOfferRecord) {
-    const technicalSkills = job.job_attributes
-      .map((link) => link.global_attributes)
+    const technicalSkillItems = job.job_attributes
       .filter(
-        (attribute): attribute is { name: string; type: 'hard_skill' } =>
-          Boolean(attribute?.name && attribute.type === 'hard_skill'),
+        (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'hard_skill' } } =>
+          Boolean(link.global_attributes?.name && link.global_attributes.type === 'hard_skill'),
       )
-      .map((attribute) => attribute.name);
+      .map((link) => ({
+        name: link.global_attributes.name,
+        is_mandatory: Boolean(link.is_mandatory),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
-    const softSkills = job.job_attributes
-      .map((link) => link.global_attributes)
+    const softSkillItems = job.job_attributes
       .filter(
-        (attribute): attribute is { name: string; type: 'soft_skill' } =>
-          Boolean(attribute?.name && attribute.type === 'soft_skill'),
+        (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'soft_skill' } } =>
+          Boolean(link.global_attributes?.name && link.global_attributes.type === 'soft_skill'),
       )
-      .map((attribute) => attribute.name);
+      .map((link) => ({
+        name: link.global_attributes.name,
+        is_mandatory: Boolean(link.is_mandatory),
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
     return {
       offer: {
@@ -174,8 +248,10 @@ export class JobsService {
         weight_culture: job.weight_culture ?? 0,
         category_id: job.category_id ?? 0,
         category: job.job_categories?.name?.trim() ?? '',
-        technical_skills: technicalSkills,
-        soft_skills: softSkills,
+        technical_skills: technicalSkillItems.map((item) => item.name),
+        soft_skills: softSkillItems.map((item) => item.name),
+        technical_skill_items: technicalSkillItems,
+        soft_skill_items: softSkillItems,
         published_at: (job.created_at ?? new Date()).toISOString(),
         candidates_count: job._count.applications,
       },
@@ -216,6 +292,7 @@ export class JobsService {
         },
         job_attributes: {
           select: {
+            is_mandatory: true,
             global_attributes: {
               select: {
                 name: true,
@@ -296,25 +373,25 @@ export class JobsService {
       throw new BadRequestException('La categoria seleccionada no existe');
     }
 
-    const groupedByType: Record<JobAttributeType, string[]> = {
-      hard_skill: this.normalizeAttributeNames(dto.technical_skills ?? []),
-      soft_skill: this.normalizeAttributeNames(dto.soft_skills ?? []),
+    const groupedByType: Record<JobAttributeType, Array<{ name: string; is_mandatory: boolean }>> = {
+      hard_skill: this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills),
+      soft_skill: this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills),
     };
 
-    const selectedAttributeIds: number[] = [];
+    const selectedAttributes: Array<{ attribute_id: number; is_mandatory: boolean }> = [];
     const createdAttributes: Array<{ id: number; name: string }> = [];
 
     for (const [type, names] of Object.entries(groupedByType) as Array<
-      [JobAttributeType, string[]]
+      [JobAttributeType, Array<{ name: string; is_mandatory: boolean }>]
     >) {
-      for (const name of names) {
-        let attribute = await this.findGlobalAttributeByNameInsensitive(name, type);
+      for (const item of names) {
+        let attribute = await this.findGlobalAttributeByNameInsensitive(item.name, type);
 
         if (!attribute) {
           try {
             attribute = await this.prisma.global_attributes.create({
               data: {
-                name,
+                name: item.name,
                 type,
               },
               select: {
@@ -325,7 +402,7 @@ export class JobsService {
 
             createdAttributes.push(attribute);
           } catch (error) {
-            attribute = await this.findGlobalAttributeByNameInsensitive(name, type);
+            attribute = await this.findGlobalAttributeByNameInsensitive(item.name, type);
 
             if (!attribute) {
               throw error;
@@ -333,11 +410,16 @@ export class JobsService {
           }
         }
 
-        selectedAttributeIds.push(attribute.id);
+        selectedAttributes.push({
+          attribute_id: attribute.id,
+          is_mandatory: item.is_mandatory,
+        });
       }
     }
 
-    const uniqueAttributeIds = Array.from(new Set(selectedAttributeIds));
+    const uniqueSelectedAttributes = Array.from(
+      new Map(selectedAttributes.map((item) => [item.attribute_id, item])).values(),
+    );
 
     const createdJob = await this.prisma.$transaction(async (tx) => {
       const job = await tx.jobs.create({
@@ -361,12 +443,12 @@ export class JobsService {
         },
       });
 
-      if (uniqueAttributeIds.length > 0) {
+      if (uniqueSelectedAttributes.length > 0) {
         await tx.job_attributes.createMany({
-          data: uniqueAttributeIds.map((attributeId) => ({
+          data: uniqueSelectedAttributes.map((item) => ({
             job_id: job.id,
-            attribute_id: attributeId,
-            is_mandatory: false,
+            attribute_id: item.attribute_id,
+            is_mandatory: item.is_mandatory,
           })),
           skipDuplicates: true,
         });
@@ -643,28 +725,34 @@ export class JobsService {
     }
 
     if (currentStatus !== 'draft') {
-      const currentTechnicalSkills = this.normalizeAttributeNames(
+      const currentTechnicalSkills = this.normalizeAdminSkillItems(
         existingOffer.job_attributes
-          .map((link) => link.global_attributes)
           .filter(
-            (attribute): attribute is { name: string; type: 'hard_skill' } =>
-              Boolean(attribute?.name && attribute.type === 'hard_skill'),
+            (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'hard_skill' } } =>
+              Boolean(link.global_attributes?.name && link.global_attributes.type === 'hard_skill'),
           )
-          .map((attribute) => attribute.name),
+          .map((link) => ({
+            name: link.global_attributes.name,
+            is_mandatory: Boolean(link.is_mandatory),
+          })),
+        undefined,
       );
 
-      const currentSoftSkills = this.normalizeAttributeNames(
+      const currentSoftSkills = this.normalizeAdminSkillItems(
         existingOffer.job_attributes
-          .map((link) => link.global_attributes)
           .filter(
-            (attribute): attribute is { name: string; type: 'soft_skill' } =>
-              Boolean(attribute?.name && attribute.type === 'soft_skill'),
+            (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'soft_skill' } } =>
+              Boolean(link.global_attributes?.name && link.global_attributes.type === 'soft_skill'),
           )
-          .map((attribute) => attribute.name),
+          .map((link) => ({
+            name: link.global_attributes.name,
+            is_mandatory: Boolean(link.is_mandatory),
+          })),
+        undefined,
       );
 
-      const incomingTechnicalSkills = this.normalizeAttributeNames(dto.technical_skills ?? []);
-      const incomingSoftSkills = this.normalizeAttributeNames(dto.soft_skills ?? []);
+      const incomingTechnicalSkills = this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills);
+      const incomingSoftSkills = this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills);
 
       const hasBlockedChanges =
         dto.title.trim() !== existingOffer.title.trim() ||
@@ -672,8 +760,8 @@ export class JobsService {
         dto.weight_technical !== (existingOffer.weight_technical ?? 0) ||
         dto.weight_soft !== (existingOffer.weight_soft ?? 0) ||
         dto.weight_culture !== (existingOffer.weight_culture ?? 0) ||
-        !this.areNormalizedListsEqual(incomingTechnicalSkills, currentTechnicalSkills) ||
-        !this.areNormalizedListsEqual(incomingSoftSkills, currentSoftSkills);
+        !this.areNormalizedSkillItemsEqual(incomingTechnicalSkills, currentTechnicalSkills) ||
+        !this.areNormalizedSkillItemsEqual(incomingSoftSkills, currentSoftSkills);
 
       if (hasBlockedChanges) {
         throw new BadRequestException(
@@ -705,25 +793,25 @@ export class JobsService {
       throw new BadRequestException('La categoria seleccionada no existe');
     }
 
-    const groupedByType: Record<JobAttributeType, string[]> = {
-      hard_skill: this.normalizeAttributeNames(dto.technical_skills ?? []),
-      soft_skill: this.normalizeAttributeNames(dto.soft_skills ?? []),
+    const groupedByType: Record<JobAttributeType, Array<{ name: string; is_mandatory: boolean }>> = {
+      hard_skill: this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills),
+      soft_skill: this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills),
     };
 
-    const selectedAttributeIds: number[] = [];
+    const selectedAttributes: Array<{ attribute_id: number; is_mandatory: boolean }> = [];
     const createdAttributes: Array<{ id: number; name: string }> = [];
 
     for (const [type, names] of Object.entries(groupedByType) as Array<
-      [JobAttributeType, string[]]
+      [JobAttributeType, Array<{ name: string; is_mandatory: boolean }>]
     >) {
-      for (const name of names) {
-        let attribute = await this.findGlobalAttributeByNameInsensitive(name, type);
+      for (const item of names) {
+        let attribute = await this.findGlobalAttributeByNameInsensitive(item.name, type);
 
         if (!attribute) {
           try {
             attribute = await this.prisma.global_attributes.create({
               data: {
-                name,
+                name: item.name,
                 type,
               },
               select: {
@@ -734,7 +822,7 @@ export class JobsService {
 
             createdAttributes.push(attribute);
           } catch (error) {
-            attribute = await this.findGlobalAttributeByNameInsensitive(name, type);
+            attribute = await this.findGlobalAttributeByNameInsensitive(item.name, type);
 
             if (!attribute) {
               throw error;
@@ -742,11 +830,16 @@ export class JobsService {
           }
         }
 
-        selectedAttributeIds.push(attribute.id);
+        selectedAttributes.push({
+          attribute_id: attribute.id,
+          is_mandatory: item.is_mandatory,
+        });
       }
     }
 
-    const uniqueAttributeIds = Array.from(new Set(selectedAttributeIds));
+    const uniqueSelectedAttributes = Array.from(
+      new Map(selectedAttributes.map((item) => [item.attribute_id, item])).values(),
+    );
 
     await this.prisma.$transaction(async (tx) => {
       await tx.jobs.update({
@@ -773,12 +866,12 @@ export class JobsService {
         where: { job_id: offerId },
       });
 
-      if (uniqueAttributeIds.length > 0) {
+      if (uniqueSelectedAttributes.length > 0) {
         await tx.job_attributes.createMany({
-          data: uniqueAttributeIds.map((attributeId) => ({
+          data: uniqueSelectedAttributes.map((item) => ({
             job_id: offerId,
-            attribute_id: attributeId,
-            is_mandatory: false,
+            attribute_id: item.attribute_id,
+            is_mandatory: item.is_mandatory,
           })),
           skipDuplicates: true,
         });

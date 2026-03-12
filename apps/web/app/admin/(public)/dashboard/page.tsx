@@ -187,7 +187,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <Card>
                     <CardHeader className="gap-1 pb-0">
-                        <CardDescription>Ofertas activas</CardDescription>
+                        <CardDescription>Ofertas Nuevas</CardDescription>
                         <CardTitle className="text-3xl">{data.metrics.activeOffers}</CardTitle>
                     </CardHeader>
                 </Card>

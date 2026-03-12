@@ -504,6 +504,12 @@ export default function OfertaAdminDetalleClient({
       category: String(offer.category_id),
       technical_skills: offer.technical_skills,
       soft_skills: offer.soft_skills,
+      mandatory_technical_skills: offer.technical_skill_items
+        .filter((item) => item.is_mandatory)
+        .map((item) => item.name),
+      mandatory_soft_skills: offer.soft_skill_items
+        .filter((item) => item.is_mandatory)
+        .map((item) => item.name),
     }),
     [offer]
   )
@@ -553,6 +559,18 @@ export default function OfertaAdminDetalleClient({
                 category_id: Number(values.category),
                 technical_skills: values.technical_skills,
                 soft_skills: values.soft_skills,
+                technical_skill_items: values.technical_skills.map((name) => ({
+                  name,
+                  is_mandatory: values.mandatory_technical_skills.some(
+                    (mandatoryValue) => mandatoryValue.trim().toLowerCase() === name.trim().toLowerCase()
+                  ),
+                })),
+                soft_skill_items: values.soft_skills.map((name) => ({
+                  name,
+                  is_mandatory: values.mandatory_soft_skills.some(
+                    (mandatoryValue) => mandatoryValue.trim().toLowerCase() === name.trim().toLowerCase()
+                  ),
+                })),
               }
 
               const response = await fetch(`/api/admin/ofertas/${offerId}`, {
