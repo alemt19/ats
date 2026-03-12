@@ -86,6 +86,7 @@ export class AuthController {
 					? toPublicEmail(adminProfile.user.email)
 					: null,
 				profile_picture: adminProfile.profile_picture,
+				role: adminProfile.role,
 			},
 		};
 	}

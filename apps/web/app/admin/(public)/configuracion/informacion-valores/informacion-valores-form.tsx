@@ -44,6 +44,7 @@ type InformacionValoresFormProps = {
 	initialData: AdminCompanyConfigInitialData
 	cityOptions: string[]
 	companyValueOptions: string[]
+	canEdit: boolean
 }
 
 function normalizeValue(value: string) {
@@ -237,6 +238,7 @@ export default function InformacionValoresForm({
 	initialData,
 	cityOptions,
 	companyValueOptions,
+	canEdit,
 }: InformacionValoresFormProps) {
 	const router = useRouter()
 	const fileInputRef = React.useRef<HTMLInputElement | null>(null)
@@ -281,6 +283,8 @@ export default function InformacionValoresForm({
 	const companyValues = form.watch("values")
 	const canSuggestValues =
 		name.trim().length > 0 && description.trim().length > 0 && mision.trim().length > 0
+	const isReadOnly = !canEdit
+	const isFormDisabled = isSaving || isReadOnly
 
 	const addSuggestionToValues = React.useCallback(
 		(value: string) => {
@@ -299,6 +303,10 @@ export default function InformacionValoresForm({
 	)
 
 	const handleSuggestCompanyValues = async () => {
+		if (isReadOnly) {
+			return
+		}
+
 		setIsGeneratingSuggestions(true)
 
 		try {
@@ -317,6 +325,10 @@ export default function InformacionValoresForm({
 	}
 
 	const onSubmit = async (values: InformacionValoresFormValues) => {
+		if (isReadOnly) {
+			return
+		}
+
 		setIsSaving(true)
 
 		const payload = new FormData()
@@ -362,12 +374,21 @@ export default function InformacionValoresForm({
 			<div>
 				<h1 className="text-2xl font-semibold">Información y Valores</h1>
 				<p className="text-sm text-muted-foreground">
-					Actualiza la información principal de la empresa y sus valores culturales.
+					{isReadOnly
+						? "Puedes consultar la información principal de la empresa y sus valores culturales."
+						: "Actualiza la información principal de la empresa y sus valores culturales."}
 				</p>
 			</div>
 
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+					{isReadOnly ? (
+						<p className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+							Tu rol tiene acceso de solo lectura a esta sección.
+						</p>
+					) : null}
+
+					<fieldset disabled={isFormDisabled} className="space-y-6">
 					<Card>
 						<CardHeader>
 							<CardTitle>Información de la empresa</CardTitle>
@@ -476,7 +497,7 @@ export default function InformacionValoresForm({
 									render={({ field }) => (
 										<FormItem>
 											<FormLabel>Ciudad</FormLabel>
-											<Select value={field.value} onValueChange={field.onChange}>
+											<Select value={field.value} onValueChange={field.onChange} disabled={isFormDisabled}>
 												<FormControl>
 													<SelectTrigger>
 														<SelectValue placeholder="Selecciona una ciudad" />
@@ -564,7 +585,7 @@ export default function InformacionValoresForm({
 									type="button"
 									variant="outline"
 									onClick={handleSuggestCompanyValues}
-									disabled={!canSuggestValues || isGeneratingSuggestions}
+									disabled={isFormDisabled || !canSuggestValues || isGeneratingSuggestions}
 								>
 									<Sparkles className="size-4" />
 									{isGeneratingSuggestions
@@ -588,17 +609,20 @@ export default function InformacionValoresForm({
 									onChangeValues={(values) => form.setValue("values", dedupe(values), { shouldDirty: true })}
 									suggestionItems={valueSuggestions}
 									onAddSuggestion={addSuggestionToValues}
-									disabled={false}
+									disabled={isFormDisabled}
 								/>
 							</div>
 						</CardContent>
 					</Card>
 
 					<CardFooter className="justify-end px-0">
-						<Button type="submit" disabled={isSaving}>
-							{isSaving ? "Guardando..." : "Guardar cambios"}
-						</Button>
+						{canEdit ? (
+							<Button type="submit" disabled={isSaving}>
+								{isSaving ? "Guardando..." : "Guardar cambios"}
+							</Button>
+						) : null}
 					</CardFooter>
+					</fieldset>
 				</form>
 			</Form>
 		</section>

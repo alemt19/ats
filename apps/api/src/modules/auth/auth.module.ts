@@ -9,6 +9,7 @@ import { BetterAuthGuard } from './auth.guard';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { StorageModule } from '../../common/storage/storage.module';
 import { AdminProfileController } from './admin-profile.controller';
+import { AdminAuthorizationService } from './admin-authorization.service';
 import { AdminProfileService } from './admin-profile.service';
 
 @Module({
@@ -33,7 +34,7 @@ import { AdminProfileService } from './admin-profile.service';
 		}),
 	],
 	controllers: [AuthController, BetterAuthController, AdminProfileController],
-	providers: [BetterAuthProvider, BetterAuthGuard, AdminProfileService],
-	exports: [BetterAuthProvider, BetterAuthGuard],
+	providers: [BetterAuthProvider, BetterAuthGuard, AdminAuthorizationService, AdminProfileService],
+	exports: [BetterAuthProvider, BetterAuthGuard, AdminAuthorizationService],
 })
 export class AuthModule {}

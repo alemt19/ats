@@ -17,6 +17,7 @@ import {
 
 import { useCompany } from "react/contexts/company-context"
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
+import { getDefaultAdminRoute, isHeadOfRecruiters } from "react/lib/admin-role"
 import {
 	Breadcrumb,
 	BreadcrumbItem,
@@ -57,6 +58,7 @@ const adminLinks = [
 		label: "Dashboard",
 		href: "/admin/dashboard",
 		icon: LayoutDashboard,
+		headOnly: true,
 	},
 	{
 		label: "Ofertas",
@@ -67,6 +69,7 @@ const adminLinks = [
 		label: "Reclutadores",
 		href: "/admin/reclutadores",
 		icon: Users,
+		headOnly: true,
 	},
 	{
 		label: "Candidatos",
@@ -242,6 +245,9 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 
 	const companyName = company?.name ?? "ATS"
 	const companyLogo = company?.logo
+	const adminRole = user?.role ?? null
+	const defaultAdminRoute = getDefaultAdminRoute(adminRole)
+	const visibleAdminLinks = adminLinks.filter((item) => !item.headOnly || isHeadOfRecruiters(adminRole))
 	const breadcrumbItems = getAdminBreadcrumbItems(pathname)
 	const isConfigurationSection =
 		pathname.startsWith("/admin/configuracion/informacion-valores") ||
@@ -258,7 +264,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 								<Skeleton className="h-5 w-28" />
 							</div>
 						) : (
-							<Link href="/admin/dashboard" className="flex items-center gap-3">
+							<Link href={defaultAdminRoute} className="flex items-center gap-3">
 								{companyLogo ? (
 									<img
 										src={companyLogo}
@@ -280,7 +286,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 					<SidebarGroup>
 						<SidebarGroupContent>
 							<SidebarMenu>
-								{adminLinks.map((item) => (
+								{visibleAdminLinks.map((item) => (
 									<SidebarMenuItem key={item.href}>
 										<SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
 											<Link href={item.href}>
@@ -385,7 +391,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 					<Breadcrumb>
 						<BreadcrumbList>
 							<BreadcrumbItem>
-								<BreadcrumbLink href="/admin/dashboard">Admin</BreadcrumbLink>
+								<BreadcrumbLink href={defaultAdminRoute}>Admin</BreadcrumbLink>
 							</BreadcrumbItem>
 							{breadcrumbItems.map((item, index) => {
 								const isLast = index === breadcrumbItems.length - 1

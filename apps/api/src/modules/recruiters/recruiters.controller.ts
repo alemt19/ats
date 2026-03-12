@@ -20,6 +20,7 @@ import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { SupabaseStorageService } from '../../common/storage/supabase-storage.service';
+import { AdminAuthorizationService } from '../auth/admin-authorization.service';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import {
@@ -33,50 +34,28 @@ import { RecruitersService } from './recruiters.service';
 @UseGuards(BetterAuthGuard)
 export class RecruitersController {
 	constructor(
+		private readonly adminAuthorizationService: AdminAuthorizationService,
 		private readonly recruitersService: RecruitersService,
 		private readonly supabaseStorageService: SupabaseStorageService,
 	) {}
 
-	private getUserIdFromSession(session: any): string {
-		const userId = session?.user?.id ?? session?.id;
-		if (!userId || typeof userId !== 'string') {
-			throw new UnauthorizedException('Invalid authenticated user');
-		}
-
-		return userId;
-	}
-
-	private assertAdminScope(request: Request) {
-		const cookieHeader = request.headers.cookie;
-		if (!cookieHeader) {
-			throw new UnauthorizedException('Missing admin session cookie');
-		}
-
-		const match = cookieHeader.match(/(?:^|;\s*)ats_scope=(admin|candidate)(?:;|$)/);
-		if (match?.[1] !== 'admin') {
-			throw new UnauthorizedException('Admin session required');
-		}
-	}
-
 	@Get()
-	findAll(
-		@CurrentUser() session: any,
+	async findAll(
+		@CurrentUser() session: unknown,
 		@Req() request: Request,
 		@Query() query: RecruitersQueryDto,
 	) {
-		this.assertAdminScope(request);
-		const userId = this.getUserIdFromSession(session);
+		const { userId } = await this.adminAuthorizationService.authorizeHeadOfRecruiters(session, request);
 		return this.recruitersService.findAll(userId, query);
 	}
 
 	@Get(':id')
-	findOne(
-		@CurrentUser() session: any,
+	async findOne(
+		@CurrentUser() session: unknown,
 		@Req() request: Request,
 		@Param('id', ParseIntPipe) recruiterId: number,
 	) {
-		this.assertAdminScope(request);
-		const userId = this.getUserIdFromSession(session);
+		const { userId } = await this.adminAuthorizationService.authorizeHeadOfRecruiters(session, request);
 		return this.recruitersService.findOne(userId, recruiterId);
 	}
 
@@ -98,14 +77,13 @@ export class RecruitersController {
 			callback(null, true);
 		},
 	}))
-	create(
-		@CurrentUser() session: any,
+	async create(
+		@CurrentUser() session: unknown,
 		@Req() request: Request,
 		@Body() dto: CreateRecruiterDto,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
-		this.assertAdminScope(request);
-		const userId = this.getUserIdFromSession(session);
+		const { userId } = await this.adminAuthorizationService.authorizeHeadOfRecruiters(session, request);
 		return this.handleCreate(userId, dto, file);
 	}
 
@@ -140,14 +118,13 @@ export class RecruitersController {
 		},
 	}))
 	async update(
-		@CurrentUser() session: any,
+		@CurrentUser() session: unknown,
 		@Req() request: Request,
 		@Param('id', ParseIntPipe) recruiterId: number,
 		@Body() dto: UpdateRecruiterDto,
 		@UploadedFile() file?: Express.Multer.File,
 	) {
-		this.assertAdminScope(request);
-		const userId = this.getUserIdFromSession(session);
+		const { userId } = await this.adminAuthorizationService.authorizeHeadOfRecruiters(session, request);
 
 		if (file) {
 			dto.profile_picture = await this.supabaseStorageService.uploadImage(file, 'recruiters');

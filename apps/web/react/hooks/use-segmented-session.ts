@@ -19,6 +19,7 @@ type AdminProfile = {
 	lastname: string | null
 	email: string | null
 	profile_picture: string | null
+	role: string | null
 }
 
 type SegmentedUser = {
@@ -27,6 +28,7 @@ type SegmentedUser = {
 	lastname?: string | null
 	email?: string | null
 	image?: string | null
+	role?: string | null
 }
 
 type SegmentedSessionResult<TProfile> = {
@@ -184,8 +186,9 @@ export function useAdminSession(): SegmentedSessionResult<AdminProfile> {
 			lastname: profile?.lastname ?? null,
 			email: profile?.email ?? session.user.email,
 			image: profile?.profile_picture ?? session.user.image,
+			role: profile?.role ?? null,
 		}
-	}, [isScopedSession, profile?.email, profile?.lastname, profile?.name, profile?.profile_picture, session?.user])
+	}, [isScopedSession, profile?.email, profile?.lastname, profile?.name, profile?.profile_picture, profile?.role, session?.user])
 
 	return {
 		user,

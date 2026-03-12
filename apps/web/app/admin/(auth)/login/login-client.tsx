@@ -10,6 +10,7 @@ import { type FieldValues, type Path, type Resolver, useForm } from "react-hook-
 import { z } from "zod"
 
 import { useCompany } from "react/contexts/company-context"
+import { getDefaultAdminRoute } from "react/lib/admin-role"
 import { toAdminScopedEmail } from "react/lib/auth-email-scope"
 import { Button } from "react/components/ui/button"
 import {
@@ -119,7 +120,13 @@ export default function AdminLoginClientPage() {
 				return
 			}
 
-			window.location.href = "http://localhost:3000/admin/dashboard"
+			const adminAccessPayload = (await adminAccessResponse.json().catch(() => null)) as
+				| { adminRole?: string | null; adminProfile?: { role?: string | null } }
+				| null
+
+			window.location.href = getDefaultAdminRoute(
+				adminAccessPayload?.adminRole ?? adminAccessPayload?.adminProfile?.role ?? null
+			)
 		} catch {
 			setLoginError("No se pudo iniciar sesión. Verifica tus credenciales e inténtalo de nuevo.")
 		}

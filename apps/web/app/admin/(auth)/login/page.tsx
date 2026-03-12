@@ -1,7 +1,8 @@
 import { cookies } from "next/headers"
 import { redirect } from "next/navigation"
 
-import { getSession } from "../../../../auth"
+import { getAdminAccess, getSession } from "../../../../auth"
+import { getDefaultAdminRoute } from "react/lib/admin-role"
 import AdminLoginClientPage from "./login-client"
 
 export default async function AdminLoginPage() {
@@ -10,7 +11,11 @@ export default async function AdminLoginPage() {
 	const sessionScope = cookieStore.get("ats_scope")?.value
 
 	if (session?.user && sessionScope === "admin") {
-		redirect("/admin/ofertas")
+		const adminAccess = await getAdminAccess()
+
+		if (adminAccess) {
+			redirect(getDefaultAdminRoute(adminAccess.adminRole ?? adminAccess.adminProfile.role))
+		}
 	}
 
 	return <AdminLoginClientPage />

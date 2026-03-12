@@ -22,9 +22,11 @@ import type { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CompaniesService } from './companies.service';
+import { AdminAuthorizationService } from '../auth/admin-authorization.service';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SupabaseStorageService } from '../../common/storage/supabase-storage.service';
+import { ADMIN_ROLE_HEAD_OF_RECRUITERS } from '../auth/admin-roles';
 import { UpdateCompanyConfigDto } from './dto/company-config.dto';
 import {
 	CompaniesQueryDto,
@@ -35,39 +37,18 @@ import {
 @Controller()
 export class CompaniesController {
   constructor(
+    private readonly adminAuthorizationService: AdminAuthorizationService,
     private readonly companiesService: CompaniesService,
     private readonly supabaseStorageService: SupabaseStorageService,
   ) {}
 
-  private getUserIdFromSession(session: any): string {
-    const userId = session?.user?.id ?? session?.id;
-    if (!userId || typeof userId !== 'string') {
-      throw new UnauthorizedException('Invalid authenticated user');
-    }
-
-    return userId;
-  }
-
-  private assertAdminScope(request: Request) {
-    const cookieHeader = request.headers.cookie;
-    if (!cookieHeader) {
-      throw new UnauthorizedException('Missing admin session cookie');
-    }
-
-    const match = cookieHeader.match(/(?:^|;\s*)ats_scope=(admin|candidate)(?:;|$)/);
-    if (match?.[1] !== 'admin') {
-      throw new UnauthorizedException('Admin session required');
-    }
-  }
-
   @Get('admin/company-config')
   @UseGuards(BetterAuthGuard)
-  getCompanyConfig(
-    @CurrentUser() session: any,
+  async getCompanyConfig(
+    @CurrentUser() session: unknown,
     @Req() request: Request,
   ) {
-    this.assertAdminScope(request);
-    const userId = this.getUserIdFromSession(session);
+    const { userId } = await this.adminAuthorizationService.authorizeAdminRequest(session, request);
     return this.companiesService.getCompanyConfig(userId);
   }
 
@@ -91,13 +72,16 @@ export class CompaniesController {
     },
   }))
   async updateCompanyConfig(
-    @CurrentUser() session: any,
+    @CurrentUser() session: unknown,
     @Req() request: Request,
     @Body() dto: UpdateCompanyConfigDto,
     @UploadedFile() logoFile?: Express.Multer.File,
   ) {
-    this.assertAdminScope(request);
-    const userId = this.getUserIdFromSession(session);
+    const { userId } = await this.adminAuthorizationService.authorizeAdminRequest(
+      session,
+      request,
+      [ADMIN_ROLE_HEAD_OF_RECRUITERS],
+    );
 
     const payload = {
       ...dto,

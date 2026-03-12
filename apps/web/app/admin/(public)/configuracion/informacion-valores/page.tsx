@@ -1,5 +1,6 @@
-import { getSession } from "../../../../../auth"
+import { getAdminAccess, getSession } from "../../../../../auth"
 import { headers } from "next/headers"
+import { canEditAdminConfiguration } from "react/lib/admin-role"
 import type {
 	AdminCompanyConfigInitialData,
 	CityRecord,
@@ -17,9 +18,11 @@ import InformacionValoresForm from "./informacion-valores-form"
 
 export default async function AdminConfiguracionInformacionValoresPage() {
 	const session = await getSession()
+	const adminAccess = await getAdminAccess()
 	const userId = session?.user?.id ?? "admin_123"
 	const accessToken = session?.accessToken
 	const cookie = (await headers()).get("cookie") ?? undefined
+	const canEdit = canEditAdminConfiguration(adminAccess?.adminRole ?? adminAccess?.adminProfile?.role ?? null)
 
 	const [countries, states, cities, bootstrapData] = await Promise.all([
 		readJsonFile<CountryRecord[]>("country.json"),
@@ -46,6 +49,7 @@ export default async function AdminConfiguracionInformacionValoresPage() {
 			initialData={initialData}
 			cityOptions={cityOptions}
 			companyValueOptions={bootstrapData.companyValueOptions}
+			canEdit={canEdit}
 		/>
 	)
 }

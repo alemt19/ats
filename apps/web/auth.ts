@@ -13,6 +13,22 @@ type AppSession = {
   accessToken?: string
 }
 
+type AdminAccessProfile = {
+  id: number
+  name: string | null
+  lastname: string | null
+  email: string | null
+  profile_picture: string | null
+  role: string | null
+}
+
+export type AdminAccess = {
+  ok: true
+  userId: string
+  adminRole: string | null
+  adminProfile: AdminAccessProfile
+}
+
 const betterAuthBaseURL =
   process.env.NEXT_PUBLIC_BETTER_AUTH_URL ??
   process.env.BETTER_AUTH_BASE_URL ??
@@ -79,4 +95,27 @@ export async function hasAuthAccess(scope: "admin" | "candidate"): Promise<boole
     cache: "no-store",
   })
   return response.ok
+}
+
+export async function getAdminAccess(): Promise<AdminAccess | null> {
+  const requestHeaders = await headers()
+  const cookie = requestHeaders.get("cookie")
+
+  if (!cookie) {
+    return null
+  }
+
+  const response = await fetch(`${betterAuthBaseURL}/api/auth/access/admin`, {
+    method: "GET",
+    headers: {
+      cookie,
+    },
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    return null
+  }
+
+  return (await response.json()) as AdminAccess
 }

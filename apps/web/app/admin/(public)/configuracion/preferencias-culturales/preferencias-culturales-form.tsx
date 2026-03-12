@@ -24,6 +24,7 @@ type PreferenciasCulturalesFormProps = {
 	userId: string
 	initialData: AdminCompanyConfigInitialData
 	cultureCategories: CulturePreferenceCategory[]
+	canEdit: boolean
 }
 
 function mapCategoryTechnicalNameToPreferenceField(technicalName: string): PreferenceFieldName | null {
@@ -78,9 +79,11 @@ export default function PreferenciasCulturalesForm({
 	userId,
 	initialData,
 	cultureCategories,
+	canEdit,
 }: PreferenciasCulturalesFormProps) {
 	const router = useRouter()
 	const [isSaving, setIsSaving] = React.useState(false)
+	const isReadOnly = !canEdit
 
 	const defaultPreferences = React.useMemo(
 		() => buildInitialPreferences(cultureCategories, initialData.preferences),
@@ -103,6 +106,10 @@ export default function PreferenciasCulturalesForm({
 	}, [defaultValues, form])
 
 	const onSubmit = async (values: PreferenciasCulturalesFormValues) => {
+		if (isReadOnly) {
+			return
+		}
+
 		setIsSaving(true)
 
 		const payload = {
@@ -153,12 +160,21 @@ export default function PreferenciasCulturalesForm({
 			<div>
 				<h1 className="text-2xl font-semibold">Preferencias Culturales</h1>
 				<p className="text-sm text-muted-foreground">
-					Define las preferencias culturales para alinear mejor candidatos y equipo.
+					{isReadOnly
+						? "Puedes consultar las preferencias culturales de la empresa."
+						: "Define las preferencias culturales para alinear mejor candidatos y equipo."}
 				</p>
 			</div>
 
+			{isReadOnly ? (
+				<p className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+					Tu rol tiene acceso de solo lectura a esta sección.
+				</p>
+			) : null}
+
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+					<fieldset disabled={isSaving || isReadOnly} className="space-y-6">
 					<Card>
 						<CardHeader>
 							<CardTitle>Alineación cultural</CardTitle>
@@ -242,10 +258,13 @@ export default function PreferenciasCulturalesForm({
 					</Card>
 
 					<CardFooter className="justify-end px-0">
-						<Button type="submit" disabled={isSaving}>
-							{isSaving ? "Guardando..." : "Guardar cambios"}
-						</Button>
+						{canEdit ? (
+							<Button type="submit" disabled={isSaving}>
+								{isSaving ? "Guardando..." : "Guardar cambios"}
+							</Button>
+						) : null}
 					</CardFooter>
+					</fieldset>
 				</form>
 			</Form>
 		</section>
