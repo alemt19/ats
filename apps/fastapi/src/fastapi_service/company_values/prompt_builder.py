@@ -6,7 +6,10 @@ def build_company_values_prompt(payload: CompanyValuesSuggestionRequest) -> str:
         "Eres un asistente experto en recursos humanos. Analiza el siguiente contexto de una "
         "empresa y saca los valores corporativos de la empresa o que serían ideales en sus "
         "trabajadores para alinearse a su cultura corporativa, ojo sácalos según el contexto "
-        f"proporcionado y no inventes nada. Nombre: {payload.name}\n"
+        "proporcionado y no inventes nada. Devuelve los valores con mayusculas, minusculas y "
+        "tildes naturales en espanol, en formato legible de etiqueta, por ejemplo: \"Comunicación\", "
+        "\"Trabajo en equipo\", \"Integridad\". No devuelvas todo en minusculas ni sin tildes. "
+        f"Nombre: {payload.name}\n"
         f"Descripcion: {payload.description}\n"
         f"mision: {payload.mision}\n"
     )

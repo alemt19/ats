@@ -36,19 +36,50 @@ export class CandidatesService {
 		private readonly cvParseQueue: Queue,
   ) {}
 
+  private normalizeAttributeKey(value: string) {
+    return value
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('es');
+  }
+
   private normalizeAttributeNames(values: string[]) {
     const unique = new Set<string>();
+    const normalizedValues: string[] = [];
 
     values.forEach((value) => {
-      const normalized = value.trim().toLowerCase();
-      if (!normalized) {
+      const clean = String(value).trim();
+      const normalized = this.normalizeAttributeKey(clean);
+      if (!clean || !normalized) {
+        return;
+      }
+
+      if (unique.has(normalized)) {
         return;
       }
 
       unique.add(normalized);
+      normalizedValues.push(clean);
     });
 
-    return Array.from(unique);
+    return normalizedValues;
+  }
+
+  private async findGlobalAttributeByNameInsensitive(
+    name: string,
+    type: CandidateAttributeType,
+  ): Promise<{ id: number; name: string } | null> {
+    const matches = await this.prisma.$queryRaw<Array<{ id: number; name: string }>>`
+      SELECT id, name
+      FROM global_attributes
+      WHERE unaccent(name) ILIKE unaccent(${name})
+        AND type::text = ${type}
+      ORDER BY id ASC
+      LIMIT 1
+    `;
+
+    return matches[0] ?? null;
   }
 
   private parseStringArray(value: string, fieldName: string) {
@@ -253,20 +284,7 @@ export class CandidatesService {
       [CandidateAttributeType, string[]]
     >) {
       for (const name of names) {
-        const uniqueWhere = {
-          name_type: {
-            name,
-            type,
-          },
-        } as const;
-
-        let attribute = await this.prisma.global_attributes.findUnique({
-          where: uniqueWhere,
-          select: {
-            id: true,
-            name: true,
-          },
-        });
+        let attribute = await this.findGlobalAttributeByNameInsensitive(name, type);
 
         if (!attribute) {
           try {
@@ -283,13 +301,7 @@ export class CandidatesService {
 
             createdAttributes.push(attribute);
           } catch (error) {
-            attribute = await this.prisma.global_attributes.findUnique({
-              where: uniqueWhere,
-              select: {
-                id: true,
-                name: true,
-              },
-            });
+            attribute = await this.findGlobalAttributeByNameInsensitive(name, type);
 
             if (!attribute) {
               throw error;

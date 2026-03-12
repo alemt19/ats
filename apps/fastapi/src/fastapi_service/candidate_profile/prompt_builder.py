@@ -19,8 +19,8 @@ y de las respuestas conductuales.
 Reglas obligatorias:
 1) No inventes informacion. Si no hay evidencia suficiente,
    devuelve listas vacias o elementos minimos evidentes.
-2) Devuelve TODO en minúsculas.
-3) Devuelve TODO sin tildes, pero conserva la letra ñ cuando corresponda.
+2) Conserva mayusculas, minusculas y tildes de forma natural en espanol.
+3) Devuelve cada elemento con formato legible de etiqueta, por ejemplo: "Comunicación", "Trabajo en equipo", "Python", "Resolución de problemas".
 4) No repitas elementos dentro de la misma lista.
 5) Cada elemento debe ser breve, concreto y utilizable como tag (1 a 4 palabras).
 6) Responde estrictamente en JSON con esta forma:

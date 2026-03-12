@@ -165,7 +165,7 @@ class GeminiBatchWorker:
 
         for item in current_batch:
             data = getattr(item.job, "data", {})
-            name = str(data.get("name", "")).strip().lower()
+            name = str(data.get("name", "")).strip()
             attribute_id = int(data.get("attributeId", 0))
 
             if not name or attribute_id <= 0:

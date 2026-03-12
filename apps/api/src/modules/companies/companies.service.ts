@@ -19,19 +19,47 @@ export class CompaniesService {
     return (value ?? '').trim();
   }
 
+  private normalizeAttributeKey(value: string) {
+    return value
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('es');
+  }
+
   private normalizeCompanyValues(values: string[]) {
     const unique = new Set<string>();
+    const normalizedValues: string[] = [];
 
     values.forEach((value) => {
-      const normalized = value.trim().toLowerCase();
-      if (!normalized) {
+      const clean = String(value).trim();
+      const normalized = this.normalizeAttributeKey(clean);
+      if (!clean || !normalized) {
+        return;
+      }
+
+      if (unique.has(normalized)) {
         return;
       }
 
       unique.add(normalized);
+      normalizedValues.push(clean);
     });
 
-    return Array.from(unique);
+    return normalizedValues;
+  }
+
+  private async findGlobalValueAttributeByNameInsensitive(name: string) {
+    const matches = await this.prisma.$queryRaw<Array<{ id: number; name: string }>>`
+      SELECT id, name
+      FROM global_attributes
+      WHERE unaccent(name) ILIKE unaccent(${name})
+        AND type::text = 'value'
+      ORDER BY id ASC
+      LIMIT 1
+    `;
+
+    return matches[0] ?? null;
   }
 
   private async getCurrentAdmin(userId: string) {
@@ -168,42 +196,41 @@ export class CompaniesService {
       Array.isArray(rawValues) ? rawValues.map((value) => String(value)) : [],
     );
 
-    const existingAttributes = await this.prisma.global_attributes.findMany({
-      where: {
-        type: 'value',
-        name: { in: normalizedValues },
-      },
-      select: {
-        id: true,
-        name: true,
-      },
-    });
+    const allSelectedAttributes: Array<{ id: number; name: string }> = [];
+    const createdAttributes: Array<{ id: number; name: string }> = [];
 
-    const existingByName = new Set(existingAttributes.map((item) => item.name));
-    const newValueNames = normalizedValues.filter((value) => !existingByName.has(value));
+    for (const name of normalizedValues) {
+      let attribute = await this.findGlobalValueAttributeByNameInsensitive(name);
 
-    if (newValueNames.length > 0) {
-      await this.prisma.global_attributes.createMany({
-        data: newValueNames.map((name) => ({
-          name,
-          type: 'value',
-        })),
-        skipDuplicates: true,
-      });
+      if (!attribute) {
+        try {
+          attribute = await this.prisma.global_attributes.create({
+            data: {
+              name,
+              type: 'value',
+            },
+            select: {
+              id: true,
+              name: true,
+            },
+          });
+
+          createdAttributes.push(attribute);
+        } catch (error) {
+          attribute = await this.findGlobalValueAttributeByNameInsensitive(name);
+
+          if (!attribute) {
+            throw error;
+          }
+        }
+      }
+
+      allSelectedAttributes.push(attribute);
     }
 
-    const allSelectedAttributes = normalizedValues.length > 0
-      ? await this.prisma.global_attributes.findMany({
-          where: {
-            type: 'value',
-            name: { in: normalizedValues },
-          },
-          select: {
-            id: true,
-            name: true,
-          },
-        })
-      : [];
+    const uniqueSelectedAttributes = Array.from(
+      new Map(allSelectedAttributes.map((attribute) => [attribute.id, attribute])).values(),
+    );
 
     await this.prisma.$transaction([
       this.prisma.companies.update({
@@ -232,7 +259,7 @@ export class CompaniesService {
       ...(allSelectedAttributes.length > 0
         ? [
             this.prisma.company_attributes.createMany({
-              data: allSelectedAttributes.map((attribute) => ({
+              data: uniqueSelectedAttributes.map((attribute) => ({
                 company_id: company.id,
                 attribute_id: attribute.id,
               })),
@@ -240,10 +267,6 @@ export class CompaniesService {
           ]
         : []),
     ]);
-
-    const createdAttributes = allSelectedAttributes.filter((attribute) =>
-      newValueNames.includes(attribute.name),
-    );
 
     await this.embeddingsQueueProducer.enqueueAttributes(
       createdAttributes.map((attribute) => ({

@@ -17,6 +17,7 @@ Reglas obligatorias:
 3) soft_skills debe contener strings con habilidades blandas requeridas.
 4) Coloca las habilidades que indique explicitamente la oferta y las que se puedan inferir con suficiente contexto.
 5) Si no hay suficiente contexto, no inventes habilidades.
-6) Coloca todo en minusculas y sin tildes, conserva la ñ.
-7) No repitas elementos dentro de cada lista.
+6) Conserva mayusculas, minusculas y tildes de forma natural en espanol.
+7) Usa formato legible de etiqueta, por ejemplo: "Comunicación", "Trabajo en equipo", "Python", "Resolución de problemas".
+8) No repitas elementos dentro de cada lista.
 """.strip()

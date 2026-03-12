@@ -1,6 +1,5 @@
 import asyncio
 import os
-import unicodedata
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -52,20 +51,13 @@ class JobOfferSkillsSuggestionService:
         cleaned_values: list[str] = []
 
         for value in values:
-            preserved_enye = value.replace("ñ", "__enie_min__").replace("Ñ", "__enie_may__")
-            normalized = unicodedata.normalize("NFD", preserved_enye)
-            without_accents = "".join(
-                char for char in normalized if unicodedata.category(char) != "Mn"
-            )
-            restored_enye = (
-                without_accents.replace("__enie_min__", "ñ").replace("__enie_may__", "Ñ")
-            )
-            cleaned = restored_enye.strip().lower()
+            cleaned = str(value).strip()
+            normalized_key = " ".join(cleaned.split()).casefold()
 
-            if not cleaned or cleaned in seen:
+            if not cleaned or normalized_key in seen:
                 continue
 
-            seen.add(cleaned)
+            seen.add(normalized_key)
             cleaned_values.append(cleaned)
 
         return cleaned_values

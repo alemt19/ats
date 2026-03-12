@@ -78,7 +78,7 @@ def _clean_values(values: list[str]) -> list[str]:
 
     for value in values:
         clean = value.strip()
-        normalized = clean.lower()
+        normalized = " ".join(clean.split()).casefold()
 
         if not clean or normalized in seen:
             continue
