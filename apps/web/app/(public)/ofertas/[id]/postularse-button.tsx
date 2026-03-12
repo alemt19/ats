@@ -12,6 +12,7 @@ type PostularseButtonProps = {
   isLoggedIn: boolean
   isCandidate: boolean
   alreadyApplied: boolean
+  initialAppliedAt?: string | null
   initialStatusTechnicalName?: string
   initialStatusDisplayName?: string
   appliedStatusTechnicalName: string
@@ -29,6 +30,7 @@ export default function PostularseButton({
   isLoggedIn,
   isCandidate,
   alreadyApplied,
+  initialAppliedAt,
   initialStatusTechnicalName,
   initialStatusDisplayName,
   appliedStatusTechnicalName,
@@ -38,6 +40,7 @@ export default function PostularseButton({
   const pathname = usePathname()
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [isApplied, setIsApplied] = React.useState(alreadyApplied)
+  const [appliedAt, setAppliedAt] = React.useState<string | null>(initialAppliedAt ?? null)
   const [statusTechnicalName, setStatusTechnicalName] = React.useState(
     initialStatusTechnicalName ?? ""
   )
@@ -79,6 +82,20 @@ export default function PostularseButton({
       missingFields: payload.missingFields,
       message: payload.message,
     }
+  }, [])
+
+  const formatAppliedDate = React.useCallback((value: string) => {
+    const parsed = new Date(value)
+
+    if (Number.isNaN(parsed.getTime())) {
+      return null
+    }
+
+    return new Intl.DateTimeFormat("es-VE", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }).format(parsed)
   }, [])
   
   const handleApply = async () => {
@@ -133,6 +150,7 @@ export default function PostularseButton({
       }
 
       setIsApplied(true)
+      setAppliedAt((current) => current ?? new Date().toISOString())
       setStatusTechnicalName(appliedStatusTechnicalName)
       setStatusDisplayName(appliedStatusDisplayName)
       toast.success("Te has postulado exitosamente, ¡buena suerte!")
@@ -144,15 +162,22 @@ export default function PostularseButton({
   }
 
   if (isApplied) {
+    const formattedAppliedDate = appliedAt ? formatAppliedDate(appliedAt) : null
+
     return (
-      <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" disabled>
-          Ya postulado
-        </Button>
-        {statusDisplayName ? (
-          <Badge variant={statusTechnicalName === "rejected" ? "destructive" : statusTechnicalName === "contacted" ? "success" : "outline"}>
-            Estado: {statusDisplayName}
-          </Badge>
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" disabled>
+            Ya postulado
+          </Button>
+          {statusDisplayName ? (
+            <Badge variant={statusTechnicalName === "rejected" ? "destructive" : statusTechnicalName === "contacted" ? "success" : "outline"}>
+              Estado: {statusDisplayName}
+            </Badge>
+          ) : null}
+        </div>
+        {formattedAppliedDate ? (
+          <p className="text-sm text-muted-foreground">Te postulaste el {formattedAppliedDate}.</p>
         ) : null}
       </div>
     )

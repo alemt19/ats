@@ -79,6 +79,7 @@ export class ApplicationsService {
       },
       select: {
         status: true,
+        created_at: true,
       },
     });
 
@@ -91,6 +92,7 @@ export class ApplicationsService {
     return {
       alreadyApplied: true,
       statusTechnicalName: application.status,
+      appliedAt: application.created_at?.toISOString() ?? null,
     };
   }
 

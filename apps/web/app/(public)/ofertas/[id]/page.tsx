@@ -52,11 +52,35 @@ type OfferEnvelope = {
 type ApplicationInfoResponse = {
 	alreadyApplied: boolean
 	statusTechnicalName?: string
+	appliedAt?: string | null
 }
 
 type ApplicationInfoEnvelope = {
 	success?: boolean
 	data?: ApplicationInfoResponse
+}
+
+function normalizeApplicationInfo(payload: unknown): ApplicationInfoResponse {
+	if (!payload || typeof payload !== "object") {
+		return { alreadyApplied: false }
+	}
+
+	const source = payload as Record<string, unknown>
+	const alreadyApplied = source.alreadyApplied === true
+	const statusTechnicalName =
+		typeof source.statusTechnicalName === "string" ? source.statusTechnicalName : undefined
+	const appliedAt =
+		typeof source.appliedAt === "string"
+			? source.appliedAt
+			: typeof source.applied_at === "string"
+				? source.applied_at
+				: null
+
+	return {
+		alreadyApplied,
+		statusTechnicalName,
+		appliedAt,
+	}
 }
 
 type OfertasDetailPageProps = {
@@ -152,10 +176,10 @@ async function fetchApplicationInfoServer(
 				| ApplicationInfoEnvelope
 
 			if (payload && typeof payload === "object" && "data" in payload && payload.data) {
-				return payload.data
+				return normalizeApplicationInfo(payload.data)
 			}
 
-			return payload as ApplicationInfoResponse
+			return normalizeApplicationInfo(payload)
 		} catch {
 			// Try next endpoint variant.
 		}
@@ -163,6 +187,7 @@ async function fetchApplicationInfoServer(
 
 	return {
 		alreadyApplied: false,
+		appliedAt: null,
 	}
 }
 
@@ -235,7 +260,7 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 
 	const applicationInfo = isCandidate
 		? await fetchApplicationInfoServer(offerId, cookieHeader, accessToken)
-		: { alreadyApplied: false }
+		: { alreadyApplied: false, appliedAt: null }
 
 	const statusMap = buildStatusMap(applicationStatusItems)
 	const appliedStatusDisplayName = statusMap.get("applied") ?? "Postulado"
@@ -313,6 +338,7 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 						isLoggedIn={isLoggedIn}
 						isCandidate={isCandidate}
 						alreadyApplied={applicationInfo.alreadyApplied}
+						initialAppliedAt={applicationInfo.appliedAt}
 						initialStatusTechnicalName={applicationInfo.statusTechnicalName}
 						initialStatusDisplayName={currentStatusDisplayName}
 						appliedStatusTechnicalName="applied"
