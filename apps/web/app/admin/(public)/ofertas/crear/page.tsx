@@ -7,7 +7,13 @@ import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import { getAdminCategoriesServer } from "../../categorias/categories-admin-service"
 import { getCompanyConfigServer } from "../../configuracion/company-config-service"
+import { getAdminOffersCatalogsServer } from "../offers-admin-service"
 import CrearOfertaForm, { type CrearOfertaCatalogs } from "./crear-oferta-form"
+
+type CategoryOption = {
+	id: number
+	name: string
+}
 
 type JobParameterValue = {
 	technical_name: string
@@ -18,16 +24,6 @@ type JobParameter = {
 	technical_name: string
 	display_name: string
 	values: JobParameterValue[]
-}
-
-type SkillsCatalog = {
-	technical_skills: string[]
-	soft_skills: string[]
-}
-
-type CategoryOption = {
-	id: number
-	name: string
 }
 
 type StateItem = {
@@ -103,73 +99,105 @@ function getMissingCompanyConfigItems(companyConfig: CompanyConfigData) {
 	return missing
 }
 
-function getParameterOptions(
-	parameters: JobParameter[],
-	key: "workplace_type" | "employment_type" | "status"
-) {
-	const entry = parameters.find((item) => item.technical_name === key)
-	return entry?.values ?? []
-}
-
 async function fetchCreateOfferCatalogsServer(input: {
 	categories: CategoryOption[]
 	companyState: string
 	companyCity: string
+	stateOptions: string[]
+	cityCatalogOptions: string[]
+	technicalSkillOptions: string[]
+	softSkillOptions: string[]
 }): Promise<CrearOfertaCatalogs> {
 	try {
-		const [parameters, skillsCatalog, states, cities] = await Promise.all([
+		const normalizedState = input.companyState.trim()
+		const normalizedCity = input.companyCity.trim()
+		const fallbackState = input.stateOptions.find((state) => state.trim().length > 0)?.trim() ?? ""
+		const resolvedState = normalizedState || fallbackState
+
+		const [parameters, states, cities] = await Promise.all([
 			readJsonFile<JobParameter[]>("job_parameters.json"),
-			readJsonFile<SkillsCatalog>("job_skills_catalog_dummy.json"),
 			readJsonFile<StateItem[]>("state.json"),
 			readJsonFile<CityItem[]>("city.json"),
 		])
 
-		const fixedStateId = states.find((state) => state.name === input.companyState)?.id
+		const fixedStateId = states.find((state) => state.name.trim() === resolvedState)?.id
+		const stateOptions =
+			input.stateOptions.length > 0
+				? input.stateOptions
+				: states.map((state) => state.name.trim()).filter((stateName) => stateName.length > 0)
+
 		const citiesByState = fixedStateId
 			? cities.filter((city) => city.state_id === fixedStateId).map((city) => city.name.trim())
 			: []
 
+		const fallbackCity = input.cityCatalogOptions.find((city) => city.trim().length > 0)?.trim() ?? ""
+		const resolvedCity = normalizedCity || fallbackCity
+
 		const cityOptions = Array.from(
 			new Set(
-				[...citiesByState, input.companyCity]
+				[...citiesByState, ...input.cityCatalogOptions, resolvedCity]
 					.map((cityName) => cityName.trim())
 					.filter((cityName) => cityName.length > 0)
 			)
 		).sort((a, b) => a.localeCompare(b))
 
 		return {
-			statuses: getParameterOptions(parameters, "status"),
-			workplaceTypes: getParameterOptions(parameters, "workplace_type"),
-			employmentTypes: getParameterOptions(parameters, "employment_type"),
+			statuses:
+				parameters.find((item) => item.technical_name === "status")?.values ?? [],
+			workplaceTypes:
+				parameters.find((item) => item.technical_name === "workplace_type")?.values ?? [],
+			employmentTypes:
+				parameters.find((item) => item.technical_name === "employment_type")?.values ?? [],
 			categories: input.categories,
+			stateOptions,
 			fixedLocation: {
-				state: input.companyState,
+				state: resolvedState,
 			},
 			cityOptions,
-			technicalSkillOptions: skillsCatalog.technical_skills,
-			softSkillOptions: skillsCatalog.soft_skills,
+			technicalSkillOptions: input.technicalSkillOptions,
+			softSkillOptions: input.softSkillOptions,
 		}
 	} catch {
+		const normalizedState = input.companyState.trim()
+		const normalizedCity = input.companyCity.trim()
+		const fallbackState = input.stateOptions.find((state) => state.trim().length > 0)?.trim() ?? ""
+		const fallbackCity = input.cityCatalogOptions.find((city) => city.trim().length > 0)?.trim() ?? ""
+
 		return {
 			statuses: [
 				{ technical_name: "draft", display_name: "Borrador" },
 				{ technical_name: "published", display_name: "Publicado" },
+				{ technical_name: "closed", display_name: "Cerrado" },
+				{ technical_name: "archived", display_name: "Archivado" },
 			],
 			workplaceTypes: [
 				{ technical_name: "onsite", display_name: "Presencial" },
 				{ technical_name: "remote", display_name: "Remoto" },
+				{ technical_name: "hybrid", display_name: "Híbrido" },
 			],
 			employmentTypes: [
 				{ technical_name: "full_time", display_name: "Tiempo completo" },
+				{ technical_name: "part_time", display_name: "Medio tiempo" },
 				{ technical_name: "contract", display_name: "Contrato" },
+				{ technical_name: "internship", display_name: "Pasantía" },
 			],
-			categories: [{ id: 1, name: "Tecnología" }],
+			categories: input.categories.length > 0 ? input.categories : [{ id: 1, name: "Tecnología" }],
+			stateOptions:
+				input.stateOptions.length > 0 ? input.stateOptions : [normalizedState || fallbackState || "Distrito Capital"],
 			fixedLocation: {
-				state: input.companyState || "Distrito Capital",
+				state: normalizedState || fallbackState || "Distrito Capital",
 			},
-			cityOptions: [input.companyCity || "Caracas"],
-			technicalSkillOptions: ["TypeScript", "React", "Node.js"],
-			softSkillOptions: ["Comunicación", "Trabajo en equipo", "Resolución de problemas"],
+			cityOptions: Array.from(
+				new Set([normalizedCity, fallbackCity, "Caracas"].filter((city) => city.trim().length > 0))
+			),
+			technicalSkillOptions:
+				input.technicalSkillOptions.length > 0
+					? input.technicalSkillOptions
+					: ["TypeScript", "React", "Node.js"],
+			softSkillOptions:
+				input.softSkillOptions.length > 0
+					? input.softSkillOptions
+					: ["Comunicación", "Trabajo en equipo", "Resolución de problemas"],
 		}
 	}
 }
@@ -177,9 +205,10 @@ async function fetchCreateOfferCatalogsServer(input: {
 export default async function CrearOfertaPage() {
 	const cookie = (await headers()).get("cookie") ?? undefined
 
-	const [companyConfigResult, categoriesResult] = await Promise.allSettled([
+	const [companyConfigResult, categoriesResult, offersCatalogsResult] = await Promise.allSettled([
 		getCompanyConfigServer(cookie),
 		getAdminCategoriesServer({ page: 1, pageSize: 100 }, cookie),
+		getAdminOffersCatalogsServer(cookie),
 	])
 
 	const blockers: string[] = []
@@ -223,6 +252,27 @@ export default async function CrearOfertaPage() {
 			blockers.push(`No se pudieron validar las categorias: ${reason.message}`)
 		} else {
 			blockers.push("No se pudieron validar las categorias")
+		}
+	}
+
+	let statuses: Array<{ technical_name: string; display_name: string }> = []
+	let stateOptions: string[] = []
+	let cityCatalogOptions: string[] = []
+	let technicalSkillOptions: string[] = []
+	let softSkillOptions: string[] = []
+
+	if (offersCatalogsResult.status === "fulfilled") {
+		statuses = offersCatalogsResult.value.statuses
+		stateOptions = offersCatalogsResult.value.states
+		cityCatalogOptions = offersCatalogsResult.value.cities
+		technicalSkillOptions = offersCatalogsResult.value.technical_skills
+		softSkillOptions = offersCatalogsResult.value.soft_skills
+	} else {
+		const reason = offersCatalogsResult.reason
+		if (reason instanceof Error) {
+			blockers.push(`No se pudieron cargar los catalogos de oferta: ${reason.message}`)
+		} else {
+			blockers.push("No se pudieron cargar los catalogos de oferta")
 		}
 	}
 
@@ -289,8 +339,12 @@ export default async function CrearOfertaPage() {
 
 	const catalogs = await fetchCreateOfferCatalogsServer({
 		categories: categoryOptions,
-		companyState,
-		companyCity,
+		companyState: companyState.trim(),
+		companyCity: companyCity.trim(),
+		stateOptions,
+		cityCatalogOptions,
+		technicalSkillOptions,
+		softSkillOptions,
 	})
 
 	return <CrearOfertaForm catalogs={catalogs} />

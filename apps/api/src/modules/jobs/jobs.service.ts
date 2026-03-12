@@ -506,7 +506,7 @@ export class JobsService {
     const admin = await this.getCurrentAdmin(userId);
     const companyId = admin.company_id as number;
 
-    const [categories, jobs, company] = await Promise.all([
+    const [categories, jobs, company, attributes] = await Promise.all([
       this.prisma.job_categories.findMany({
         orderBy: { name: 'asc' },
         select: { name: true },
@@ -524,6 +524,15 @@ export class JobsService {
       this.prisma.companies.findUnique({
         where: { id: companyId },
         select: { city: true, state: true },
+      }),
+      this.prisma.global_attributes.findMany({
+        where: {
+          type: {
+            in: ['hard_skill', 'soft_skill'],
+          },
+        },
+        orderBy: { name: 'asc' },
+        select: { name: true, type: true },
       }),
     ]);
 
@@ -583,6 +592,18 @@ export class JobsService {
       statusSet.add('archived');
     }
 
+    const technicalSkills = this.normalizeAttributeNames(
+      attributes
+        .filter((attribute) => attribute.type === 'hard_skill')
+        .map((attribute) => attribute.name),
+    );
+
+    const softSkills = this.normalizeAttributeNames(
+      attributes
+        .filter((attribute) => attribute.type === 'soft_skill')
+        .map((attribute) => attribute.name),
+    );
+
     return {
       categories: categories
         .map((category) => category.name?.trim() || '')
@@ -607,6 +628,8 @@ export class JobsService {
           technical_name: value,
           display_name: this.getStatusDisplayName(value),
         })),
+      technical_skills: technicalSkills,
+      soft_skills: softSkills,
     };
   }
 

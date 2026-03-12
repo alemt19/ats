@@ -45,6 +45,8 @@ export type AdminOffersCatalogsResponse = {
   workplace_types: JobParameterOption[]
   employment_types: JobParameterOption[]
   statuses: JobParameterOption[]
+  technical_skills: string[]
+  soft_skills: string[]
 }
 
 const DEFAULT_PAGE = 1

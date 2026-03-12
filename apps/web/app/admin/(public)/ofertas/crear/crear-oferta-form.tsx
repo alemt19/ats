@@ -173,6 +173,33 @@ function MultiDatalistField({
     setDraft("")
   }, [draft, onChangeValues, selectedValues])
 
+  const handleDraftChange = React.useCallback(
+    (nextDraft: string) => {
+      setDraft(nextDraft)
+
+      const matchingOption = options.find(
+        (option) => normalizeValue(option) === normalizeValue(nextDraft)
+      )
+
+      if (!matchingOption) {
+        return
+      }
+
+      const alreadyExists = selectedValues.some(
+        (selected) => normalizeValue(selected) === normalizeValue(matchingOption)
+      )
+
+      if (alreadyExists) {
+        setDraft("")
+        return
+      }
+
+      onChangeValues([...selectedValues, matchingOption])
+      setDraft("")
+    },
+    [onChangeValues, options, selectedValues]
+  )
+
   const removeValue = React.useCallback(
     (valueToRemove: string) => {
       onChangeValues(selectedValues.filter((item) => item !== valueToRemove))
@@ -198,13 +225,14 @@ function MultiDatalistField({
           value={draft}
           placeholder={placeholder}
           disabled={disabled}
-          onChange={(event) => setDraft(event.target.value)}
+          onChange={(event) => handleDraftChange(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
               event.preventDefault()
               addValue()
             }
           }}
+          onBlur={addValue}
         />
         <Button type="button" variant="outline" onClick={addValue} disabled={disabled}>
           Agregar
@@ -343,6 +371,7 @@ export default function CrearOfertaForm({
   const status = form.watch("status")
   const workplaceType = form.watch("workplace_type")
   const employmentType = form.watch("employment_type")
+  const state = form.watch("state")
   const city = form.watch("city")
   const position = form.watch("position")
   const salary = form.watch("salary")
@@ -376,7 +405,7 @@ export default function CrearOfertaForm({
     status.trim().length > 0 &&
     city.trim().length > 0 &&
     address.trim().length > 0 &&
-    fixedLocation.state.trim().length > 0 &&
+    state.trim().length > 0 &&
     workplaceType.trim().length > 0 &&
     employmentType.trim().length > 0 &&
     position.trim().length > 0 &&
@@ -480,7 +509,7 @@ export default function CrearOfertaForm({
       status: "draft",
       city: values.city.trim(),
       address: values.address.trim(),
-      state: fixedLocation.state,
+      state: values.state.trim(),
       workplace_type: values.workplace_type,
       employment_type: values.employment_type,
       position: values.position.trim(),

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import OfertaAdminDetalleClient from "./oferta-admin-detalle-client"
 import { getAdminCategoriesServer } from "../../categorias/categories-admin-service"
 import { getCompanyConfigServer } from "../../configuracion/company-config-service"
+import { getAdminOffersCatalogsServer } from "../offers-admin-service"
 import {
   getAdminOfferCandidatesServer,
   getAdminOfferDetailServer,
@@ -17,6 +18,11 @@ import {
 } from "./offer-detail-admin-types"
 import { type CrearOfertaCatalogs } from "../crear/crear-oferta-form"
 
+type CategoryOption = {
+  id: number
+  name: string
+}
+
 type JobParameterValue = {
   technical_name: string
   display_name: string
@@ -26,16 +32,6 @@ type JobParameter = {
   technical_name: string
   display_name: string
   values: JobParameterValue[]
-}
-
-type SkillsCatalog = {
-  technical_skills: string[]
-  soft_skills: string[]
-}
-
-type CategoryOption = {
-  id: number
-  name: string
 }
 
 type StateItem = {
@@ -74,9 +70,9 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
   try {
     const cookie = (await headers()).get("cookie") ?? undefined
 
-    const [parameters, skillsCatalog, states, cities, categoriesResult, companyConfig] = await Promise.all([
+    const [offersCatalogs, parameters, states, cities, categoriesResult, companyConfig] = await Promise.all([
+      getAdminOffersCatalogsServer(cookie),
       readJsonFile<JobParameter[]>("job_parameters.json"),
-      readJsonFile<SkillsCatalog>("job_skills_catalog_dummy.json"),
       readJsonFile<StateItem[]>("state.json"),
       readJsonFile<CityItem[]>("city.json"),
       getAdminCategoriesServer({ page: 1, pageSize: 100 }, cookie),
@@ -113,17 +109,28 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       a.localeCompare(b)
     )
 
+    const stateOptions = Array.from(
+      new Set(
+        [
+          ...offersCatalogs.states,
+          ...states.map((state) => state.name.trim()),
+          companyState,
+        ].filter((stateName) => stateName.length > 0)
+      )
+    ).sort((a, b) => a.localeCompare(b))
+
     return {
       statuses: getParameterOptions(parameters, "status"),
       workplaceTypes: getParameterOptions(parameters, "workplace_type"),
       employmentTypes: getParameterOptions(parameters, "employment_type"),
       categories,
+      stateOptions,
       fixedLocation: {
         state: companyState,
       },
       cityOptions,
-      technicalSkillOptions: skillsCatalog.technical_skills,
-      softSkillOptions: skillsCatalog.soft_skills,
+      technicalSkillOptions: offersCatalogs.technical_skills,
+      softSkillOptions: offersCatalogs.soft_skills,
     }
   } catch {
     return {
@@ -141,8 +148,10 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
         { technical_name: "full_time", display_name: "Tiempo completo" },
         { technical_name: "part_time", display_name: "Medio tiempo" },
         { technical_name: "contract", display_name: "Contrato" },
+        { technical_name: "internship", display_name: "Pasantía" },
       ],
       categories: [{ id: 1, name: "Tecnologia" }],
+      stateOptions: ["Carabobo"],
       fixedLocation: {
         state: "Carabobo",
       },
