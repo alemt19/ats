@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import math
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -148,6 +149,18 @@ class GeminiBatchWorker:
             connection.commit()
         logger.info("Updated embeddings in DB for %s attribute(s)", len(updates))
 
+    def _normalize_embedding(self, embedding: list[float]) -> list[float]:
+        # Normalize to unit length so cosine similarity reflects direction only.
+        squared_norm = sum(value * value for value in embedding)
+        norm = math.sqrt(squared_norm)
+        if norm == 0.0:
+            logger.warning("Received zero-norm embedding; storing without normalization")
+            return embedding
+        return [value / norm for value in embedding]
+
+    def _normalize_embeddings(self, embeddings: list[list[float]]) -> list[list[float]]:
+        return [self._normalize_embedding(embedding) for embedding in embeddings]
+
     async def process_batch(self) -> None:
         async with self.lock:
             if not self.queue_buffer:
@@ -187,13 +200,14 @@ class GeminiBatchWorker:
                 model=self.embedding_model,
                 contents=texts,
                 config=types.EmbedContentConfig(
-                    task_type=self.embedding_task_type,
+                    # task_type=self.embedding_task_type,
                     output_dimensionality=self.embedding_output_dimensionality,
                 ),
             )
             embeddings = self._extract_embeddings(result, len(texts))
+            normalized_embeddings = self._normalize_embeddings(embeddings)
 
-            updates = list(zip(attribute_ids, embeddings, strict=False))
+            updates = list(zip(attribute_ids, normalized_embeddings, strict=False))
             await asyncio.to_thread(self._update_embeddings_in_db, updates)
 
             update_by_id = {attribute_id: embedding for attribute_id, embedding in updates}

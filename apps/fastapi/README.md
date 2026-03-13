@@ -43,6 +43,13 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
 The worker updates embeddings directly in the `global_attributes.embedding` column using `DATABASE_URL`
 (Supabase Postgres connection), not via Supabase HTTP APIs.
 
+### Normalize existing embeddings
+
+- Run one-time backfill to normalize stored vectors: `pnpm --filter fastapi embeddings:normalize-existing`
+- Optional env vars:
+  - `EMBEDDING_NORMALIZATION_BATCH_SIZE` (default: `500`)
+  - `EMBEDDING_NORMALIZATION_TOLERANCE` (default: `0.001`)
+
 The service listens on port 8000 by default.
 
 ## Company values suggestions endpoint
