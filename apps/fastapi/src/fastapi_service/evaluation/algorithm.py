@@ -10,13 +10,16 @@ Final score = average of individual scores across all base items.
 """
 
 import logging
+import os
 from dataclasses import dataclass, field
 
 import numpy as np
 
 logger = logging.getLogger("fastapi_service.evaluation.algorithm")
 
-SIMILARITY_THRESHOLD = 0.65
+SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "0.65"))
+IS_MANDATORY_RECALL = float(os.getenv("IS_MANDATORY_RECALL", str(SIMILARITY_THRESHOLD)))
+IS_MANDATORY_WEIGHT = float(os.getenv("IS_MANDATORY_WEIGHT", "0.0"))
 
 
 @dataclass
@@ -47,6 +50,7 @@ def analyze_embeddings(
     compare_texts: list[str],
     base_embeddings: list[list[float]],
     compare_embeddings: list[list[float]],
+    mandatory_flags: list[bool] | None = None,
 ) -> MatchResult:
     """
     Analyze how well compare items match base requirements.
@@ -56,6 +60,7 @@ def analyze_embeddings(
         compare_texts: Candidate attribute names.
         base_embeddings: Embedding vectors for each base text.
         compare_embeddings: Embedding vectors for each compare text.
+        mandatory_flags: Optional list matching base_texts where True means mandatory.
 
     Returns:
         MatchResult with final_score and per-requirement details.
@@ -64,7 +69,7 @@ def analyze_embeddings(
         return MatchResult(final_score=0.0)
 
     if not compare_texts or not compare_embeddings:
-        details = [
+        missing_details = [
             MatchDetail(
                 requirement=req,
                 matched_to="",
@@ -73,10 +78,11 @@ def analyze_embeddings(
             )
             for req in base_texts
         ]
-        return MatchResult(final_score=0.0, details=details)
+        return MatchResult(final_score=0.0, details=missing_details)
 
     compare_texts_lower = [t.lower() for t in compare_texts]
     compare_vecs = [np.array(e, dtype=np.float64) for e in compare_embeddings]
+    effective_mandatory_flags = mandatory_flags or [False] * len(base_texts)
 
     total_score = 0.0
     details: list[MatchDetail] = []
@@ -129,4 +135,24 @@ def analyze_embeddings(
             )
 
     final_score = total_score / len(base_texts)
+
+    mandatory_indexes = [
+        idx
+        for idx, is_mandatory in enumerate(effective_mandatory_flags[: len(base_texts)])
+        if is_mandatory
+    ]
+    weight = max(0.0, min(1.0, IS_MANDATORY_WEIGHT))
+
+    if mandatory_indexes and weight > 0.0:
+        mandatory_hits = 0
+
+        for idx in mandatory_indexes:
+            req_vec = np.array(base_embeddings[idx], dtype=np.float64)
+            best_similarity = max(cosine_similarity(req_vec, cand_vec) for cand_vec in compare_vecs)
+            if best_similarity > IS_MANDATORY_RECALL:
+                mandatory_hits += 1
+
+        mandatory_score = mandatory_hits / len(mandatory_indexes)
+        final_score = (final_score * (1.0 - weight)) + (mandatory_score * weight)
+
     return MatchResult(final_score=final_score, details=details)

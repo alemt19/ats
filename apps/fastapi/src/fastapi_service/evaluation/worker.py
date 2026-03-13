@@ -18,7 +18,7 @@ import psycopg
 from bullmq import Worker
 
 from fastapi_service.environment import load_environment
-from fastapi_service.evaluation.algorithm import MatchResult, analyze_embeddings
+from fastapi_service.evaluation.algorithm import analyze_embeddings
 
 logger = logging.getLogger("fastapi_service.evaluation.worker")
 logging.basicConfig(
@@ -36,6 +36,7 @@ TOP_SIMILAR_JOBS = 3
 class AttributeGroup:
     names: list[str]
     embeddings: list[list[float]]
+    mandatory_flags: list[bool]
 
 
 @dataclass
@@ -89,34 +90,35 @@ class EvaluationWorker:
         """
         if entity_type == "job":
             query = """
-                SELECT ga.name, ga.type, ga.embedding::text
+                SELECT ga.name, ga.type, ga.embedding::text, COALESCE(ja.is_mandatory, false)
                 FROM job_attributes ja
                 JOIN global_attributes ga ON ga.id = ja.attribute_id
                 WHERE ja.job_id = %s AND ga.embedding IS NOT NULL
             """
         else:
             query = """
-                SELECT ga.name, ga.type, ga.embedding::text
+                SELECT ga.name, ga.type, ga.embedding::text, false AS is_mandatory
                 FROM candidate_attributes ca
                 JOIN global_attributes ga ON ga.id = ca.attribute_id
                 WHERE ca.candidate_id = %s AND ga.embedding IS NOT NULL
             """
 
         groups: dict[str, AttributeGroup] = {
-            "hard_skill": AttributeGroup(names=[], embeddings=[]),
-            "soft_skill": AttributeGroup(names=[], embeddings=[]),
-            "value": AttributeGroup(names=[], embeddings=[]),
+            "hard_skill": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
+            "soft_skill": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
+            "value": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
         }
 
         with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
             with conn.cursor() as cur:
                 cur.execute(query, (entity_id,))
-                for name, attr_type, embedding_str in cur.fetchall():
+                for name, attr_type, embedding_str, is_mandatory in cur.fetchall():
                     if attr_type not in groups:
                         continue
                     embedding = self._parse_vector(embedding_str)
                     groups[attr_type].names.append(name)
                     groups[attr_type].embeddings.append(embedding)
+                    groups[attr_type].mandatory_flags.append(bool(is_mandatory))
 
         # For jobs: fall back to company values when no job-specific values are defined
         if entity_type == "job" and not groups["value"].names:
@@ -148,6 +150,7 @@ class EvaluationWorker:
             for name, embedding_str in rows:
                 groups["value"].names.append(name)
                 groups["value"].embeddings.append(self._parse_vector(embedding_str))
+                groups["value"].mandatory_flags.append(False)
 
     @staticmethod
     def _parse_vector(vector_str: str) -> list[float]:
@@ -167,6 +170,7 @@ class EvaluationWorker:
             cand_attrs["hard_skill"].names,
             job_attrs["hard_skill"].embeddings,
             cand_attrs["hard_skill"].embeddings,
+            job_attrs["hard_skill"].mandatory_flags,
         )
 
         soft_result = analyze_embeddings(
@@ -174,6 +178,7 @@ class EvaluationWorker:
             cand_attrs["soft_skill"].names,
             job_attrs["soft_skill"].embeddings,
             cand_attrs["soft_skill"].embeddings,
+            job_attrs["soft_skill"].mandatory_flags,
         )
 
         culture_result = analyze_embeddings(
@@ -181,6 +186,7 @@ class EvaluationWorker:
             cand_attrs["value"].names,
             job_attrs["value"].embeddings,
             cand_attrs["value"].embeddings,
+            job_attrs["value"].mandatory_flags,
         )
 
         overall = (
