@@ -30,6 +30,53 @@ load_environment()
 
 QUEUE_NAME = "evaluation"
 TOP_SIMILAR_JOBS = 3
+CULTURE_PREFERENCE_WEIGHT = float(os.getenv("CULTURE_PREFERENCE_WEIGHT", "0.5"))
+CULTURE_VALUE_WEIGHT = float(os.getenv("CULTURE_VALUE_WEIGHT", "0.5"))
+
+_CULTURE_SCALE_BY_FIELD: dict[str, dict[str, int]] = {
+    "dress_code": {
+        "casual": 1,
+        "semi_formal": 2,
+        "semi-formal": 2,
+        "formal": 3,
+    },
+    "colaboration_style": {
+        "individual": 1,
+        "mixed": 2,
+        "highly_collaborative": 3,
+    },
+    "work_pace": {
+        "slow": 1,
+        "moderate": 2,
+        "accelerated": 3,
+    },
+    "level_of_autonomy": {
+        "high_control": 1,
+        "balanced": 2,
+        "total_freedom": 3,
+    },
+    "dealing_with_management": {
+        "strictly_professional": 1,
+        "friendly_and_approachable": 2,
+        "nearby": 3,
+    },
+    "level_of_monitoring": {
+        "daily_monitoring": 1,
+        "frequent_monitoring": 2,
+        "weekly_goals": 3,
+        "biweekly_goals": 4,
+        "total_trust": 5,
+    },
+}
+
+_CULTURE_FIELDS = [
+    "dress_code",
+    "colaboration_style",
+    "work_pace",
+    "level_of_autonomy",
+    "dealing_with_management",
+    "level_of_monitoring",
+]
 
 
 @dataclass
@@ -158,8 +205,125 @@ class EvaluationWorker:
         cleaned = vector_str.strip("[]")
         return [float(x) for x in cleaned.split(",")]
 
+    def _fetch_culture_preferences(
+        self, job_id: int, candidate_id: int
+    ) -> tuple[dict[str, str | None], dict[str, str | None]]:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        comp.dress_code,
+                        comp.colaboration_style,
+                        comp.work_pace,
+                        comp.level_of_autonomy,
+                        comp.dealing_with_management,
+                        comp.level_of_monitoring,
+                        cand.dress_code,
+                        cand.collaboration_style,
+                        cand.work_pace,
+                        cand.level_of_autonomy,
+                        cand.dealing_with_management,
+                        cand.level_of_monitoring
+                    FROM jobs j
+                    LEFT JOIN companies comp ON comp.id = j.company_id
+                    JOIN candidates cand ON cand.id = %s
+                    WHERE j.id = %s
+                    """,
+                    (candidate_id, job_id),
+                )
+                row = cur.fetchone()
+
+        if not row:
+            raise ValueError(
+                f"Could not fetch culture preferences for job={job_id} candidate={candidate_id}"
+            )
+
+        company_preferences: dict[str, str | None] = {
+            "dress_code": row[0],
+            "colaboration_style": row[1],
+            "work_pace": row[2],
+            "level_of_autonomy": row[3],
+            "dealing_with_management": row[4],
+            "level_of_monitoring": row[5],
+        }
+        candidate_preferences: dict[str, str | None] = {
+            "dress_code": row[6],
+            "colaboration_style": row[7],
+            "work_pace": row[8],
+            "level_of_autonomy": row[9],
+            "dealing_with_management": row[10],
+            "level_of_monitoring": row[11],
+        }
+        return company_preferences, candidate_preferences
+
+    def _calculate_culture_preference_score(
+        self,
+        company_preferences: dict[str, str | None],
+        candidate_preferences: dict[str, str | None],
+    ) -> float:
+        scores: list[float] = []
+
+        for field_name in _CULTURE_FIELDS:
+            candidate_value = candidate_preferences.get(field_name)
+            company_value = company_preferences.get(field_name)
+
+            if candidate_value == "indifferent":
+                scores.append(1.0)
+                logger.info(
+                    "Culture preference %s | candidate=%s company=%s score=%.3f",
+                    field_name,
+                    candidate_value,
+                    company_value,
+                    1.0,
+                )
+                continue
+
+            if candidate_value is None or company_value is None:
+                scores.append(0.0)
+                logger.info(
+                    "Culture preference %s | candidate=%s company=%s score=%.3f",
+                    field_name,
+                    candidate_value,
+                    company_value,
+                    0.0,
+                )
+                continue
+
+            scale = _CULTURE_SCALE_BY_FIELD[field_name]
+            candidate_numeric = scale.get(candidate_value)
+            company_numeric = scale.get(company_value)
+
+            if candidate_numeric is None or company_numeric is None:
+                scores.append(0.0)
+                logger.info(
+                    "Culture preference %s | candidate=%s company=%s score=%.3f",
+                    field_name,
+                    candidate_value,
+                    company_value,
+                    0.0,
+                )
+                continue
+
+            score = abs(candidate_numeric - company_numeric) / company_numeric
+            scores.append(score)
+            logger.info(
+                "Culture preference %s | candidate=%s company=%s score=%.3f",
+                field_name,
+                candidate_value,
+                company_value,
+                score,
+            )
+
+        if not scores:
+            return 0.0
+
+        return sum(scores) / len(scores)
+
     def _evaluate_candidate_for_job(
         self,
+        job_id: int,
+        candidate_id: int,
         job_attrs: dict[str, AttributeGroup],
         cand_attrs: dict[str, AttributeGroup],
         weights: JobWeights,
@@ -181,7 +345,7 @@ class EvaluationWorker:
             job_attrs["soft_skill"].mandatory_flags,
         )
 
-        culture_result = analyze_embeddings(
+        culture_values_result = analyze_embeddings(
             job_attrs["value"].names,
             cand_attrs["value"].names,
             job_attrs["value"].embeddings,
@@ -189,16 +353,40 @@ class EvaluationWorker:
             job_attrs["value"].mandatory_flags,
         )
 
+        company_preferences, candidate_preferences = self._fetch_culture_preferences(
+            job_id, candidate_id
+        )
+        culture_preference_score = self._calculate_culture_preference_score(
+            company_preferences, candidate_preferences
+        )
+
+        culture_final_score = (
+            culture_preference_score * CULTURE_PREFERENCE_WEIGHT
+            + culture_values_result.final_score * CULTURE_VALUE_WEIGHT
+        )
+
+        logger.info(
+            (
+                "Culture score blend | preference=%.3f values=%.3f pref_weight=%.3f "
+                "value_weight=%.3f final=%.3f"
+            ),
+            culture_preference_score,
+            culture_values_result.final_score,
+            CULTURE_PREFERENCE_WEIGHT,
+            CULTURE_VALUE_WEIGHT,
+            culture_final_score,
+        )
+
         overall = (
             tech_result.final_score * weights.technical
             + soft_result.final_score * weights.soft
-            + culture_result.final_score * weights.culture
+            + culture_final_score * weights.culture
         )
 
         return {
             "match_technical_score": tech_result.final_score,
             "match_soft_score": soft_result.final_score,
-            "match_culture_score": culture_result.final_score,
+            "match_culture_score": culture_final_score,
             "overall_score": overall,
         }
 
@@ -326,7 +514,12 @@ class EvaluationWorker:
 
             # Evaluate for the applied job
             scores = await asyncio.to_thread(
-                self._evaluate_candidate_for_job, job_attrs, cand_attrs, weights
+                self._evaluate_candidate_for_job,
+                job_id,
+                candidate_id,
+                job_attrs,
+                cand_attrs,
+                weights,
             )
             await asyncio.to_thread(
                 self._update_application_scores, application_id, scores
@@ -354,7 +547,11 @@ class EvaluationWorker:
                 )
                 similar_scores = await asyncio.to_thread(
                     self._evaluate_candidate_for_job,
-                    similar_job_attrs, cand_attrs, similar_weights,
+                    similar_job_id,
+                    candidate_id,
+                    similar_job_attrs,
+                    cand_attrs,
+                    similar_weights,
                 )
                 await asyncio.to_thread(
                     self._insert_similar_job_analysis,
