@@ -1,8 +1,6 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
-import { Globe, Mail, Phone } from "lucide-react"
-
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
@@ -110,28 +108,28 @@ export default function CandidateDetailReadonly({
   }, [candidate.cv_url, cvPreviewType])
 
   return (
-    <section className="mx-auto w-full max-w-6xl space-y-6 p-4 md:p-6">
-      <header className="flex items-center gap-4 rounded-xl border bg-card p-4 md:p-6">
+    <section className="mx-auto w-full max-w-6xl space-y-6">
+      <header className="gradient-border flex items-center gap-4 rounded-2xl bg-card/90 p-4 shadow-soft md:p-6">
         <Avatar className="size-20 md:size-24">
           <AvatarImage src={candidate.profile_picture} alt={fullName} />
           <AvatarFallback>{toInitials(fullName)}</AvatarFallback>
         </Avatar>
 
         <div>
-          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{fullName}</h1>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{fullName}</h1>
           <p className="text-muted-foreground mt-1 text-sm">Perfil de candidato</p>
         </div>
       </header>
 
       <Tabs defaultValue="datos" className="gap-4">
-        <TabsList>
+        <TabsList variant="line" className="w-full justify-start border-b border-border/70 pb-2">
           <TabsTrigger value="datos">Datos</TabsTrigger>
           <TabsTrigger value="competencias">Competencias y valores</TabsTrigger>
           <TabsTrigger value="preferencias">Preferencias culturales</TabsTrigger>
         </TabsList>
 
         <TabsContent value="datos" className="space-y-4">
-          <Card>
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
             <CardHeader>
               <CardTitle>Información general</CardTitle>
               <CardDescription>Datos personales y de contacto del candidato.</CardDescription>
@@ -182,13 +180,13 @@ export default function CandidateDetailReadonly({
         </TabsContent>
 
         <TabsContent value="competencias" className="space-y-4">
-          <Card>
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
             <CardHeader>
               <CardTitle>CV</CardTitle>
               <CardDescription>Documento de currículo del candidato.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="overflow-hidden rounded-lg border">
+              <div className="overflow-hidden rounded-xl border border-border/70 bg-background/80">
                 {!cvPreviewType ? (
                   <div className="p-6 text-sm text-muted-foreground">No hay CV para mostrar.</div>
                 ) : null}
@@ -206,7 +204,7 @@ export default function CandidateDetailReadonly({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
             <CardHeader>
               <CardTitle>Preguntas conductuales</CardTitle>
               <CardDescription>Respuestas declaradas por el candidato.</CardDescription>
@@ -224,7 +222,7 @@ export default function CandidateDetailReadonly({
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
             <CardHeader>
               <CardTitle>Habilidades técnicas, blandas y valores</CardTitle>
               <CardDescription>Listado de competencias del candidato.</CardDescription>
@@ -280,7 +278,7 @@ export default function CandidateDetailReadonly({
 
         <TabsContent value="preferencias" className="space-y-4">
           {culturalPreferenceCatalog.length === 0 ? (
-            <Card>
+            <Card className="rounded-2xl bg-card/90 shadow-soft">
               <CardContent className="pt-6">
                 <p className="text-muted-foreground text-sm">No hay preferencias culturales registradas.</p>
               </CardContent>
@@ -290,50 +288,50 @@ export default function CandidateDetailReadonly({
               const selectedTechnicalName = candidate.cultural_preferences[category.technical_name]
 
               return (
-              <Card key={category.technical_name}>
-                <CardHeader>
-                  <CardTitle>{category.display_name}</CardTitle>
-                  <CardDescription>Preferencia cultural registrada (solo lectura)</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <RadioGroup
-                    value={selectedTechnicalName ?? ""}
-                    className="grid gap-4 sm:grid-cols-2"
-                    disabled
-                  >
-                    {category.values.map((option) => {
-                      const isSelected = selectedTechnicalName === option.technical_name
-                      const optionId = `${category.technical_name}-${option.technical_name}`
+                <Card key={category.technical_name} className="rounded-2xl bg-card/90 shadow-soft">
+                  <CardHeader>
+                    <CardTitle>{category.display_name}</CardTitle>
+                    <CardDescription>Preferencia cultural registrada (solo lectura)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <RadioGroup
+                      value={selectedTechnicalName ?? ""}
+                      className="grid gap-4 sm:grid-cols-2"
+                      disabled
+                    >
+                      {category.values.map((option) => {
+                        const isSelected = selectedTechnicalName === option.technical_name
+                        const optionId = `${category.technical_name}-${option.technical_name}`
 
-                      return (
-                        <label key={option.technical_name} className="block">
-                          <Card
-                            className={cn(
-                              "border-muted/60",
-                              isSelected && "border-primary/70 ring-1 ring-primary/20"
-                            )}
-                          >
-                            <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-                              <div className="space-y-1">
-                                <CardTitle className="text-base">{option.display_name}</CardTitle>
-                              </div>
-                              <RadioGroupItem
-                                id={optionId}
-                                value={option.technical_name}
-                                aria-label={option.display_name}
-                                disabled
-                              />
-                            </CardHeader>
-                            <CardContent className="pt-0">
-                              <CardDescription>{option.description}</CardDescription>
-                            </CardContent>
-                          </Card>
-                        </label>
-                      )
-                    })}
-                  </RadioGroup>
-                </CardContent>
-              </Card>
+                        return (
+                          <label key={option.technical_name} className="block">
+                            <Card
+                              className={cn(
+                                "border-muted/60",
+                                isSelected && "border-primary/70 ring-1 ring-primary/20"
+                              )}
+                            >
+                              <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
+                                <div className="space-y-1">
+                                  <CardTitle className="text-base">{option.display_name}</CardTitle>
+                                </div>
+                                <RadioGroupItem
+                                  id={optionId}
+                                  value={option.technical_name}
+                                  aria-label={option.display_name}
+                                  disabled
+                                />
+                              </CardHeader>
+                              <CardContent className="pt-0">
+                                <CardDescription>{option.description}</CardDescription>
+                              </CardContent>
+                            </Card>
+                          </label>
+                        )
+                      })}
+                    </RadioGroup>
+                  </CardContent>
+                </Card>
               )
             })
           )}
