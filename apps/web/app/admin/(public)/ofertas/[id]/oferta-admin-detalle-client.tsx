@@ -1,3 +1,4 @@
+﻿
 "use client"
 
 import * as React from "react"
@@ -214,7 +215,7 @@ function ScoreFilterPanel({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label>Puntuación de habilidades técnicas</Label>
+        <Label className="text-xs text-muted-foreground">Puntuación de habilidades técnicas</Label>
         <Slider
           min={0}
           max={100}
@@ -230,7 +231,7 @@ function ScoreFilterPanel({
       </div>
 
       <div className="space-y-2">
-        <Label>Puntuación de habilidades blandas</Label>
+        <Label className="text-xs text-muted-foreground">Puntuación de habilidades blandas</Label>
         <Slider
           min={0}
           max={100}
@@ -246,7 +247,7 @@ function ScoreFilterPanel({
       </div>
 
       <div className="space-y-2">
-        <Label>Puntuación de alineación cultural</Label>
+        <Label className="text-xs text-muted-foreground">Puntuación de alineación cultural</Label>
         <Slider
           min={0}
           max={100}
@@ -262,7 +263,7 @@ function ScoreFilterPanel({
       </div>
 
       <div className="space-y-2">
-        <Label>Puntuación final</Label>
+        <Label className="text-xs text-muted-foreground">Puntuación final</Label>
         <Slider
           min={0}
           max={100}
@@ -278,12 +279,12 @@ function ScoreFilterPanel({
       </div>
 
       <div className="space-y-2">
-        <Label>Estado</Label>
+        <Label className="text-xs text-muted-foreground">Estado</Label>
         <Select value={query.status} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Selecciona estado" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="border-border/70 bg-popover/95">
             <SelectItem value="all">Todos</SelectItem>
             {statusOptions.map((option) => (
               <SelectItem key={option.technical_name} value={option.technical_name}>
@@ -294,7 +295,7 @@ function ScoreFilterPanel({
         </Select>
       </div>
 
-      <Button variant="outline" onClick={onClear} className="w-full">
+      <Button variant="outline" onClick={onClear} className="w-full rounded-full border-border/70 bg-background/70">
         Limpiar filtros
       </Button>
     </div>
@@ -517,7 +518,7 @@ export default function OfertaAdminDetalleClient({
   return (
     <section className="mx-auto w-full space-y-6">
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight">{offer.title}</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">{offer.title}</h1>
         <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
           <Badge variant={offerStatusBadgeVariant(offer.status)}>{statusDisplayName}</Badge>
           <span>Creado {formatPublishedDate(offer.published_at)}</span>
@@ -525,10 +526,10 @@ export default function OfertaAdminDetalleClient({
       </div>
 
       <Tabs defaultValue="detalles" className="space-y-6">
-        <TabsList variant="line" className="w-full justify-start border-b px-0 pb-0">
+        <TabsList variant="line" className="w-full justify-start border-b border-border/70 px-0 pb-2">
           <TabsTrigger value="detalles">Detalles de la Oferta</TabsTrigger>
           <TabsTrigger value="candidatos" className="gap-2">
-            Candidatos Postulados
+            Candidatos postulados
             <Badge variant="secondary">{offer.candidates_count}</Badge>
           </TabsTrigger>
         </TabsList>
@@ -539,7 +540,7 @@ export default function OfertaAdminDetalleClient({
             initialValues={initialFormValues}
             mode="edit"
             showPageHeader={false}
-            offerCardTitle="Editar Oferta de Empleo"
+            offerCardTitle="Editar oferta de empleo"
             submitLabel="Guardar cambios"
             onSubmitValues={async (values) => {
               const payload = {
@@ -597,7 +598,7 @@ export default function OfertaAdminDetalleClient({
 
         <TabsContent value="candidatos" className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-            <Card className="hidden h-fit lg:block">
+            <Card className="gradient-border hidden h-fit rounded-2xl bg-card/90 shadow-soft lg:block">
               <CardHeader>
                 <CardTitle className="text-base">Filtros avanzados</CardTitle>
               </CardHeader>
@@ -639,7 +640,7 @@ export default function OfertaAdminDetalleClient({
               </CardContent>
             </Card>
 
-            <Card className="min-w-0 gap-3">
+            <Card className="min-w-0 rounded-2xl bg-card/90 shadow-soft">
               <CardHeader className="space-y-3">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="relative flex-1">
@@ -655,12 +656,12 @@ export default function OfertaAdminDetalleClient({
                   <div className="flex gap-2">
                     <Sheet>
                       <SheetTrigger asChild>
-                        <Button variant="outline" className="lg:hidden">
+                        <Button variant="outline" className="rounded-full border-border/70 bg-background/70 lg:hidden">
                           <SlidersHorizontal className="mr-2 size-4" />
                           Filtros
                         </Button>
                       </SheetTrigger>
-                      <SheetContent side="left" className="w-full max-w-xs">
+                      <SheetContent side="left" className="w-full max-w-xs border-border/70 bg-card/95">
                         <SheetHeader>
                           <SheetTitle>Filtros avanzados</SheetTitle>
                           <SheetDescription>Ajusta rangos y status de candidatos.</SheetDescription>
@@ -718,90 +719,92 @@ export default function OfertaAdminDetalleClient({
 
               <CardContent className="space-y-4">
                 <div className="w-full overflow-x-auto">
-                  <Table className="min-w-280">
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Candidato</TableHead>
-                        <TableHead>Puntuación técnica</TableHead>
-                        <TableHead>Puntuación blanda</TableHead>
-                        <TableHead>Alineación cultural</TableHead>
-                        <TableHead>Puntuación final</TableHead>
-                        <TableHead>Estado</TableHead>
-                        <TableHead className="w-20 text-right">Acciones</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {tableLoading ? <CandidateRowsSkeleton rows={Math.min(query.pageSize, 8)} /> : null}
-
-                      {!tableLoading &&
-                        candidates.map((candidate) => {
-                          const fullName = `${candidate.first_name} ${candidate.last_name}`
-                          const statusLabel = statusMap.get(candidate.status) ?? candidate.status
-
-                          return (
-                            <TableRow key={candidate.application_id}>
-                              <TableCell>
-                                <div className="font-medium">{fullName}</div>
-                              </TableCell>
-                              <TableCell className="space-y-1.5">
-                                <Progress
-                                  value={candidate.technical_score}
-                                  className={cn("h-2 w-36", getProgressColorClass(candidate.technical_score))}
-                                />
-                                <p className="text-muted-foreground text-xs">{candidate.technical_score}%</p>
-                              </TableCell>
-                              <TableCell className="space-y-1.5">
-                                <Progress
-                                  value={candidate.soft_score}
-                                  className={cn("h-2 w-36", getProgressColorClass(candidate.soft_score))}
-                                />
-                                <p className="text-muted-foreground text-xs">{candidate.soft_score}%</p>
-                              </TableCell>
-                              <TableCell className="space-y-1.5">
-                                <Progress
-                                  value={candidate.culture_score}
-                                  className={cn("h-2 w-36", getProgressColorClass(candidate.culture_score))}
-                                />
-                                <p className="text-muted-foreground text-xs">{candidate.culture_score}%</p>
-                              </TableCell>
-                              <TableCell className="space-y-1.5">
-                                <Progress
-                                  value={candidate.final_score}
-                                  className={cn("h-2 w-36", getProgressColorClass(candidate.final_score))}
-                                />
-                                <p className="text-muted-foreground text-xs">{candidate.final_score}%</p>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant={candidateStatusBadgeVariant(candidate.status)}>
-                                  {statusLabel}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" asChild>
-                                  <Link
-                                    href={`/admin/ofertas/${offerId}/candidatos/${candidate.application_id}`}
-                                    aria-label={`Ver aplicación de ${fullName}`}
-                                  >
-                                    <Eye className="size-4" />
-                                  </Link>
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          )
-                        })}
-
-                      {!tableLoading && !candidates.length ? (
+                  <div className="min-w-280 overflow-hidden rounded-2xl border border-border/70 bg-background/80">
+                    <Table>
+                      <TableHeader className="bg-muted/40">
                         <TableRow>
-                          <TableCell colSpan={7} className="text-muted-foreground py-8 text-center">
-                            No se encontraron candidatos con los filtros seleccionados.
-                          </TableCell>
+                          <TableHead className="text-xs font-semibold text-muted-foreground">Candidato</TableHead>
+                          <TableHead className="text-xs font-semibold text-muted-foreground">Puntuación técnica</TableHead>
+                          <TableHead className="text-xs font-semibold text-muted-foreground">Puntuación blanda</TableHead>
+                          <TableHead className="text-xs font-semibold text-muted-foreground">Alineación cultural</TableHead>
+                          <TableHead className="text-xs font-semibold text-muted-foreground">Puntuación final</TableHead>
+                          <TableHead className="text-xs font-semibold text-muted-foreground">Estado</TableHead>
+                          <TableHead className="w-20 text-right text-xs font-semibold text-muted-foreground">Acciones</TableHead>
                         </TableRow>
-                      ) : null}
-                    </TableBody>
-                  </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {tableLoading ? <CandidateRowsSkeleton rows={Math.min(query.pageSize, 8)} /> : null}
+
+                        {!tableLoading &&
+                          candidates.map((candidate) => {
+                            const fullName = `${candidate.first_name} ${candidate.last_name}`
+                            const statusLabel = statusMap.get(candidate.status) ?? candidate.status
+
+                            return (
+                              <TableRow key={candidate.application_id} className="transition-colors hover:bg-muted/60">
+                                <TableCell>
+                                  <div className="font-medium">{fullName}</div>
+                                </TableCell>
+                                <TableCell className="space-y-1.5">
+                                  <Progress
+                                    value={candidate.technical_score}
+                                    className={cn("h-2 w-36", getProgressColorClass(candidate.technical_score))}
+                                  />
+                                  <p className="text-muted-foreground text-xs">{candidate.technical_score}%</p>
+                                </TableCell>
+                                <TableCell className="space-y-1.5">
+                                  <Progress
+                                    value={candidate.soft_score}
+                                    className={cn("h-2 w-36", getProgressColorClass(candidate.soft_score))}
+                                  />
+                                  <p className="text-muted-foreground text-xs">{candidate.soft_score}%</p>
+                                </TableCell>
+                                <TableCell className="space-y-1.5">
+                                  <Progress
+                                    value={candidate.culture_score}
+                                    className={cn("h-2 w-36", getProgressColorClass(candidate.culture_score))}
+                                  />
+                                  <p className="text-muted-foreground text-xs">{candidate.culture_score}%</p>
+                                </TableCell>
+                                <TableCell className="space-y-1.5">
+                                  <Progress
+                                    value={candidate.final_score}
+                                    className={cn("h-2 w-36", getProgressColorClass(candidate.final_score))}
+                                  />
+                                  <p className="text-muted-foreground text-xs">{candidate.final_score}%</p>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={candidateStatusBadgeVariant(candidate.status)}>
+                                    {statusLabel}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button variant="ghost" size="icon" asChild className="rounded-full">
+                                    <Link
+                                      href={`/admin/ofertas/${offerId}/candidatos/${candidate.application_id}`}
+                                      aria-label={`Ver aplicación de ${fullName}`}
+                                    >
+                                      <Eye className="size-4" />
+                                    </Link>
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            )
+                          })}
+
+                        {!tableLoading && !candidates.length ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-muted-foreground py-10 text-center">
+                              No se encontraron candidatos con los filtros seleccionados.
+                            </TableCell>
+                          </TableRow>
+                        ) : null}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-muted-foreground text-sm">
                     Mostrando {startItem} a {endItem} de {total} candidatos
                   </p>
@@ -818,7 +821,10 @@ export default function OfertaAdminDetalleClient({
                               updateUrl({ page: query.page - 1 })
                             }
                           }}
-                          className={cn("gap-1 px-2.5", query.page <= 1 ? "pointer-events-none opacity-50" : "")}
+                          className={cn(
+                            "gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 hover:bg-muted/80",
+                            query.page <= 1 ? "pointer-events-none opacity-50" : ""
+                          )}
                         >
                           <ChevronLeft className="size-4" />
                           <span>Anterior</span>
@@ -837,6 +843,7 @@ export default function OfertaAdminDetalleClient({
                                 event.preventDefault()
                                 updateUrl({ page: pageNumber })
                               }}
+                              className="rounded-full border border-border/60 bg-background/70 hover:bg-muted/80"
                             >
                               {pageNumber}
                             </PaginationLink>
@@ -855,7 +862,7 @@ export default function OfertaAdminDetalleClient({
                             }
                           }}
                           className={cn(
-                            "gap-1 px-2.5",
+                            "gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 hover:bg-muted/80",
                             query.page >= totalPages ? "pointer-events-none opacity-50" : ""
                           )}
                         >

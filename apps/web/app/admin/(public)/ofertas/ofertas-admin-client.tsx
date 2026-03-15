@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -159,7 +159,7 @@ function TableRowsSkeleton({ rows = 6 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-6 w-16" />
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className="text-center">
             <Skeleton className="ml-auto h-8 w-8" />
           </TableCell>
         </TableRow>
@@ -192,12 +192,12 @@ function FiltersPanel({
   return (
     <div className={cn("grid gap-3", compact ? "grid-cols-2 xl:grid-cols-5" : "grid-cols-1 sm:grid-cols-2")}>
       <div className="space-y-1.5">
-        <Label>Categoría</Label>
+        <Label className="text-xs text-muted-foreground">Categoría</Label>
         <Select value={query.category} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="border-border/70 bg-popover/95">
             <SelectItem value="all">Todas</SelectItem>
             {catalogs.categories.map((item) => (
               <SelectItem key={item} value={item}>
@@ -209,12 +209,12 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Modalidad</Label>
+        <Label className="text-xs text-muted-foreground">Modalidad</Label>
         <Select value={query.workplace_type} onValueChange={onWorkplaceTypeChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Modalidad" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="border-border/70 bg-popover/95">
             <SelectItem value="all">Todas</SelectItem>
             {catalogs.workplace_types.map((option) => (
               <SelectItem key={option.technical_name} value={option.technical_name}>
@@ -226,12 +226,12 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Tipo de empleo</Label>
+        <Label className="text-xs text-muted-foreground">Tipo de empleo</Label>
         <Select value={query.employment_type} onValueChange={onEmploymentTypeChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Tipo de empleo" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="border-border/70 bg-popover/95">
             <SelectItem value="all">Todos</SelectItem>
             {catalogs.employment_types.map((option) => (
               <SelectItem key={option.technical_name} value={option.technical_name}>
@@ -243,15 +243,15 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Ciudad</Label>
+        <Label className="text-xs text-muted-foreground">Ciudad</Label>
         <Popover open={cityOpen} onOpenChange={setCityOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="w-full justify-between">
+            <Button variant="outline" className="w-full justify-between border-border/70 bg-background/70 hover:bg-muted/80">
               {query.city === "all" ? "Todas" : query.city}
               <ChevronsUpDown className="size-4 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-0" align="start">
+          <PopoverContent className="w-64 border-border/70 bg-popover/95 p-0" align="start">
             <Command>
               <CommandInput placeholder="Buscar ciudad..." />
               <CommandList>
@@ -293,12 +293,12 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label>Estado</Label>
+        <Label className="text-xs text-muted-foreground">Estado</Label>
         <Select value={query.status} onValueChange={onStatusChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="border-border/70 bg-popover/95">
             <SelectItem value="all">Todos</SelectItem>
             {catalogs.statuses.map((option) => (
               <SelectItem key={option.technical_name} value={option.technical_name}>
@@ -450,7 +450,7 @@ export default function OfertasAdminClient({
 
   const offersErrorMessage = offersError instanceof Error ? offersError.message : "No se pudieron cargar las ofertas"
   const catalogsErrorMessage =
-    catalogsError instanceof Error ? catalogsError.message : "No se pudieron cargar los catalogos"
+    catalogsError instanceof Error ? catalogsError.message : "No se pudieron cargar los catálogos"
 
   const onPageChange = (nextPage: number) => {
     if (nextPage < 1 || nextPage > totalPages || nextPage === query.page) {
@@ -461,10 +461,13 @@ export default function OfertasAdminClient({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Ofertas de Empleo</h1>
-        <Button asChild className="sm:w-auto">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Gestión de ofertas de empleo</h1>
+          <p className="text-sm text-muted-foreground">Revisa, filtra y publica nuevas oportunidades.</p>
+        </div>
+        <Button asChild className="rounded-full sm:w-auto">
           <Link href="/admin/ofertas/crear">
             <Plus className="mr-2 size-4" />
             Crear Nueva Oferta
@@ -472,9 +475,9 @@ export default function OfertasAdminClient({
         </Button>
       </div>
 
-      <Card className="container mx-auto gap-4 @container">
+      <Card className="gradient-border container mx-auto gap-4 rounded-3xl bg-card/90 shadow-soft @container">
         <CardHeader className="space-y-3">
-          <div className="flex flex-col gap-3 @[1151px]:flex-row @[1151px]:items-start @[1151px]:gap-4">
+          <div className="flex flex-row gap-3 items-start">
             <div className="relative flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
               <Input
@@ -500,12 +503,15 @@ export default function OfertasAdminClient({
 
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="outline" className="@[1151px]:hidden">
+                <Button
+                  variant="outline"
+                  className="rounded-full border-border/70 bg-muted/60 text-foreground/80 hover:border-primary/40 hover:bg-muted/80 @[1151px]:hidden"
+                >
                   <SlidersHorizontal className="mr-2 size-4" />
                   Filtros
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-full max-w-sm">
+              <SheetContent side="right" className="w-full max-w-sm border-border/70 bg-card/95">
                 <SheetHeader>
                   <SheetTitle>Filtros</SheetTitle>
                   <SheetDescription>Filtra las ofertas en función de tus criterios.</SheetDescription>
@@ -528,68 +534,75 @@ export default function OfertasAdminClient({
 
         <CardContent className="space-y-4">
           {isOffersError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
               {offersErrorMessage}
             </div>
           ) : null}
 
           {isCatalogsError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+            <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
               {catalogsErrorMessage}
             </div>
           ) : null}
 
           {isFetching && !offers.length ? <TableSkeleton /> : null}
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Título del cargo</TableHead>
-                <TableHead>Ubicación</TableHead>
-                <TableHead>Candidatos</TableHead>
-                <TableHead>Fecha de creación</TableHead>
-                <TableHead>Estado</TableHead>
-                <TableHead className="w-20 text-right">Ver</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isFetching ? <TableRowsSkeleton rows={Math.min(query.pageSize, 8)} /> : null}
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/80">
+            <Table>
+              <TableHeader className="bg-muted/60 text-foreground/80">
+                <TableRow className="border-b border-border/70">
+                  <TableHead className="text-xs font-medium text-foreground/70">Título del cargo</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Ubicación</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Candidatos</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Fecha de creación</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Estado</TableHead>
+                  <TableHead className="w-12 text-center text-xs font-medium text-foreground/70">Ver</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isFetching ? <TableRowsSkeleton rows={Math.min(query.pageSize, 8)} /> : null}
 
-              {!isFetching &&
-                offers.map((offer) => (
-                  <TableRow key={offer.id}>
-                    <TableCell>
-                      <div className="font-medium">{offer.title}</div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {offer.city}, {offer.state}
-                    </TableCell>
-                    <TableCell className="text-primary font-medium">{offer.candidateCount}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(offer.createdAt)}</TableCell>
-                    <TableCell>
-                      <Badge variant={statusBadgeVariant(offer.status)}>{statusLabel(offer.status)}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link href={`/admin/ofertas/${offer.id}`} aria-label={`Ver oferta ${offer.title}`}>
-                          <Eye className="size-4" />
-                        </Link>
-                      </Button>
+                {!isFetching &&
+                  offers.map((offer) => (
+                    <TableRow
+                      key={offer.id}
+                      className="transition-colors hover:bg-muted/35 data-[state=selected]:bg-muted/45"
+                    >
+                      <TableCell>
+                        <div className="font-medium">{offer.title}</div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {offer.city}, {offer.state}
+                      </TableCell>
+                      <TableCell className="text-primary font-medium">{offer.candidateCount}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatDate(offer.createdAt)}</TableCell>
+                      <TableCell>
+                        <Badge variant={statusBadgeVariant(offer.status)}>{statusLabel(offer.status)}</Badge>
+                      </TableCell>
+                      <TableCell className="w-12 text-center">
+                        <div className="flex items-center justify-center">
+                          <Button variant="ghost" size="icon" asChild className="rounded-full">
+                            <Link href={`/admin/ofertas/${offer.id}`} aria-label={`Ver oferta ${offer.title}`}>
+                              <Eye className="size-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                {!isFetching && !offers.length ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-muted-foreground py-10 text-center">
+                      No se encontraron ofertas con los filtros seleccionados.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : null}
+              </TableBody>
+            </Table>
+          </div>
 
-              {!isFetching && !offers.length ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-muted-foreground py-8 text-center">
-                    No se encontraron ofertas con los filtros seleccionados.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-
-          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-muted-foreground text-sm">
               Mostrando {startItem} a {endItem} de {total} resultados
             </p>
@@ -604,7 +617,10 @@ export default function OfertasAdminClient({
                       event.preventDefault()
                       onPageChange(query.page - 1)
                     }}
-                    className={cn("gap-1 px-2.5", query.page <= 1 ? "pointer-events-none opacity-50" : "")}
+                    className={cn(
+                      "gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 hover:bg-muted/80",
+                      query.page <= 1 ? "pointer-events-none opacity-50" : ""
+                    )}
                   >
                     <ChevronLeft className="size-4" />
                     <span>Anterior</span>
@@ -622,6 +638,7 @@ export default function OfertasAdminClient({
                           event.preventDefault()
                           onPageChange(pageNumber)
                         }}
+                        className="rounded-full border border-border/60 bg-background/70 hover:bg-muted/80"
                       >
                         {pageNumber}
                       </PaginationLink>
@@ -637,7 +654,10 @@ export default function OfertasAdminClient({
                       event.preventDefault()
                       onPageChange(query.page + 1)
                     }}
-                    className={cn("gap-1 px-2.5", query.page >= totalPages ? "pointer-events-none opacity-50" : "")}
+                    className={cn(
+                      "gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 hover:bg-muted/80",
+                      query.page >= totalPages ? "pointer-events-none opacity-50" : ""
+                    )}
                   >
                     <span>Siguiente</span>
                     <ChevronRight className="size-4" />
