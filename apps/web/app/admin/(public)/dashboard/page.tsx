@@ -1,5 +1,6 @@
-import Link from "next/link"
+﻿import Link from "next/link"
 import { CheckCircle2, CircleX, Send, UserRoundPlus } from "lucide-react"
+import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import { Button } from "react/components/ui/button"
 import { Input } from "react/components/ui/input"
@@ -159,91 +160,104 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
     } as const
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2 lg:max-w-2xl">
+                <Badge variant="outline" className="w-fit rounded-full border-primary/35 bg-primary/10 text-primary">
+                    Panel de reclutamiento
+                </Badge>
                 <div>
-                    <h1 className="text-2xl font-bold">Dashboard de Reclutamiento</h1>
-                    <p className="text-sm text-muted-foreground">Bienvenido, Reclutador</p>
+                    <h1 className="text-3xl font-semibold tracking-tight">Dashboard de Reclutamiento</h1>
+                    <p className="text-sm text-foreground/70">Resumen operativo y estado del funnel.</p>
                 </div>
-
-                <form className="grid grid-cols-1 items-end gap-2 sm:grid-cols-2 lg:grid-cols-[auto_auto_auto]" method="GET">
-                    <div className="space-y-1">
-                        <label htmlFor="from" className="text-xs text-muted-foreground">Fecha inicial</label>
-                        <Input id="from" name="from" type="date" defaultValue={from} />
-                    </div>
-                    <div className="space-y-1">
-                        <label htmlFor="to" className="text-xs text-muted-foreground">Fecha final</label>
-                        <Input id="to" name="to" type="date" defaultValue={to} />
-                    </div>
-                    <div className="flex gap-2">
-                        <Button type="submit">Aplicar</Button>
-                        <Button variant="outline" asChild>
-                            <Link href="/admin/dashboard">Limpiar</Link>
-                        </Button>
-                    </div>
-                </form>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <Card>
-                    <CardHeader className="gap-1 pb-0">
-                        <CardDescription>Ofertas Nuevas</CardDescription>
-                        <CardTitle className="text-3xl">{data.metrics.activeOffers}</CardTitle>
-                    </CardHeader>
-                </Card>
+            <form
+                className="w-full max-w-2xl grid grid-cols-1 items-end gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 shadow-soft sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]"
+                method="GET"
+            >
+                <div className="space-y-1">
+                    <label htmlFor="from" className="text-xs font-medium text-foreground/70">Fecha inicial</label>
+                    <Input id="from" name="from" type="date" defaultValue={from} />
+                </div>
+                <div className="space-y-1">
+                    <label htmlFor="to" className="text-xs font-medium text-foreground/70">Fecha final</label>
+                    <Input id="to" name="to" type="date" defaultValue={to} />
+                </div>
+                <div className="flex gap-2">
+                    <Button type="submit" className="rounded-full">Aplicar</Button>
+                    <Button
+                        variant="outline"
+                        asChild
+                        className="rounded-full border-border/70 bg-background/70 text-foreground/80 hover:border-primary/40"
+                    >
+                        <Link href="/admin/dashboard">Limpiar</Link>
+                    </Button>
+                </div>
+            </form>
+        </div>
 
-                <Card>
-                    <CardHeader className="gap-1 pb-0">
-                        <CardDescription>Nuevos candidatos</CardDescription>
-                        <CardTitle className="text-3xl">{data.metrics.newCandidates}</CardTitle>
-                    </CardHeader>
-                </Card>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Card className="gradient-border min-h-[120px] rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader className="gap-2 pb-2">
+                    <CardDescription className="text-xs text-foreground/60">Ofertas nuevas</CardDescription>
+                    <CardTitle className="text-3xl font-semibold">{data.metrics.activeOffers}</CardTitle>
+                </CardHeader>
+            </Card>
 
-                <Card>
-                    <CardHeader className="gap-1 pb-0">
-                        <CardDescription>Cantidad nueva de postulaciones</CardDescription>
-                        <CardTitle className="text-3xl">{data.metrics.newApplications}</CardTitle>
-                    </CardHeader>
-                </Card>
+            <Card className="gradient-border min-h-[120px] rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader className="gap-2 pb-2">
+                    <CardDescription className="text-xs text-foreground/60">Nuevos candidatos</CardDescription>
+                    <CardTitle className="text-3xl font-semibold">{data.metrics.newCandidates}</CardTitle>
+                </CardHeader>
+            </Card>
 
-                <Card>
-                    <CardHeader className="gap-1 pb-0">
-                        <CardDescription>Tasa de alineación cultural promedio</CardDescription>
-                        <CardTitle className="text-3xl">{data.metrics.culturalAlignment}%</CardTitle>
-                    </CardHeader>
-                </Card>
-            </div>
+            <Card className="gradient-border min-h-[120px] rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader className="gap-2 pb-2">
+                    <CardDescription className="text-xs text-foreground/60">Nuevas postulaciones</CardDescription>
+                    <CardTitle className="text-3xl font-semibold">{data.metrics.newApplications}</CardTitle>
+                </CardHeader>
+            </Card>
 
-            <div className="gap-4 mx-auto">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Progreso de Candidatos</CardTitle>
-                    </CardHeader>
-                    <CardContent className="w-full  space-y-4">
-                        {data.candidateProgress.map((item) => {
-                            const value = (item.count / maxProgressCount) * 100
-                            const Icon = progressIcons[item.label as keyof typeof progressIcons] ?? UserRoundPlus
-                            return (
-                                <div key={item.label} className="space-y-1.5">
-                                    <div className="flex items-center justify-between text-sm">
-                                        <span className="flex items-center gap-2">
-                                            <span className="bg-muted flex h-6 w-6 items-center justify-center rounded-md">
-                                                <Icon className="size-4" />
-                                            </span>
-                                            {item.label}
+            <Card className="gradient-border min-h-[120px] rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader className="gap-2 pb-2">
+                    <CardDescription className="line-clamp-2 text-xs text-foreground/60">
+                        Tasa de alineación cultural promedio
+                    </CardDescription>
+                    <CardTitle className="text-3xl font-semibold">{data.metrics.culturalAlignment}%</CardTitle>
+                </CardHeader>
+            </Card>
+        </div>
+
+        <div className="space-y-4">
+            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader>
+                    <CardTitle>Progreso de candidatos</CardTitle>
+                </CardHeader>
+                <CardContent className="w-full space-y-4">
+                    {data.candidateProgress.map((item) => {
+                        const value = (item.count / maxProgressCount) * 100
+                        const Icon = progressIcons[item.label as keyof typeof progressIcons] ?? UserRoundPlus
+                        return (
+                            <div key={item.label} className="rounded-xl border border-border/70 bg-background/85 p-4">
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-4 text-sm">
+                                    <span className="flex items-center gap-2 text-foreground/80">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/70">
+                                            <Icon aria-hidden="true" className="size-4" />
                                         </span>
-                                        <span className="text-muted-foreground">{item.count}</span>
-                                    </div>
-                                    <Progress value={value} />
+                                        {item.label}
+                                    </span>
+                                    <span className="text-foreground/70 tabular-nums">{item.count}</span>
                                 </div>
-                            )
-                        })}
-                    </CardContent>
-                </Card>
-
-
+                                <Progress value={value} className="mt-3 h-2" />
+                            </div>
+                        )
+                    })}
+                </CardContent>
+            </Card>
             </div>
-            <Card>
+
+            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
                 <CardHeader>
                     <CardTitle>Top 5 de ofertas laborales con más candidatos</CardTitle>
                 </CardHeader>

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -254,10 +254,16 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 		pathname.startsWith("/admin/configuracion/preferencias-culturales")
 
 	return (
-		<SidebarProvider>
-			<Sidebar collapsible="offcanvas">
+		<SidebarProvider className="bg-background">
+			<a
+				href="#admin-main-content"
+				className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm"
+			>
+				Saltar al contenido principal
+			</a>
+			<Sidebar collapsible="offcanvas" variant="inset" className="border-border/70 bg-sidebar/90">
 				<SidebarHeader>
-					<div className="flex items-center gap-3 rounded-md px-2 py-1">
+					<div className="gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
 						{isSidebarIdentityLoading ? (
 							<div className="flex items-center gap-3">
 								<Skeleton className="h-8 w-8 rounded-md" />
@@ -269,14 +275,16 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 									<img
 										src={companyLogo}
 										alt={`${companyName} logo`}
-										className="h-8 w-8 rounded-md object-contain"
+										className="h-8 w-8 rounded-lg border border-border/70 object-contain"
 									/>
 								) : (
-									<div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">
+									<div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow-soft">
 										{companyName.slice(0, 2).toUpperCase()}
 									</div>
 								)}
-								<span className="text-base font-semibold tracking-tight">{companyName}</span>
+								<span className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight">
+									{companyName}
+								</span>
 							</Link>
 						)}
 					</div>
@@ -288,9 +296,13 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 							<SidebarMenu>
 								{visibleAdminLinks.map((item) => (
 									<SidebarMenuItem key={item.href}>
-										<SidebarMenuButton asChild isActive={pathname.startsWith(item.href)}>
+										<SidebarMenuButton
+											asChild
+											isActive={pathname.startsWith(item.href)}
+											className="rounded-xl text-muted-foreground transition-colors duration-[240ms] hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+										>
 											<Link href={item.href}>
-												<item.icon />
+												<item.icon aria-hidden="true" />
 												<span>{item.label}</span>
 											</Link>
 										</SidebarMenuButton>
@@ -300,10 +312,16 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 								<Collapsible defaultOpen={isConfigurationSection} className="group/collapsible">
 									<SidebarMenuItem>
 										<CollapsibleTrigger asChild>
-											<SidebarMenuButton isActive={isConfigurationSection}>
-												<Settings />
+											<SidebarMenuButton
+												isActive={isConfigurationSection}
+												className="rounded-xl text-muted-foreground transition-colors duration-[240ms] hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+											>
+												<Settings aria-hidden="true" />
 												<span>Configuración</span>
-												<ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+												<ChevronRight
+													aria-hidden="true"
+													className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90"
+												/>
 											</SidebarMenuButton>
 										</CollapsibleTrigger>
 
@@ -313,6 +331,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 													<SidebarMenuSubButton
 														asChild
 														isActive={pathname.startsWith("/admin/configuracion/informacion-valores")}
+														className="rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground"
 													>
 														<Link href="/admin/configuracion/informacion-valores">
 															<span>Información y Valores</span>
@@ -324,6 +343,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 													<SidebarMenuSubButton
 														asChild
 														isActive={pathname.startsWith("/admin/configuracion/preferencias-culturales")}
+														className="rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground"
 													>
 														<Link href="/admin/configuracion/preferencias-culturales">
 															<span>Preferencias Culturales</span>
@@ -355,7 +375,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 						</>
 					) : (
 						<>
-							<div className="flex items-center gap-3 rounded-md px-2 py-1">
+							<div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card/80 px-2 py-2 shadow-soft">
 								<Avatar className="h-9 w-9">
 									<AvatarImage src={adminImage} alt={fullName} />
 									<AvatarFallback>{fullName.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -368,7 +388,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 
 							<Button
 								variant="outline"
-								className="w-full justify-start"
+								className="w-full justify-start rounded-xl border-border/70 bg-background/80 hover:border-primary/45 hover:bg-muted/80"
 								onClick={() => {
 									void (async () => {
 										document.cookie = "ats_scope=; Path=/; Max-Age=0; SameSite=Lax"
@@ -377,7 +397,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 									})()
 								}}
 							>
-								<LogOut className="mr-2 size-4" />
+								<LogOut aria-hidden="true" className="mr-2 size-4" />
 								Logout
 							</Button>
 						</>
@@ -385,36 +405,41 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 				</SidebarFooter>
 			</Sidebar>
 
-			<SidebarInset>
-				<header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-background px-4">
-					<SidebarTrigger />
-					<Breadcrumb>
-						<BreadcrumbList>
-							<BreadcrumbItem>
-								<BreadcrumbLink href={defaultAdminRoute}>Admin</BreadcrumbLink>
-							</BreadcrumbItem>
-							{breadcrumbItems.map((item, index) => {
-								const isLast = index === breadcrumbItems.length - 1
+			<SidebarInset className="bg-background/85">
+				<div className="content-space flex min-h-dvh flex-col gap-3">
+					<header className="sticky top-3 z-30 flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft backdrop-blur-md">
+						<SidebarTrigger />
+						<Breadcrumb>
+							<BreadcrumbList>
+								<BreadcrumbItem>
+									<BreadcrumbLink href={defaultAdminRoute}>Admin</BreadcrumbLink>
+								</BreadcrumbItem>
+								{breadcrumbItems.map((item, index) => {
+									const isLast = index === breadcrumbItems.length - 1
 
-								return (
-									<div key={`${item.label}-${index}`} className="contents">
-										<BreadcrumbSeparator />
-										<BreadcrumbItem>
-											{!isLast && item.href ? (
-												<BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
-											) : (
-												<BreadcrumbPage>{item.label}</BreadcrumbPage>
-											)}
-										</BreadcrumbItem>
-									</div>
-								)
-							})}
-						</BreadcrumbList>
-					</Breadcrumb>
-				</header>
+									return (
+										<div key={`${item.label}-${index}`} className="contents">
+											<BreadcrumbSeparator />
+											<BreadcrumbItem>
+												{!isLast && item.href ? (
+													<BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
+												) : (
+													<BreadcrumbPage>{item.label}</BreadcrumbPage>
+												)}
+											</BreadcrumbItem>
+										</div>
+									)
+								})}
+							</BreadcrumbList>
+						</Breadcrumb>
+					</header>
 
-				<main className="p-4 sm:p-6">{children}</main>
+					<main id="admin-main-content" className="flex-1" tabIndex={-1}>
+						{children}
+					</main>
+				</div>
 			</SidebarInset>
 		</SidebarProvider>
 	)
 }
+
