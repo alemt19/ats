@@ -236,15 +236,15 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 		return (
 			<section className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 sm:px-6">
 				<div>
-					<Button asChild variant="ghost" className="-ml-2">
+						<Button asChild variant="ghost" className="-ml-2 rounded-full">
 						<Link href="/ofertas">
-							<ArrowLeft className="size-4" />
+								<ArrowLeft aria-hidden="true" className="size-4" />
 							Volver atrás
 						</Link>
 					</Button>
 				</div>
 
-				<Card>
+					<Card className="rounded-3xl border-border/75 bg-card/92 shadow-soft">
 					<CardHeader>
 						<CardTitle className="text-2xl">Oferta no disponible</CardTitle>
 					</CardHeader>
@@ -282,19 +282,19 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 	return (
 		<section className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10 sm:px-6">
 			<div>
-				<Button asChild variant="ghost" className="-ml-2">
+					<Button asChild variant="ghost" className="-ml-2 rounded-full">
 					<Link href="/ofertas">
-						<ArrowLeft className="size-4" />
+							<ArrowLeft aria-hidden="true" className="size-4" />
 						Volver atrás
 					</Link>
 				</Button>
 			</div>
 
-			<Card>
+				<Card className="gradient-border rounded-3xl bg-card/94 shadow-soft">
 				<CardHeader className="space-y-3">
 					<div className="flex flex-wrap items-center gap-2">
-						<Badge variant="outline">{workplaceTypeLabel}</Badge>
-						<Badge variant="secondary">{employmentTypeLabel}</Badge>
+							<Badge variant="outline" className="border-primary/35 bg-primary/10 text-primary">{workplaceTypeLabel}</Badge>
+							<Badge variant="secondary" className="bg-muted text-foreground">{employmentTypeLabel}</Badge>
 					</div>
 					<CardTitle className="text-2xl">{offerDetail.title}</CardTitle>
 				</CardHeader>
@@ -308,25 +308,25 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 
 					<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
-							<MapPin className="size-4" />
+								<MapPin aria-hidden="true" className="size-4 text-primary" />
 							<span>
 								{offerDetail.city}, {offerDetail.state}
 							</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
-							<BriefcaseBusiness className="size-4" />
+								<BriefcaseBusiness aria-hidden="true" className="size-4 text-primary" />
 							<span>{offerDetail.position}</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
-							<MapPin className="size-4" />
+								<MapPin aria-hidden="true" className="size-4 text-primary" />
 							<span>{offerDetail.address}</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm font-semibold">
-							<Wallet className="size-4" />
+								<Wallet aria-hidden="true" className="size-4 text-accent" />
 							<span>${offerDetail.salary} / mes</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
-							<CalendarDays className="size-4" />
+								<CalendarDays aria-hidden="true" className="size-4 text-primary" />
 							<span>Publicado: {formatPublishedDate(offerDetail.updated_at)}</span>
 						</p>
 					</div>

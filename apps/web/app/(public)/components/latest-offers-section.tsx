@@ -1,5 +1,7 @@
-import { BriefcaseBusiness, MapPin, Tag, Wallet } from "lucide-react"
+import Link from "next/link"
+import { BriefcaseBusiness, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
 
+import { Badge } from "../../../react/components/ui/badge"
 import { Button } from "../../../react/components/ui/button"
 import {
   Card,
@@ -7,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../react/components/ui/card"
-import Link from "next/link"
 
 type JobOffer = {
   id: number
@@ -27,7 +28,6 @@ type LatestOffersPayload =
 
 async function fetchLatestOffersServer(): Promise<JobOffer[]> {
   const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-
   const endpoints = [`${apiBaseUrl}/api/jobs/latest?limit=3`, `${apiBaseUrl}/jobs/latest?limit=3`]
 
   for (const endpoint of endpoints) {
@@ -41,6 +41,7 @@ async function fetchLatestOffersServer(): Promise<JobOffer[]> {
     }
 
     const payload = (await response.json().catch(() => null)) as LatestOffersPayload | null
+
     if (Array.isArray(payload)) {
       return payload
     }
@@ -57,62 +58,74 @@ export default async function LatestOffersSection() {
   const latestOffers = await fetchLatestOffersServer()
 
   return (
-    <section id="ofertas" className="bg-muted/30 py-10 sm:py-12 lg:py-16">
+    <section id="ofertas" className="section-space border-t border-border/65 bg-muted/20">
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-neutral-800 sm:text-4xl">
-            Ultimas ofertas laborales
-          </h2>
+          <Badge variant="outline" className="mb-4 rounded-full border-primary/35 bg-primary/10 text-primary">
+            Vacantes activas
+          </Badge>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ofertas destacadas esta semana</h2>
+          <p className="mt-4 text-base sm:text-lg">
+            Encuentra oportunidades activas con requisitos claros y procesos de seleccion transparentes.
+          </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {latestOffers.map((offer) => (
-            <Card key={offer.id} className="gap-3 rounded-2xl py-4 shadow-none">
-              <CardHeader className="pb-0">
-                <CardTitle className="text-xl text-neutral-800">{offer.title}</CardTitle>
+        <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {latestOffers.map((offer, index) => (
+            <Card
+              key={offer.id}
+              className="gradient-border animate-fade-up gap-3 rounded-3xl bg-card/92 py-4 shadow-soft interactive-lift hover:interactive-lift-hover"
+              style={{ animationDelay: `${index * 80}ms` }}
+            >
+              <CardHeader className="space-y-3 pb-0">
+                <Badge className="w-fit rounded-full bg-accent/85 text-accent-foreground">
+                  <Sparkles aria-hidden="true" className="size-3.5" />
+                  Relevante
+                </Badge>
+                <CardTitle className="text-xl leading-tight">{offer.title}</CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-2.5">
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Tag className="size-4" />
+                  <Tag aria-hidden="true" className="size-4 text-primary" />
                   <span>{offer.category}</span>
                 </p>
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="size-4" />
+                  <MapPin aria-hidden="true" className="size-4 text-primary" />
                   <span>
                     {offer.city}, {offer.state}
                   </span>
                 </p>
                 <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <BriefcaseBusiness className="size-4" />
+                  <BriefcaseBusiness aria-hidden="true" className="size-4 text-primary" />
                   <span>{offer.position}</span>
                 </p>
-                <p className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
-                  <Wallet className="size-4" />
+                <p className="flex items-center gap-2 text-sm font-semibold">
+                  <Wallet aria-hidden="true" className="size-4 text-accent" />
                   <span>${offer.salary} / mes</span>
                 </p>
 
-                <Button asChild className="mt-4 w-full bg-blue-700 hover:bg-blue-800">
-                  <Link href={`/ofertas/${offer.id}`}>Ver más</Link>
+                <Button asChild className="mt-4 w-full rounded-full shadow-soft">
+                  <Link href={`/ofertas/${offer.id}`}>Ver detalle</Link>
                 </Button>
               </CardContent>
             </Card>
           ))}
 
           {latestOffers.length === 0 ? (
-            <p className="text-muted-foreground md:col-span-2 lg:col-span-3 text-center">
+            <p className="text-muted-foreground text-center md:col-span-2 lg:col-span-3">
               No hay ofertas publicadas por el momento.
             </p>
           ) : null}
         </div>
 
         <div className="mt-8 flex justify-center">
-          <Button variant="outline" className="cursor-pointer px-8" >
-            
-            <Link href="/ofertas">Buscar mas ofertas</Link>
+          <Button variant="outline" className="rounded-full border-primary/35 bg-card/65 px-8 hover:border-primary/45 hover:bg-muted/90">
+            <Link href="/ofertas">Ver todas las ofertas</Link>
           </Button>
         </div>
       </div>
     </section>
   )
 }
+

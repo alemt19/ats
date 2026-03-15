@@ -21,17 +21,25 @@ export default function PublicLayoutShell({ children }: PublicLayoutShellProps) 
   if (!mounted) {
     return (
       <div className="flex min-h-screen flex-col">
-        <div className="h-16 border-b border-neutral-200 bg-background/95" />
+        <div className="h-16 border-b border-border/70 bg-background/80 backdrop-blur-xl" />
         <main className="flex-1">{children}</main>
-        <div className="h-40 border-t border-neutral-200 bg-neutral-100" />
+        <div className="h-40 border-t border-border/70 bg-muted/25" />
       </div>
     )
   }
 
   return (
     <div className="flex min-h-screen flex-col">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm"
+      >
+        Saltar al contenido principal
+      </a>
       <Navbar companyName={company?.name} logoSrc={company?.logo} />
-      <main className="flex-1">{children}</main>
+      <main id="main-content" className="flex-1" tabIndex={-1}>
+        {children}
+      </main>
       <Footer companyName={company?.name} logoSrc={company?.logo} />
     </div>
   )

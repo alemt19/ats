@@ -108,7 +108,7 @@ function OffersGridSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
       {items.map((_, index) => (
-        <Card key={`offer-skeleton-${index}`} className="gap-3 rounded-2xl py-4 shadow-none">
+        <Card key={`offer-skeleton-${index}`} className="gap-3 rounded-3xl border-border/75 bg-card/90 py-4 shadow-soft">
           <CardHeader className="space-y-2 pb-0">
             <Skeleton className="h-5 w-40" />
             <Skeleton className="h-4 w-28" />
@@ -166,7 +166,7 @@ function FiltersPanel({
       <div className="space-y-2">
         <Label>Categoría</Label>
         <Select value={category} onValueChange={onCategoryChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/75 bg-card/80">
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
           <SelectContent>
@@ -182,7 +182,7 @@ function FiltersPanel({
       <div className="space-y-2">
         <Label>Modalidad</Label>
         <Select value={workplaceType} onValueChange={onWorkplaceTypeChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/75 bg-card/80">
             <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
@@ -199,7 +199,7 @@ function FiltersPanel({
       <div className="space-y-2">
         <Label>Tipo de empleo</Label>
         <Select value={employmentType} onValueChange={onEmploymentTypeChange}>
-          <SelectTrigger className="w-full">
+          <SelectTrigger className="w-full border-border/75 bg-card/80">
             <SelectValue placeholder="Todos" />
           </SelectTrigger>
           <SelectContent>
@@ -217,9 +217,9 @@ function FiltersPanel({
         <Label>Ciudad</Label>
         <Popover open={cityOpen} onOpenChange={setCityOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" role="combobox" className="w-full justify-between">
+            <Button variant="outline" role="combobox" className="w-full justify-between border-border/75 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
               {city === "all" ? "Todas las ciudades" : city}
-              <ChevronsUpDown className="size-4 opacity-50" />
+              <ChevronsUpDown aria-hidden="true" className="size-4 opacity-60" />
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-60 p-0" align="start">
@@ -420,14 +420,14 @@ export default function OfertasClient({
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
       <div className="mb-6 space-y-2">
-        <h1 className="text-3xl font-semibold">Ofertas laborales</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-3xl font-semibold sm:text-4xl">Ofertas laborales</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
           Explora oportunidades y filtra por el tipo de trabajo que estás buscando.
         </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="hidden h-fit rounded-xl border p-4 lg:block">
+        <aside className="surface-glass hidden h-fit rounded-3xl p-4 lg:block">
           <FiltersPanel
             category={query.category}
             workplaceType={query.workplace_type}
@@ -449,11 +449,11 @@ export default function OfertasClient({
             <div className="flex w-full items-center gap-2 sm:max-w-md">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="lg:hidden">
-                    <SlidersHorizontal className="size-4" />
+                  <Button variant="outline" size="icon" className="border-border/75 bg-card/80 hover:border-primary/45 hover:bg-muted/90 lg:hidden">
+                    <SlidersHorizontal aria-hidden="true" className="size-4" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left">
+                <SheetContent side="left" className="border-border/75 bg-card/95">
                   <SheetHeader>
                     <SheetTitle>Filtros</SheetTitle>
                     <SheetDescription>Ajusta tu búsqueda de ofertas</SheetDescription>
@@ -482,9 +482,9 @@ export default function OfertasClient({
               </Sheet>
 
               <div className="relative w-full">
-                <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  className="pl-9"
+                  className="border-border/75 bg-card/85 pl-9"
                   placeholder="Buscar por título o cargo"
                   value={titleInput}
                   onChange={(event) => setTitleInput(event.target.value)}
@@ -493,8 +493,8 @@ export default function OfertasClient({
             </div>
 
             <div className="flex items-center gap-2">
-              {isFetching ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}
-              <Badge variant="outline">{data.total} ofertas encontradas</Badge>
+              {isFetching ? <Loader2 aria-hidden="true" className="size-4 animate-spin text-muted-foreground" /> : null}
+              <Badge variant="outline" className="border-primary/35 bg-primary/10 text-primary">{data.total} ofertas encontradas</Badge>
             </div>
           </div>
 
@@ -503,12 +503,13 @@ export default function OfertasClient({
           ) : (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
               {data.items.length === 0 ? (
-                <Card className="col-span-full">
+                <Card className="col-span-full rounded-3xl border-border/75 bg-card/90">
                   <CardContent className="py-10 text-center text-sm text-muted-foreground">
                     <div className="space-y-3">
                       <p>No hay ofertas que coincidan con tu búsqueda y filtros.</p>
                       <Button
                         variant="outline"
+                        className="rounded-full border-primary/35 bg-card/75 hover:border-primary/45 hover:bg-muted/90"
                         onClick={() => {
                           setTitleInput("")
                           router.replace(pathname, { scroll: false })
@@ -523,7 +524,7 @@ export default function OfertasClient({
                 data.items.map((offer) => (
                   <Card
                     key={offer.id}
-                    className="gap-3 rounded-2xl py-4 shadow-none transition hover:shadow-lg"
+                    className="gradient-border interactive-lift gap-3 rounded-3xl bg-card/92 py-4 shadow-soft hover:interactive-lift-hover"
                   >
                     <CardHeader className="pb-0">
                       <CardTitle className="text-xl">{offer.title}</CardTitle>
@@ -531,21 +532,21 @@ export default function OfertasClient({
 
                     <CardContent className="space-y-2">
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Tag className="size-4" />
+                        <Tag aria-hidden="true" className="size-4 text-primary" />
                         <span>{offer.category}</span>
                       </p>
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <MapPin className="size-4" />
+                        <MapPin aria-hidden="true" className="size-4 text-primary" />
                         <span>
                           {offer.city}, {offer.state}
                         </span>
                       </p>
                       <p className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <BriefcaseBusiness className="size-4" />
+                        <BriefcaseBusiness aria-hidden="true" className="size-4 text-primary" />
                         <span>{offer.position}</span>
                       </p>
                       <p className="flex items-center gap-2 text-sm font-semibold">
-                        <Wallet className="size-4" />
+                        <Wallet aria-hidden="true" className="size-4 text-accent" />
                         <span>${offer.salary} / mes</span>
                       </p>
 
@@ -562,7 +563,7 @@ export default function OfertasClient({
                     </CardContent>
 
                     <CardFooter>
-                      <Button asChild size="sm" variant="outline">
+                      <Button asChild size="sm" variant="outline" className="rounded-full border-primary/35 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
                         <Link href={`/ofertas/${offer.id}`}>Ver más</Link>
                       </Button>
                     </CardFooter>

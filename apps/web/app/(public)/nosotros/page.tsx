@@ -115,25 +115,25 @@ export default async function NosotrosPage() {
   const company = await fetchCompanyForAboutPage()
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-6 px-4 py-10 sm:px-6">
+    <section className="mx-auto w-full max-w-5xl space-y-8 px-4 py-10 sm:px-6">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold">Nosotros</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-3xl font-semibold sm:text-4xl">Nosotros</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
           Conoce mas sobre {company.name} y nuestra propuesta para conectar talento con oportunidades.
         </p>
       </div>
 
-      <Card>
+      <Card className="gradient-border rounded-3xl bg-card/94 shadow-soft">
         <CardHeader className="space-y-3">
           <div className="flex items-center gap-4">
             {company.logo ? (
               <img
                 src={company.logo}
                 alt={`Logo de ${company.name}`}
-                className="h-14 w-14 rounded-md object-contain"
+                className="h-14 w-14 rounded-xl border border-border/70 object-contain"
               />
             ) : (
-              <div className="bg-primary text-primary-foreground flex h-14 w-14 items-center justify-center rounded-md text-sm font-semibold">
+              <div className="bg-primary text-primary-foreground flex h-14 w-14 items-center justify-center rounded-xl text-sm font-semibold">
                 {company.name.slice(0, 2).toUpperCase()}
               </div>
             )}
@@ -178,7 +178,10 @@ export default async function NosotrosPage() {
           </div>
 
           <div>
-            <Link href="/ofertas" className="text-sm font-medium text-blue-700 hover:underline">
+            <Link
+              href="/ofertas"
+              className="inline-flex rounded-full border border-primary/35 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition-colors duration-[240ms] hover:border-primary/45 hover:bg-muted/90"
+            >
               Ver ofertas laborales
             </Link>
           </div>
