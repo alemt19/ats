@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { Camera, Sparkles, X } from "lucide-react"
@@ -164,7 +164,7 @@ function MultiDatalistField({
 						}
 					}}
 				/>
-				<Button type="button" variant="outline" onClick={addValue} disabled={disabled}>
+				<Button type="button" variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80" onClick={addValue} disabled={disabled}>
 					Agregar
 				</Button>
 			</div>
@@ -182,7 +182,7 @@ function MultiDatalistField({
 					selectedValues.map((value) => (
 						<span
 							key={value}
-							className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm"
+							className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-3 py-1.5 text-sm"
 						>
 							{value}
 							<Button
@@ -211,7 +211,7 @@ function MultiDatalistField({
 							return (
 								<div
 									key={item}
-									className="inline-flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+									className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm"
 								>
 									<span>{item}</span>
 									<Button
@@ -370,7 +370,7 @@ export default function InformacionValoresForm({
 	}
 
 	return (
-		<section className="mx-auto w-full max-w-5xl space-y-6">
+		<section className="mx-auto w-full max-w-5xl space-y-8">
 			<div>
 				<h1 className="text-2xl font-semibold">Información y Valores</h1>
 				<p className="text-sm text-muted-foreground">
@@ -383,20 +383,20 @@ export default function InformacionValoresForm({
 			<Form {...form}>
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 					{isReadOnly ? (
-						<p className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+						<p className="rounded-xl border border-dashed border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
 							Tu rol tiene acceso de solo lectura a esta sección.
 						</p>
 					) : null}
 
 					<fieldset disabled={isFormDisabled} className="space-y-6">
-					<Card>
-						<CardHeader>
+					<Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+						<CardHeader className="space-y-1">
 							<CardTitle>Información de la empresa</CardTitle>
 							<CardDescription>Completa los datos base del perfil corporativo.</CardDescription>
 						</CardHeader>
 
 						<CardContent className="space-y-4">
-							<div className="flex items-center gap-4 rounded-md border p-4">
+							<div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-background/80 p-4">
 								<Avatar className="size-16">
 									<AvatarImage src={logoPreview} alt={form.watch("name") || "Logo empresa"} />
 									<AvatarFallback>
@@ -406,7 +406,7 @@ export default function InformacionValoresForm({
 
 								<div className="space-y-2">
 									<p className="font-medium">Logo de la empresa</p>
-									<Button type="button" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+									<Button type="button" variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80" size="sm" onClick={() => fileInputRef.current?.click()}>
 										<Camera className="mr-2 size-4" />
 										Cambiar logo
 									</Button>
@@ -571,8 +571,8 @@ export default function InformacionValoresForm({
 						</CardContent>
 					</Card>
 
-					<Card>
-						<CardHeader>
+					<Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+						<CardHeader className="space-y-1">
 							<CardTitle>Valores de la empresa</CardTitle>
 							<CardDescription>
 								Puedes sugerir valores desde descripción y misión, y luego ajustar manualmente.
@@ -583,7 +583,7 @@ export default function InformacionValoresForm({
 							<div>
 								<Button
 									type="button"
-									variant="outline"
+									variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80"
 									onClick={handleSuggestCompanyValues}
 									disabled={isFormDisabled || !canSuggestValues || isGeneratingSuggestions}
 								>
@@ -617,7 +617,7 @@ export default function InformacionValoresForm({
 
 					<CardFooter className="justify-end px-0">
 						{canEdit ? (
-							<Button type="submit" disabled={isSaving}>
+							<Button type="submit" disabled={isSaving} className="rounded-full px-5">
 								{isSaving ? "Guardando..." : "Guardar cambios"}
 							</Button>
 						) : null}

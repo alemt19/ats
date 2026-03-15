@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
@@ -156,10 +156,10 @@ export default function PreferenciasCulturalesForm({
 	}
 
 	return (
-		<section className="mx-auto w-full max-w-5xl space-y-6">
+		<section className="mx-auto w-full max-w-5xl space-y-8">
 			<div>
 				<h1 className="text-2xl font-semibold">Preferencias Culturales</h1>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm text-foreground/70">
 					{isReadOnly
 						? "Puedes consultar las preferencias culturales de la empresa."
 						: "Define las preferencias culturales para alinear mejor candidatos y equipo."}
@@ -167,23 +167,14 @@ export default function PreferenciasCulturalesForm({
 			</div>
 
 			{isReadOnly ? (
-				<p className="rounded-md border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+				<p className="rounded-xl border border-dashed border-border/70 bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
 					Tu rol tiene acceso de solo lectura a esta sección.
 				</p>
 			) : null}
 
 			<Form {...form}>
-				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-					<fieldset disabled={isSaving || isReadOnly} className="space-y-6">
-					<Card>
-						<CardHeader>
-							<CardTitle>Alineación cultural</CardTitle>
-							<CardDescription>
-								Estas preferencias abarcan desde dress code hasta nivel de supervisión.
-							</CardDescription>
-						</CardHeader>
-
-						<CardContent className="space-y-4">
+				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+					<fieldset disabled={isSaving || isReadOnly} className="space-y-8">
 							{cultureCategories.map((category) => {
 								const preferenceField = mapCategoryTechnicalNameToPreferenceField(category.technical_name)
 
@@ -199,8 +190,8 @@ export default function PreferenciasCulturalesForm({
 										control={form.control}
 										name={fieldName}
 										render={({ field }) => (
-											<Card>
-												<CardHeader>
+											<Card className="rounded-2xl border border-border/70 bg-background/70 shadow-soft">
+												<CardHeader className="space-y-1">
 													<CardTitle>{category.display_name}</CardTitle>
 													<CardDescription>
 														Elige la opción que mejor se alinee con la cultura de la empresa.
@@ -208,12 +199,12 @@ export default function PreferenciasCulturalesForm({
 												</CardHeader>
 												<CardContent>
 													<FormItem className="space-y-3">
-														<FormLabel className="text-sm text-muted-foreground">Selección única</FormLabel>
+														<FormLabel className="text-sm text-foreground/70">Selección única</FormLabel>
 														<FormControl>
 															<RadioGroup
 																value={typeof field.value === "string" ? field.value : ""}
 																onValueChange={field.onChange}
-																className="grid gap-4 sm:grid-cols-2"
+																className="grid gap-5 sm:grid-cols-2"
 															>
 																{category.values.map((option) => {
 																	const isSelected = field.value === option.technical_name
@@ -223,8 +214,8 @@ export default function PreferenciasCulturalesForm({
 																		<label key={option.technical_name} className="block">
 																			<Card
 																				className={cn(
-																					"cursor-pointer border-muted/60 transition hover:border-primary/50",
-																					isSelected && "border-primary/70 ring-1 ring-primary/20"
+																					"cursor-pointer border border-border/70 bg-background/80 transition hover:border-primary/50 hover:bg-muted/40",
+																					isSelected && "border-primary/70 ring-1 ring-primary/25 bg-primary/5"
 																				)}
 																			>
 																				<CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
@@ -254,8 +245,6 @@ export default function PreferenciasCulturalesForm({
 									/>
 								)
 							})}
-						</CardContent>
-					</Card>
 
 					<CardFooter className="justify-end px-0">
 						{canEdit ? (
