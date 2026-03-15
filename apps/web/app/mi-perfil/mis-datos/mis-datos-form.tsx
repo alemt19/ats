@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { Camera } from "lucide-react"
@@ -7,6 +7,7 @@ import { toast } from "sonner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Button } from "react/components/ui/button"
+import { Card, CardContent } from "react/components/ui/card"
 import {
   Form,
   FormControl,
@@ -283,17 +284,19 @@ export default function MisDatosForm({
     `${watchedName?.[0] ?? ""}${watchedLastname?.[0] ?? ""}`.toUpperCase() || "US"
 
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-6">
+    <section className="mx-auto w-full max-w-4xl space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Mis datos</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-foreground/70">
           Completa y actualiza tu información personal.
         </p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="flex items-center gap-4">
+        <Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+          <CardContent className="pt-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-background/80 p-4">
             <Avatar className="h-20 w-20">
               <AvatarImage src={avatarPreview || undefined} alt="Foto de perfil" />
               <AvatarFallback>{initials}</AvatarFallback>
@@ -303,6 +306,7 @@ export default function MisDatosForm({
               <Button
                 type="button"
                 variant="outline"
+                className="rounded-full"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Camera className="mr-2 size-4" />
@@ -334,7 +338,7 @@ export default function MisDatosForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Nombre</FormLabel>
                   <FormControl>
                     <Input placeholder="Tu nombre" {...field} />
                   </FormControl>
@@ -347,7 +351,7 @@ export default function MisDatosForm({
               name="lastname"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Apellido</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Apellido</FormLabel>
                   <FormControl>
                     <Input placeholder="Tu apellido" {...field} />
                   </FormControl>
@@ -361,7 +365,7 @@ export default function MisDatosForm({
               name="birth_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Fecha de nacimiento</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Fecha de nacimiento</FormLabel>
                   <FormControl>
                     <Input type="date" {...field} />
                   </FormControl>
@@ -375,7 +379,7 @@ export default function MisDatosForm({
               name="country"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>País</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">País</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -404,7 +408,7 @@ export default function MisDatosForm({
               name="state"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Estado</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Estado</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={(value) => {
@@ -436,7 +440,7 @@ export default function MisDatosForm({
               name="city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ciudad</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Ciudad</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
@@ -465,7 +469,7 @@ export default function MisDatosForm({
               name="address"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Dirección</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Dirección</FormLabel>
                   <FormControl>
                     <Input placeholder="Dirección" {...field} />
                   </FormControl>
@@ -479,7 +483,7 @@ export default function MisDatosForm({
               name="contact_page"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Página de contacto</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Página de contacto</FormLabel>
                   <FormControl>
                     <Input placeholder="https://..." {...field} />
                   </FormControl>
@@ -493,12 +497,12 @@ export default function MisDatosForm({
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Teléfono</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Teléfono</FormLabel>
                   <div className="flex gap-2">
                     <Input
                       value={phonePrefix}
                       readOnly
-                      className="w-24"
+                      className="w-24 bg-muted/40 text-muted-foreground/80"
                       placeholder="+000"
                     />
                     <FormControl>
@@ -523,7 +527,7 @@ export default function MisDatosForm({
               name="dni"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cedula</FormLabel>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Cédula</FormLabel>
                   <FormControl>
                     <Input placeholder="Documento de identidad" {...field} />
                   </FormControl>
@@ -533,13 +537,15 @@ export default function MisDatosForm({
             />
           </div>
 
-          <div className="flex justify-end">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Guardando..." : "Guardar cambios"}
-            </Button>
-          </div>
-        </form>
-      </Form>
+            <div className="flex justify-end">
+              <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-5">
+                {form.formState.isSubmitting ? "Guardando..." : "Guardar cambios"}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </Form>
     </section>
   )
 }

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { Sparkles, Upload, X } from "lucide-react"
@@ -174,7 +174,7 @@ function MultiDatalistField({
 
   return (
     <div className="space-y-2">
-      <FormLabel>{label}</FormLabel>
+      <FormLabel className="text-sm font-medium text-foreground/85">{label}</FormLabel>
       <div className="flex gap-2">
         <Input
           list={datalistId}
@@ -189,7 +189,7 @@ function MultiDatalistField({
             }
           }}
         />
-        <Button type="button" variant="outline" onClick={addValue} disabled={disabled}>
+        <Button type="button" variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80" onClick={addValue} disabled={disabled}>
           Agregar
         </Button>
       </div>
@@ -200,14 +200,14 @@ function MultiDatalistField({
         ))}
       </datalist>
 
-      <div className="flex min-h-10 flex-wrap gap-2 rounded-md border p-2">
+      <div className="flex min-h-10 flex-wrap gap-2 rounded-xl border border-border/70 bg-background/80 p-2.5">
         {selectedValues.length === 0 ? (
           <span className="text-sm text-muted-foreground">Sin elementos seleccionados.</span>
         ) : (
           selectedValues.map((value) => (
             <span
               key={value}
-              className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1 text-sm"
+              className="inline-flex items-center gap-1 rounded-full border border-border/70 bg-muted/70 px-3 py-1.5 text-sm"
             >
               {value}
               <Button
@@ -231,7 +231,7 @@ function MultiDatalistField({
             <Button
               type="button"
               size="xs"
-              variant="outline"
+              variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80"
               disabled={disabled}
               onClick={onAddAllSuggestions}
             >
@@ -247,7 +247,7 @@ function MultiDatalistField({
               return (
                 <div
                   key={item}
-                  className="inline-flex items-center gap-2 rounded-md border px-2 py-1 text-sm"
+                  className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-3 py-1.5 text-sm"
                 >
                   <span>{item}</span>
                   <Button
@@ -537,18 +537,18 @@ export default function CompetenciasValoresForm({
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-6">
+    <section className="mx-auto w-full max-w-5xl space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Competencias y valores</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-foreground/70">
           Actualiza tu CV y completa la información para sugerir habilidades y valores.
         </p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <Card>
-            <CardHeader>
+          <Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+            <CardHeader className="space-y-1">
               <CardTitle>CV</CardTitle>
               <CardDescription>
                 Adjunta tu CV en formato PDF o DOCX y visualízalo sin descargar.
@@ -558,10 +558,10 @@ export default function CompetenciasValoresForm({
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="size-4" />
+                  <Upload className="mr-2 size-4" />
                   Cargar CV
                 </Button>
                 <span className="text-sm text-muted-foreground">
@@ -579,7 +579,7 @@ export default function CompetenciasValoresForm({
 
               {cvError ? <p className="text-sm text-destructive">{cvError}</p> : null}
 
-              <div className="overflow-hidden rounded-lg border">
+              <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/80">
                 {!cvPreviewType ? (
                   <div className="p-6 text-sm text-muted-foreground">
                     No hay CV para mostrar todavía.
@@ -603,8 +603,8 @@ export default function CompetenciasValoresForm({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+            <CardHeader className="space-y-1">
               <CardTitle>Preguntas conductuales</CardTitle>
               <CardDescription>
                 Tus respuestas se usan para sugerir habilidades y valores de tu perfil.
@@ -616,7 +616,7 @@ export default function CompetenciasValoresForm({
                 name="behavioral_ans_1"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{behavioralQuestion1}</FormLabel>
+                    <FormLabel className="text-sm font-medium text-foreground/85">{behavioralQuestion1}</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Escribe tu respuesta conductual"
@@ -634,7 +634,7 @@ export default function CompetenciasValoresForm({
                 name="behavioral_ans_2"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{behavioralQuestion2}</FormLabel>
+                    <FormLabel className="text-sm font-medium text-foreground/85">{behavioralQuestion2}</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Escribe tu segunda respuesta conductual"
@@ -650,11 +650,11 @@ export default function CompetenciasValoresForm({
               <div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80"
                   onClick={handleSuggestSkillsAndValues}
                   disabled={!isSkillsSectionUnlocked || isGeneratingSuggestions}
                 >
-                  <Sparkles className="size-4" />
+                  <Sparkles className="mr-2 size-4" />
                   {isGeneratingSuggestions
                     ? "Generando sugerencias..."
                     : "Sugerir habilidades y valores"}
@@ -663,8 +663,8 @@ export default function CompetenciasValoresForm({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+            <CardHeader className="space-y-1">
               <CardTitle>Habilidades y valores</CardTitle>
               <CardDescription>
                 Agrega o quita elementos en cada lista usando las opciones sugeridas.
@@ -727,7 +727,7 @@ export default function CompetenciasValoresForm({
           </Card>
 
           <CardFooter className="justify-end px-0">
-            <Button type="submit" disabled={form.formState.isSubmitting}>
+            <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-5">
               {form.formState.isSubmitting ? "Guardando..." : "Guardar cambios"}
             </Button>
           </CardFooter>

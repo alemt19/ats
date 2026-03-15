@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { useForm, type FieldPath } from "react-hook-form"
@@ -148,16 +148,16 @@ export default function PreferenciasCulturalesForm({
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-6">
+    <section className="mx-auto w-full max-w-5xl space-y-8">
       <div>
         <h1 className="text-2xl font-semibold">Preferencias culturales</h1>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-foreground/70">
           Selecciona las opciones que mejor describen tu entorno laboral ideal.
         </p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           {categories.map((category) => {
             const fieldName = `preferences.${category.technical_name}` as FieldPath<
               CulturePreferenceFormValues
@@ -169,23 +169,23 @@ export default function PreferenciasCulturalesForm({
                 control={form.control}
                 name={fieldName}
                 render={({ field }) => (
-                  <Card>
-                    <CardHeader>
+                  <Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+                    <CardHeader className="space-y-1">
                       <CardTitle>{category.display_name}</CardTitle>
                       <CardDescription>
-                        Elige la opcion que mejor se alinee con tu estilo.
+                        Elige la opción que mejor se alinee con tu estilo.
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <FormItem className="space-y-3">
-                        <FormLabel className="text-sm text-muted-foreground">
-                          Seleccion unica
+                        <FormLabel className="text-sm text-foreground/70">
+                          Selección única
                         </FormLabel>
                         <FormControl>
                           <RadioGroup
                             value={typeof field.value === "string" ? field.value : ""}
                             onValueChange={field.onChange}
-                            className="grid gap-4 sm:grid-cols-2"
+                            className="grid gap-5 sm:grid-cols-2"
                           >
                             {category.values.map((option) => {
                               const isSelected = field.value === option.technical_name
@@ -195,9 +195,9 @@ export default function PreferenciasCulturalesForm({
                                 <label key={option.technical_name} className="block">
                                   <Card
                                     className={cn(
-                                      "cursor-pointer border-muted/60 transition hover:border-primary/50",
+                                      "cursor-pointer border border-border/70 bg-background/80 transition hover:border-primary/50 hover:bg-muted/40",
                                       isSelected &&
-                                        "border-primary/70 ring-1 ring-primary/20"
+                                        "border-primary/70 ring-1 ring-primary/25 bg-primary/5"
                                     )}
                                   >
                                     <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
@@ -231,7 +231,7 @@ export default function PreferenciasCulturalesForm({
           })}
 
           <div className="flex justify-end">
-            <Button type="submit">Guardar cambios</Button>
+            <Button type="submit" className="rounded-full px-5">Guardar cambios</Button>
           </div>
         </form>
       </Form>
