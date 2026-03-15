@@ -64,23 +64,23 @@ export default function SidebarClient({ children }: SidebarClientProps) {
     const resolvedLogoSrc = company?.logo ?? "https://i.pravatar.cc/100?img=1"
 
     return (
-        <SidebarProvider>
-            <Sidebar collapsible="offcanvas">
+        <SidebarProvider className="bg-background">
+            <Sidebar collapsible="offcanvas" variant="inset" className="border-border/70 bg-sidebar/90">
                 <SidebarHeader>
-                    <div className="flex items-center gap-3 rounded-md px-2 py-1">
+                    <div className="gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
                         <Link href="/" className="flex items-center gap-3">
                             {resolvedLogoSrc ? (
                                 <img
                                     src={resolvedLogoSrc}
                                     alt={`${resolvedCompanyName} logo`}
-                                    className="h-8 w-8 rounded-md object-contain"
+                                    className="h-8 w-8 rounded-lg border border-border/70 object-contain"
                                 />
                             ) : (
-                                <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-semibold">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-xs font-semibold text-primary-foreground shadow-soft">
                                     {resolvedCompanyName.slice(0, 2).toUpperCase()}
                                 </div>
                             )}
-                            <span className="text-base font-semibold tracking-tight">
+                            <span className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight">
                                 {resolvedCompanyName}
                             </span>
                         </Link>
@@ -93,9 +93,13 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                             <SidebarMenu>
                                 {profileLinks.map((item) => (
                                     <SidebarMenuItem key={item.href}>
-                                        <SidebarMenuButton asChild isActive={pathname === item.href}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={pathname.startsWith(item.href)}
+                                            className="rounded-xl text-muted-foreground transition-colors duration-[240ms] hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+                                        >
                                             <Link href={item.href}>
-                                                <item.icon />
+                                                <item.icon aria-hidden="true" />
                                                 <span>{item.label}</span>
                                             </Link>
                                         </SidebarMenuButton>
@@ -118,7 +122,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center gap-3 rounded-md px-2 py-1">
+                        <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-card/80 px-2 py-2 shadow-soft">
                             <Avatar className="h-9 w-9">
                                 <AvatarImage src={userImage} alt={userName} />
                                 <AvatarFallback>{userName.slice(0, 2).toUpperCase()}</AvatarFallback>
@@ -132,7 +136,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
 
                     <Button
                         variant="outline"
-                        className="w-full justify-start"
+                        className="w-full justify-start rounded-xl border-border/70 bg-background/80 hover:border-primary/45 hover:bg-muted/80"
                         onClick={() => {
                             void (async () => {
                                 document.cookie = "ats_scope=; Path=/; Max-Age=0; SameSite=Lax"
@@ -141,15 +145,13 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                             })()
                         }}
                     >
-                        <LogOut className="mr-2 size-4" />
+                        <LogOut aria-hidden="true" className="mr-2 size-4" />
                         Logout
                     </Button>
                 </SidebarFooter>
             </Sidebar>
 
-            <SidebarInset>
-                {children}
-            </SidebarInset>
+            <SidebarInset className="bg-background/85">{children}</SidebarInset>
         </SidebarProvider>
     )
 }
