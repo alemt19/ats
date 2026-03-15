@@ -74,8 +74,8 @@ export default function RecoverPasswordPage() {
 	}
 
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-neutral-100 p-4 md:p-6">
-			<Card className="w-full max-w-md shadow-2xl">
+		<main className="flex min-h-screen items-center justify-center bg-background p-4 md:p-6">
+			<Card className="gradient-border w-full max-w-md rounded-3xl bg-card/95 shadow-elevated">
 				<CardHeader className="space-y-3 text-center">
 					<p className="text-sm font-medium text-muted-foreground">{companyName}</p>
 					<CardTitle className="text-2xl">Recuperar contraseña</CardTitle>
@@ -101,7 +101,7 @@ export default function RecoverPasswordPage() {
 						{error ? <p className="text-sm text-destructive">{error}</p> : null}
 						{successMessage ? <p className="text-sm text-primary">{successMessage}</p> : null}
 
-						<Button type="submit" className="w-full" disabled={isSubmitting}>
+						<Button type="submit" className="w-full rounded-full shadow-soft" disabled={isSubmitting}>
 							{isSubmitting ? "Enviando..." : "Enviar código"}
 						</Button>
 					</form>

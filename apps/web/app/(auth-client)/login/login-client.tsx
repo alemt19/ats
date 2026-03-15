@@ -213,8 +213,8 @@ export default function LoginClientPage() {
 	}
 
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-neutral-100 p-4 md:p-6">
-			<Card className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl md:flex md:flex-row md:items-stretch gap-0">
+		<main className="flex min-h-screen items-center justify-center bg-background p-4 md:p-6">
+			<Card className="gradient-border mx-auto w-full max-w-4xl overflow-hidden rounded-3xl bg-card/95 p-0 shadow-elevated md:flex md:flex-row md:items-stretch gap-0">
 				<div
 					className="relative hidden overflow-hidden md:block md:h-full md:shrink-0 md:self-stretch"
 					style={{ minWidth: "395px" }}
@@ -258,7 +258,7 @@ export default function LoginClientPage() {
 
 					<CardContent className="px-0 pb-0">
 						<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-							<TabsList className="mb-6 grid h-11 w-full grid-cols-2">
+								<TabsList className="mb-6 grid h-11 w-full grid-cols-2 rounded-full bg-muted/70">
 								<TabsTrigger value="login">Iniciar sesión</TabsTrigger>
 								<TabsTrigger value="register">Registrarse</TabsTrigger>
 							</TabsList>
@@ -317,14 +317,14 @@ export default function LoginClientPage() {
 										/>
 
 										<div className="flex justify-end">
-											<Link href="/recover-password" className="text-sm font-medium text-primary hover:underline">
+												<Link href="/recover-password" className="text-sm font-medium text-primary transition-colors duration-[240ms] hover:text-primary/80 hover:underline">
 												¿Olvidaste tu contraseña?
 											</Link>
 										</div>
 
 										{loginError ? <p className="text-sm text-destructive">{loginError}</p> : null}
 
-										<Button type="submit" className="w-full" disabled={loginForm.formState.isSubmitting}>
+											<Button type="submit" className="w-full rounded-full shadow-soft" disabled={loginForm.formState.isSubmitting}>
 											{loginForm.formState.isSubmitting ? "Ingresando..." : "Ingresar al sistema"}
 										</Button>
 									</form>
@@ -369,11 +369,11 @@ export default function LoginClientPage() {
 
 										{registerMessage ? <p className="text-sm text-primary">{registerMessage}</p> : null}
 
-										<Button
-											type="submit"
-											className="w-full"
-											disabled={registerForm.formState.isSubmitting}
-										>
+											<Button
+												type="submit"
+												className="w-full rounded-full shadow-soft"
+												disabled={registerForm.formState.isSubmitting}
+											>
 											{registerForm.formState.isSubmitting ? "Registrando..." : "Crear cuenta"}
 										</Button>
 									</form>
