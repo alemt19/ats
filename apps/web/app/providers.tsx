@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { ThemeProvider } from "next-themes"
 import { Toaster } from "react/components/ui/sonner"
 import { CompanyProvider } from "react/contexts/company-context"
 
@@ -22,11 +23,13 @@ export default function Providers({ children }: ProvidersProps) {
   )
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <CompanyProvider>
-        {children}
-        <Toaster richColors position="top-right" />
-      </CompanyProvider>
-    </QueryClientProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+      <QueryClientProvider client={queryClient}>
+        <CompanyProvider>
+          {children}
+          <Toaster richColors position="top-right" />
+        </CompanyProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   )
 }
