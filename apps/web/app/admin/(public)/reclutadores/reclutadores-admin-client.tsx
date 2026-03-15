@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -67,7 +67,7 @@ function TableRowsSkeleton({ rows = 6 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-6 w-32" />
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className="text-center">
             <Skeleton className="ml-auto h-8 w-8" />
           </TableCell>
         </TableRow>
@@ -172,10 +172,13 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Gestión de Reclutadores</h1>
-        <Button asChild className="sm:w-auto">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight">Gestión de reclutadores</h1>
+          <p className="text-sm text-muted-foreground">Gestiona cuentas y permisos del equipo.</p>
+        </div>
+        <Button asChild className="rounded-full sm:w-auto">
           <Link href="/admin/reclutadores/crear">
             <Plus className="mr-2 size-4" />
             Crear nuevo reclutador
@@ -183,12 +186,12 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
         </Button>
       </div>
 
-      <Card className="container mx-auto gap-4 @container">
+      <Card className="gradient-border container mx-auto gap-4 rounded-3xl bg-card/90 shadow-soft @container">
         <CardHeader>
           <div className="relative w-full max-w-xl">
             <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
             <Input
-              placeholder="Buscar por nombre, correo o Cedula"
+              placeholder="Buscar por nombre, correo o cédula"
               className="pl-9"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
@@ -199,54 +202,61 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
         <CardContent className="space-y-4">
           {isFetching && !recruiters.length ? <TableSkeleton /> : null}
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Correo</TableHead>
-                <TableHead>Cedula</TableHead>
-                <TableHead>Rol</TableHead>
-                <TableHead className="w-20 text-right">Ver</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isFetching ? <TableRowsSkeleton rows={Math.min(query.pageSize, 8)} /> : null}
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/80">
+            <Table>
+              <TableHeader className="bg-muted/60 text-foreground/80">
+                <TableRow className="border-b border-border/70">
+                  <TableHead className="text-xs font-medium text-foreground/70">Nombre</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Correo</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Cédula</TableHead>
+                  <TableHead className="text-xs font-medium text-foreground/70">Rol</TableHead>
+                  <TableHead className="w-12 text-center text-xs font-medium text-foreground/70">Ver</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isFetching ? <TableRowsSkeleton rows={Math.min(query.pageSize, 8)} /> : null}
 
-              {!isFetching &&
-                recruiters.map((recruiter) => (
-                  <TableRow key={recruiter.id}>
-                    <TableCell className="font-medium">{`${recruiter.name} ${recruiter.lastname}`}</TableCell>
-                    <TableCell>{recruiter.email}</TableCell>
-                    <TableCell>{recruiter.dni || "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant={recruiter.role === "head_of_recruiters" ? "default" : "secondary"}>
-                        {getRoleLabel(recruiter.role)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" asChild>
-                        <Link
-                          href={`/admin/reclutadores/${encodeURIComponent(String(recruiter.id))}`}
-                          aria-label={`Ver reclutador ${recruiter.name} ${recruiter.lastname}`}
-                        >
-                          <Eye className="size-4" />
-                        </Link>
-                      </Button>
+                {!isFetching &&
+                  recruiters.map((recruiter) => (
+                    <TableRow
+                      key={recruiter.id}
+                      className="transition-colors hover:bg-muted/35 data-[state=selected]:bg-muted/45"
+                    >
+                      <TableCell className="font-medium">{`${recruiter.name} ${recruiter.lastname}`}</TableCell>
+                      <TableCell>{recruiter.email}</TableCell>
+                      <TableCell>{recruiter.dni || "-"}</TableCell>
+                      <TableCell>
+                        <Badge variant={recruiter.role === "head_of_recruiters" ? "default" : "secondary"}>
+                          {getRoleLabel(recruiter.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="w-12 text-center">
+                        <div className="flex items-center justify-center">
+                          <Button variant="ghost" size="icon" asChild className="rounded-full">
+                            <Link
+                              href={`/admin/reclutadores/${encodeURIComponent(String(recruiter.id))}`}
+                              aria-label={`Ver reclutador ${recruiter.name} ${recruiter.lastname}`}
+                            >
+                              <Eye className="size-4" />
+                            </Link>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+
+                {!isFetching && !recruiters.length ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-muted-foreground py-10 text-center">
+                      No se encontraron reclutadores con la búsqueda ingresada.
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : null}
+              </TableBody>
+            </Table>
+          </div>
 
-              {!isFetching && !recruiters.length ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-muted-foreground py-8 text-center">
-                    No se encontraron reclutadores con la búsqueda ingresada.
-                  </TableCell>
-                </TableRow>
-              ) : null}
-            </TableBody>
-          </Table>
-
-          <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 border-t border-border/70 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-muted-foreground text-sm">
               Mostrando {startItem} a {endItem} de {total} resultados
             </p>
@@ -261,7 +271,10 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
                       event.preventDefault()
                       onPageChange(query.page - 1)
                     }}
-                    className={cn("gap-1 px-2.5", query.page <= 1 ? "pointer-events-none opacity-50" : "")}
+                    className={cn(
+                      "gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 hover:bg-muted/80",
+                      query.page <= 1 ? "pointer-events-none opacity-50" : ""
+                    )}
                   >
                     <ChevronLeft className="size-4" />
                     <span>Anterior</span>
@@ -279,6 +292,7 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
                           event.preventDefault()
                           onPageChange(pageNumber)
                         }}
+                        className="rounded-full border border-border/60 bg-background/70 hover:bg-muted/80"
                       >
                         {pageNumber}
                       </PaginationLink>
@@ -294,7 +308,10 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
                       event.preventDefault()
                       onPageChange(query.page + 1)
                     }}
-                    className={cn("gap-1 px-2.5", query.page >= totalPages ? "pointer-events-none opacity-50" : "")}
+                    className={cn(
+                      "gap-1 rounded-full border border-border/60 bg-background/70 px-2.5 hover:bg-muted/80",
+                      query.page >= totalPages ? "pointer-events-none opacity-50" : ""
+                    )}
                   >
                     <span>Siguiente</span>
                     <ChevronRight className="size-4" />
