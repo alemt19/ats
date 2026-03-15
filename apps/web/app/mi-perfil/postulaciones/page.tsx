@@ -78,10 +78,10 @@ async function PostulacionesData() {
 
 export default function PostulacionesPage() {
 	return (
-		<section className="mx-auto w-full max-w-6xl space-y-6">
+		<section className="mx-auto w-full max-w-6xl space-y-8">
 			<div className="space-y-2">
 				<h1 className="text-2xl font-semibold">Postulaciones</h1>
-				<p className="text-sm text-muted-foreground">
+				<p className="text-sm text-foreground/70">
 					Revisa el estado de tus aplicaciones activas y filtra las oportunidades.
 				</p>
 			</div>

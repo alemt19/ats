@@ -13,7 +13,7 @@ export default function PostulacionesSkeleton() {
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {cards.map((_, index) => (
-          <Card key={`skeleton-${index}`} className="gap-3 rounded-2xl py-4 shadow-none">
+          <Card key={`skeleton-${index}`} className="gradient-border gap-3 rounded-3xl bg-card/90 py-4 shadow-soft">
             <CardHeader className="space-y-2 pb-0">
               <Skeleton className="h-5 w-40" />
               <Skeleton className="h-4 w-28" />

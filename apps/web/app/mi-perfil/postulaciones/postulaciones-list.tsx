@@ -100,20 +100,20 @@ export default function PostulacionesList({
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="min-w-45">
-            <SelectValue placeholder="Categoria" />
+          <SelectTrigger className="min-w-45 border-border/70 bg-background/70">
+            <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
-                {category === "all" ? "Todas las categorias" : category}
+                {category === "all" ? "Todas las categorías" : category}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="min-w-45">
+          <SelectTrigger className="min-w-45 border-border/70 bg-background/70">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -129,36 +129,39 @@ export default function PostulacionesList({
 
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         {filteredApplications.length === 0 ? (
-          <Card className="col-span-full">
-            <CardContent className="py-10 text-center text-sm text-muted-foreground">
+          <Card className="gradient-border col-span-full rounded-3xl bg-card/90 shadow-soft">
+            <CardContent className="py-10 text-center text-sm text-foreground/70">
               No se encontraron postulaciones con los filtros actuales.
             </CardContent>
           </Card>
         ) : (
           filteredApplications.map((application) => (
-            <Card key={application.id} className="gap-3 rounded-2xl py-4 shadow-none">
+            <Card
+              key={application.id}
+              className="gradient-border gap-3 rounded-3xl bg-card/90 py-4 shadow-soft"
+            >
               <CardHeader className="space-y-1 pb-0">
-                <h2 className="text-xl font-semibold text-neutral-800">
+                <h2 className="text-xl font-semibold text-foreground">
                   {application.title}
                 </h2>
               </CardHeader>
 
               <CardContent className="space-y-2">
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 text-sm text-foreground/70">
                   <Tag className="size-4" />
                   <span>{application.category}</span>
                 </p>
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 text-sm text-foreground/70">
                   <MapPin className="size-4" />
                   <span>
                     {application.city}, {application.state}
                   </span>
                 </p>
-                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                <p className="flex items-center gap-2 text-sm text-foreground/70">
                   <BriefcaseBusiness className="size-4" />
                   <span>{application.position}</span>
                 </p>
-                <p className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
+                <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Wallet className="size-4" />
                   <span>${application.salary} / mes</span>
                 </p>
@@ -171,8 +174,8 @@ export default function PostulacionesList({
                   {statusLabelMap.get(application.status) ?? application.status}
                 </Badge>
 
-                <Button asChild size="sm" variant="outline">
-                  <Link href={`/ofertas/${application.id}`}>Ver mas</Link>
+                <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-background/70">
+                  <Link href={`/ofertas/${application.id}`}>Ver más</Link>
                 </Button>
               </CardFooter>
             </Card>

@@ -51,12 +51,12 @@ export default function PostulacionesShell({ children }: PostulacionesShellProps
     <FiltersContext.Provider value={value}>
       <div className="space-y-6">
         <div className="relative w-full sm:max-w-md">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-foreground/50" />
           <Input
-            placeholder="Buscar por titulo"
+            placeholder="Buscar por título"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="pl-9"
+            className="pl-9 border-border/70 bg-background/80"
           />
         </div>
 
