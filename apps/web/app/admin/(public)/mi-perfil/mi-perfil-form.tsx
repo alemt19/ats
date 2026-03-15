@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import * as React from "react"
 import { useMutation } from "@tanstack/react-query"
@@ -209,20 +209,20 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
   const cityOptions = selectedState?.cities ?? []
 
   return (
-    <section className="mx-auto w-full max-w-4xl space-y-6">
+    <section className="mx-auto w-full max-w-4xl space-y-8">
       <div className="space-y-1">
         <h1 className="text-3xl font-bold tracking-tight">Mi perfil</h1>
         <p className="text-muted-foreground text-sm">Actualiza los datos de tu perfil administrativo.</p>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
+        <CardHeader className="space-y-1">
           <CardTitle>Datos del administrador</CardTitle>
           <CardDescription>Campos del perfil en modo edición.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="flex items-center gap-4 rounded-md border p-4">
+            <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-background/80 p-4">
               <Avatar className="size-16">
                 <AvatarImage src={avatarPreview} alt={fullName} />
                 <AvatarFallback>{toInitials(fullName)}</AvatarFallback>
@@ -267,22 +267,22 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre *</Label>
+                <Label htmlFor="name" className="text-sm font-medium text-foreground/85">Nombre *</Label>
                 <Input id="name" value={values.name} onChange={handleInputChange("name")} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="lastname">Apellido *</Label>
+                <Label htmlFor="lastname" className="text-sm font-medium text-foreground/85">Apellido *</Label>
                 <Input id="lastname" value={values.lastname} onChange={handleInputChange("lastname")} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Correo</Label>
-                <Input id="email" value={values.email} disabled readOnly />
+                <Label htmlFor="email" className="text-sm font-medium text-foreground/85">Correo</Label>
+                <Input id="email" value={values.email} disabled readOnly className="bg-muted/40 text-muted-foreground/80" />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="birth_date">Fecha de nacimiento</Label>
+                <Label htmlFor="birth_date" className="text-sm font-medium text-foreground/85">Fecha de nacimiento</Label>
                 <Input
                   id="birth_date"
                   type="date"
@@ -292,14 +292,14 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dni">Cedula</Label>
+                <Label htmlFor="dni" className="text-sm font-medium text-foreground/85">Cédula</Label>
                 <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
+                <Label htmlFor="phone" className="text-sm font-medium text-foreground/85">Teléfono</Label>
                 <div className="flex gap-2">
-                  <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24" placeholder="+000" />
+                  <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24 bg-muted/40 text-muted-foreground/80" placeholder="+000" />
                   <Input
                     id="phone"
                     value={values.phone}
@@ -317,12 +317,12 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="country">País</Label>
-                <Input id="country" value={values.country} disabled readOnly />
+                <Label htmlFor="country" className="text-sm font-medium text-foreground/85">País</Label>
+                <Input id="country" value={values.country} disabled readOnly className="bg-muted/40 text-muted-foreground/80" />
               </div>
 
               <div className="space-y-2">
-                <Label>Estado *</Label>
+                <Label className="text-sm font-medium text-foreground/85">Estado *</Label>
                 <Select value={values.state} onValueChange={handleStateChange}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona un estado" />
@@ -338,7 +338,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               </div>
 
               <div className="space-y-2">
-                <Label>Ciudad *</Label>
+                <Label className="text-sm font-medium text-foreground/85">Ciudad *</Label>
                 <Select value={values.city} onValueChange={handleCityChange} disabled={cityOptions.length === 0}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Selecciona una ciudad" />
@@ -361,12 +361,12 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Dirección *</Label>
+              <Label htmlFor="address" className="text-sm font-medium text-foreground/85">Dirección *</Label>
               <Textarea id="address" value={values.address} onChange={handleInputChange("address")} rows={3} />
             </div>
 
             <div className="flex justify-end">
-              <Button type="submit" disabled={mutation.isPending}>
+              <Button type="submit" disabled={mutation.isPending} className="rounded-full px-5">
                 {mutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 size-4 animate-spin" />
@@ -386,3 +386,5 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
     </section>
   )
 }
+
+
