@@ -13,6 +13,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "react/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "react/components/ui/select"
 import { Textarea } from "react/components/ui/textarea"
+import { cn } from "react/lib/utils"
 
 type MultiFieldName = "soft_skills" | "technical_skills"
 
@@ -74,6 +75,7 @@ type CrearOfertaFormProps = {
   showPageHeader?: boolean
   offerCardTitle?: string
   submitLabel?: string
+  containerClassName?: string
   onSubmitValues?: (values: CrearOfertaFormValues) => Promise<void> | void
 }
 
@@ -346,6 +348,7 @@ export default function CrearOfertaForm({
   showPageHeader = true,
   offerCardTitle = "Datos de la oferta",
   submitLabel = "Crear oferta",
+  containerClassName,
   onSubmitValues,
 }: CrearOfertaFormProps) {
   const router = useRouter()
@@ -645,7 +648,7 @@ export default function CrearOfertaForm({
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-6">
+    <section className={cn("mx-auto w-full max-w-5xl space-y-6", containerClassName)}>
       {showPageHeader ? (
         <div>
           <h1 className="text-2xl font-semibold">{pageTitle}</h1>

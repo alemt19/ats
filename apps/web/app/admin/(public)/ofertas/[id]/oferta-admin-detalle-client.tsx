@@ -479,6 +479,13 @@ export default function OfertaAdminDetalleClient({
   const totalPages = Math.max(1, Math.ceil(total / query.pageSize))
   const startItem = total === 0 ? 0 : (query.page - 1) * query.pageSize + 1
   const endItem = Math.min(query.page * query.pageSize, total)
+  const locationLabel = [offer.city, offer.state].filter((value) => Boolean(value)).join(", ")
+  const metaChips = [
+    locationLabel,
+    offer.position,
+    offer.workplace_type,
+    offer.employment_type,
+  ].filter((value) => Boolean(value))
 
   const statusMap = React.useMemo(
     () => new Map(candidateStatusOptions.map((item) => [item.technical_name, item.display_name])),
@@ -503,12 +510,12 @@ export default function OfertaAdminDetalleClient({
       weight_soft: String(offer.weight_soft),
       weight_culture: String(offer.weight_culture),
       category: String(offer.category_id),
-      technical_skills: offer.technical_skills,
-      soft_skills: offer.soft_skills,
-      mandatory_technical_skills: offer.technical_skill_items
+      technical_skills: offer.technical_skills ?? [],
+      soft_skills: offer.soft_skills ?? [],
+      mandatory_technical_skills: (offer.technical_skill_items ?? [])
         .filter((item) => item.is_mandatory)
         .map((item) => item.name),
-      mandatory_soft_skills: offer.soft_skill_items
+      mandatory_soft_skills: (offer.soft_skill_items ?? [])
         .filter((item) => item.is_mandatory)
         .map((item) => item.name),
     }),
@@ -517,20 +524,54 @@ export default function OfertaAdminDetalleClient({
 
   return (
     <section className="mx-auto w-full space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-4xl font-semibold tracking-tight">{offer.title}</h1>
-        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
-          <Badge variant={offerStatusBadgeVariant(offer.status)}>{statusDisplayName}</Badge>
-          <span>Creado {formatPublishedDate(offer.published_at)}</span>
+      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-muted/40 p-6 shadow-soft">
+        <div className="absolute -right-10 -top-10 hidden size-40 rounded-full bg-primary/10 blur-3xl md:block" />
+        <div className="relative space-y-3">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
+            <Badge variant={offerStatusBadgeVariant(offer.status)}>{statusDisplayName}</Badge>
+            <span>Creado {formatPublishedDate(offer.published_at)}</span>
+            <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/60 sm:inline-block" />
+            <span>{offer.candidates_count} candidatos</span>
+          </div>
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{offer.title}</h1>
+          {metaChips.length ? (
+            <div className="flex flex-wrap gap-2">
+              {metaChips.map((chip) => (
+                <Badge
+                  key={String(chip)}
+                  variant="secondary"
+                  className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium"
+                >
+                  {chip}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </div>
       </div>
 
       <Tabs defaultValue="detalles" className="space-y-6">
-        <TabsList variant="line" className="w-full justify-start border-b border-border/70 px-0 pb-2">
-          <TabsTrigger value="detalles">Detalles de la Oferta</TabsTrigger>
-          <TabsTrigger value="candidatos" className="gap-2">
+        <TabsList
+          variant="default"
+          className="mx-auto w-fit max-w-full justify-center gap-1.5 rounded-full border border-border/70 bg-muted/50 p-1.5 shadow-soft"
+        >
+          <TabsTrigger
+            value="detalles"
+            className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Detalles de la Oferta
+          </TabsTrigger>
+          <TabsTrigger
+            value="candidatos"
+            className="h-9 gap-2 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
             Candidatos postulados
-            <Badge variant="secondary">{offer.candidates_count}</Badge>
+            <Badge
+              variant="secondary"
+              className="rounded-full border border-border/60 bg-background/70 px-2.5 py-0.5 text-xs"
+            >
+              {offer.candidates_count}
+            </Badge>
           </TabsTrigger>
         </TabsList>
 
@@ -598,9 +639,10 @@ export default function OfertaAdminDetalleClient({
 
         <TabsContent value="candidatos" className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-            <Card className="gradient-border hidden h-fit rounded-2xl bg-card/90 shadow-soft lg:block">
-              <CardHeader>
+            <Card className="gradient-border sticky top-6 hidden h-fit rounded-2xl border border-border/70 bg-card/90 shadow-soft lg:block">
+              <CardHeader className="space-y-1">
                 <CardTitle className="text-base">Filtros avanzados</CardTitle>
+                <p className="text-muted-foreground text-xs">Ajusta rangos y status de candidatos.</p>
               </CardHeader>
               <CardContent>
                 <ScoreFilterPanel
@@ -640,14 +682,14 @@ export default function OfertaAdminDetalleClient({
               </CardContent>
             </Card>
 
-            <Card className="min-w-0 rounded-2xl bg-card/90 shadow-soft">
-              <CardHeader className="space-y-3">
+            <Card className="min-w-0 rounded-2xl border border-border/70 bg-card/90 shadow-soft">
+              <CardHeader className="space-y-3 border-b border-border/70 pb-4">
                 <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                   <div className="relative flex-1">
                     <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
                     <Input
                       placeholder="Buscar candidato por nombre y apellido"
-                      className="pl-9"
+                      className="rounded-full border-border/70 bg-background/70 pl-9"
                       value={searchInput}
                       onChange={(event) => setSearchInput(event.target.value)}
                     />
@@ -717,9 +759,9 @@ export default function OfertaAdminDetalleClient({
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 pt-4">
                 <div className="w-full overflow-x-auto">
-                  <div className="min-w-280 overflow-hidden rounded-2xl border border-border/70 bg-background/80">
+                  <div className="min-w-280 overflow-hidden rounded-2xl border border-border/70 bg-background/80 shadow-sm">
                     <Table>
                       <TableHeader className="bg-muted/40">
                         <TableRow>
