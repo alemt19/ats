@@ -158,6 +158,11 @@ export class CandidatesController {
     return this.candidatesService.findOne(id);
   }
 
+  @Get(':id/applications')
+  findApplicationsByCandidateId(@Param('id', ParseIntPipe) id: number) {
+    return this.candidatesService.findApplicationsByCandidateId(id);
+  }
+
 	@Patch(':id')
 	update(
 		@Param('id', ParseIntPipe) id: number,

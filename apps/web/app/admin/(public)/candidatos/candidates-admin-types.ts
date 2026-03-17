@@ -30,6 +30,14 @@ export type CandidateListItem = {
   dni: string
 }
 
+export type CandidateApplication = {
+  application_id: number
+  offer_id: number
+  offer_title: string
+  status: string
+  created_at: string | null
+}
+
 export type CandidatesQueryParams = {
   search: string
   page: number

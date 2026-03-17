@@ -453,6 +453,35 @@ export class CandidatesService {
     return candidate;
   }
 
+  async findApplicationsByCandidateId(candidateId: number) {
+    await this.findOne(candidateId);
+
+    const applications = await this.prisma.applications.findMany({
+      where: { candidate_id: candidateId },
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        job_id: true,
+        status: true,
+        created_at: true,
+        jobs: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+    });
+
+    return applications.map((application) => ({
+      application_id: application.id,
+      offer_id: application.jobs?.id ?? application.job_id ?? 0,
+      offer_title: application.jobs?.title ?? 'Oferta sin título',
+      status: application.status ?? 'applied',
+      created_at: application.created_at?.toISOString() ?? null,
+    }));
+  }
+
 	/**
 	 * Update an existing candidate by id
 	 */

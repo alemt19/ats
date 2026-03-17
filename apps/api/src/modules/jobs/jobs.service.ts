@@ -1208,6 +1208,10 @@ export class JobsService {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 8;
     const search = (query.search ?? '').trim().toLowerCase();
+    const searchTerms = search
+      .split(/\s+/)
+      .map((term) => term.trim())
+      .filter((term) => term.length > 0);
     const status = (query.status ?? 'all').trim();
 
     // Score ranges arrive as 0-100 percentages; DB stores 0-1 floats
@@ -1225,13 +1229,15 @@ export class JobsService {
     const where: Prisma.applicationsWhereInput = {
       job_id: offerId,
       ...(status !== 'all' ? { status } : {}),
-      ...(search
+      ...(searchTerms.length > 0
         ? {
             candidates: {
-              OR: [
-                { name: { contains: search, mode: 'insensitive' } },
-                { lastname: { contains: search, mode: 'insensitive' } },
-              ],
+              AND: searchTerms.map((term) => ({
+                OR: [
+                  { name: { contains: term, mode: 'insensitive' } },
+                  { lastname: { contains: term, mode: 'insensitive' } },
+                ],
+              })),
             },
           }
         : {}),

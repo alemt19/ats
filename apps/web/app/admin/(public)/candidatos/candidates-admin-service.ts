@@ -1,6 +1,7 @@
 import "server-only"
 
 import {
+  type CandidateApplication,
   type Candidate,
   type CandidateListItem,
   type CandidatesQueryParams,
@@ -48,6 +49,14 @@ type BackendCandidateRecord = {
     email?: string | null
   } | null
   candidate_attributes?: CandidateAttribute[]
+}
+
+type BackendCandidateApplicationRecord = {
+  application_id?: number
+  offer_id?: number
+  offer_title?: string | null
+  status?: string | null
+  created_at?: string | null
 }
 
 function unwrapEnvelope<T>(payload: T | BackendEnvelope<T>): T {
@@ -257,4 +266,59 @@ export async function getCandidateByIdServer(candidateId: number): Promise<Candi
   }
 
   return fetchCandidateByIdFromBackend(candidateId)
+}
+
+export async function getCandidateApplicationsByIdServer(
+  candidateId: number
+): Promise<CandidateApplication[]> {
+  if (!Number.isFinite(candidateId) || candidateId <= 0) {
+    return []
+  }
+
+  const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+  const endpoints = [
+    `${apiBaseUrl}/api/candidates/${candidateId}/applications`,
+    `${apiBaseUrl}/candidates/${candidateId}/applications`,
+  ]
+
+  for (const endpoint of endpoints) {
+    try {
+      const response = await fetch(endpoint, {
+        method: "GET",
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        if (response.status === 404) {
+          return []
+        }
+
+        continue
+      }
+
+      const payload = (await response.json()) as
+        | BackendCandidateApplicationRecord[]
+        | BackendEnvelope<BackendCandidateApplicationRecord[]>
+
+      const records = unwrapEnvelope(payload)
+
+      if (!Array.isArray(records)) {
+        return []
+      }
+
+      return records
+        .map((record) => ({
+          application_id: Number(record.application_id ?? 0),
+          offer_id: Number(record.offer_id ?? 0),
+          offer_title: safeText(record.offer_title) || "Oferta sin título",
+          status: safeText(record.status) || "applied",
+          created_at: typeof record.created_at === "string" ? record.created_at : null,
+        }))
+        .filter((record) => record.application_id > 0 && record.offer_id > 0)
+    } catch {
+      // Try next endpoint variant.
+    }
+  }
+
+  return []
 }

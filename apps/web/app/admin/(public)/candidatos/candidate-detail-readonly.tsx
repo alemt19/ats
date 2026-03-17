@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
@@ -8,7 +9,7 @@ import { RadioGroup, RadioGroupItem } from "react/components/ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "react/components/ui/tabs"
 import { cn } from "react/lib/utils"
 
-import type { Candidate } from "./candidates-admin-types"
+import type { Candidate, CandidateApplication } from "./candidates-admin-types"
 
 type CulturePreferenceValue = {
   technical_name: string
@@ -24,9 +25,16 @@ type CulturePreferenceCategory = {
 
 type CandidateDetailReadonlyProps = {
   candidate: Candidate
+  applications: CandidateApplication[]
+  statusCatalog: ApplicationStatusCatalogItem[]
   culturalPreferenceCatalog: CulturePreferenceCategory[]
   behavioralQuestion1: string
   behavioralQuestion2: string
+}
+
+type ApplicationStatusCatalogItem = {
+  technical_name: string
+  display_name: string
 }
 
 function toInitials(name: string) {
@@ -60,6 +68,8 @@ function getCvType(urlOrName?: string): "pdf" | "docx" | null {
 
 export default function CandidateDetailReadonly({
   candidate,
+  applications,
+  statusCatalog,
   culturalPreferenceCatalog,
   behavioralQuestion1,
   behavioralQuestion2,
@@ -68,6 +78,16 @@ export default function CandidateDetailReadonly({
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
+  const statusLabelMap = React.useMemo(
+    () => new Map(statusCatalog.map((item) => [item.technical_name, item.display_name])),
+    [statusCatalog]
+  )
+
+  const offerSearchQuery = React.useMemo(() => {
+    const fullNameValue = `${candidate.name} ${candidate.lastname}`.trim()
+    const params = new URLSearchParams({ search: fullNameValue })
+    return params.toString()
+  }, [candidate.lastname, candidate.name])
 
   React.useEffect(() => {
     if (activeTab !== "competencias" || cvPreviewType !== "docx" || !candidate.cv_url) {
@@ -151,6 +171,7 @@ export default function CandidateDetailReadonly({
           <TabsTrigger value="datos">Datos</TabsTrigger>
           <TabsTrigger value="competencias">Competencias y valores</TabsTrigger>
           <TabsTrigger value="preferencias">Preferencias culturales</TabsTrigger>
+          <TabsTrigger value="postulaciones">Postulaciones</TabsTrigger>
         </TabsList>
 
         <TabsContent value="datos" className="space-y-4">
@@ -360,6 +381,51 @@ export default function CandidateDetailReadonly({
               )
             })
           )}
+        </TabsContent>
+
+        <TabsContent value="postulaciones" className="space-y-4">
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
+            <CardHeader>
+              <CardTitle>Postulaciones del candidato</CardTitle>
+              <CardDescription>
+                Histórico de ofertas a las que se ha postulado este candidato.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {applications.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Este candidato no tiene postulaciones registradas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {applications.map((application) => (
+                    <div
+                      key={application.application_id}
+                      className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/60 p-3 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                      <div className="space-y-1">
+                        <p className="font-medium">{application.offer_title}</p>
+                        <p className="text-muted-foreground text-xs">
+                          Postulación #{application.application_id}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">
+                          {statusLabelMap.get(application.status) ?? application.status}
+                        </Badge>
+
+                        <Link
+                          href={`/admin/ofertas/${application.offer_id}?${offerSearchQuery}`}
+                          className="text-primary text-sm font-medium hover:underline"
+                        >
+                          Ver oferta
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </section>
