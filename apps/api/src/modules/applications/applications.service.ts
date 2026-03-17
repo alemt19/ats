@@ -18,6 +18,26 @@ export class ApplicationsService {
     return normalized.length > 0 ? normalized : null;
   }
 
+  private normalizeAiFeedback(value: Prisma.JsonValue | null): Record<string, string> | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const normalizedEntries = Object.entries(value as Record<string, unknown>)
+      .map(([rawTitle, rawParagraph]) => {
+        const title = String(rawTitle ?? '').trim();
+        const paragraph = String(rawParagraph ?? '').trim();
+        return [title, paragraph] as const;
+      })
+      .filter(([title, paragraph]) => title.length > 0 && paragraph.length > 0);
+
+    if (normalizedEntries.length === 0) {
+      return null;
+    }
+
+    return Object.fromEntries(normalizedEntries);
+  }
+
   private async createApplicationStatusRegister(applicationId: number, status: string) {
     await this.prisma.$executeRaw`
       INSERT INTO "applications_registers" ("application_id", "status")
@@ -161,19 +181,35 @@ export class ApplicationsService {
       select: {
         status: true,
         created_at: true,
+        evaluation_status: true,
+        match_technical_score: true,
+        match_soft_score: true,
+        match_culture_score: true,
+        overall_score: true,
+        ai_feedback: true,
       },
     });
 
-    if (!application?.status) {
+    if (!application) {
       return {
         alreadyApplied: false,
       };
     }
 
+    const scores = {
+      technical: application.match_technical_score,
+      soft: application.match_soft_score,
+      culture: application.match_culture_score,
+      overall: application.overall_score,
+    };
+
     return {
       alreadyApplied: true,
-      statusTechnicalName: application.status,
+      statusTechnicalName: application.status ?? 'applied',
       appliedAt: application.created_at?.toISOString() ?? null,
+      evaluationStatus: application.evaluation_status ?? null,
+      scores,
+      aiFeedback: this.normalizeAiFeedback(application.ai_feedback),
     };
   }
 
