@@ -25,17 +25,17 @@ import LatestOffersSectionSkeleton from "./components/latest-offers-section-skel
 const processSteps = [
   {
     title: "Crea tu cuenta",
-    description: "Configura tu perfil en minutos y define hacia donde quieres crecer.",
+    description: "Crea tu cuenta en minutos con tu correo electronico",
     icon: UserPlus,
   },
   {
-    title: "Potencia tu perfil",
-    description: "Muestra habilidades tecnicas, blandas y preferencia de entorno laboral.",
+    title: "Completa tu perfil",
+    description: "Muestra habilidades tecnicas, blandas, valores y preferencia de entorno laboral.",
     icon: BrainCircuit,
   },
   {
-    title: "Postula con contexto",
-    description: "Recibe vacantes alineadas a tu potencial y aplica con informacion clara.",
+    title: "Conectate con oportunidades",
+    description: "Te presentamos nuestras oportunidades laborales para que apliques.",
     icon: Network,
   },
 ]
@@ -43,7 +43,29 @@ const processSteps = [
 export default function PublicPage() {
   return (
     <main>
-      <section className="relative isolate overflow-hidden border-b border-border/70">
+      <section className="relative isolate overflow-hidden">
+                <div
+                    className="h-[60vh] min-h-[420px] w-full bg-cover bg-center md:h-[72vh] md:min-h-[520px]"
+                    style={{ backgroundImage: "url('/images/banner-home.jpg')" }}
+                />
+                <div className="absolute inset-0 bg-black/50" />
+                <div className="absolute inset-0 flex items-center">
+                    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
+                        <div className="max-w-2xl space-y-4 text-white md:space-y-6">
+                            <h1 className="text-3xl leading-tight font-bold sm:text-4xl md:text-5xl lg:text-6xl text-neutral-200">
+                                Tu Potencial es Nuestro Próximo Exito
+                            </h1>
+                            <p className="text-sm leading-relaxed text-white/95 sm:text-base md:text-lg">
+                                Unete a un proceso de seleccion justo e innovador que valora tus habilidades reales
+                            </p>
+                            <Button asChild >
+                                <Link href="/ofertas">Postulate Ahora</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+      {/* <section className="relative isolate overflow-hidden border-b border-border/70">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_12%_8%,color-mix(in_oklab,var(--accent)_30%,transparent)_0%,transparent_44%),radial-gradient(circle_at_86%_0%,color-mix(in_oklab,var(--primary)_32%,transparent)_0%,transparent_52%)]" />
         <div className="absolute -top-24 right-0 -z-10 h-72 w-72 rounded-full bg-primary/22 blur-3xl animate-drift" />
         <div className="absolute -left-24 bottom-12 -z-10 h-72 w-72 rounded-full bg-accent/20 blur-3xl animate-drift" />
@@ -132,9 +154,9 @@ export default function PublicPage() {
             </CardContent>
           </Card>
         </div>
-      </section>
+      </section> */}
 
-      <section className="border-b border-border/65 bg-card/60 py-6">
+      {/* <section className="border-b border-border/65 bg-card/60 py-6">
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-3 px-4 sm:grid-cols-3 sm:px-6">
           {[
             "Empresas con criterios transparentes",
@@ -150,7 +172,7 @@ export default function PublicPage() {
             </article>
           ))}
         </div>
-      </section>
+      </section> */}
 
       <section id="como-funciona" className="section-space bg-muted/20">
         <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
@@ -160,7 +182,7 @@ export default function PublicPage() {
             </Badge>
             <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Un flujo simple y medible</h2>
             <p className="mt-4 text-base sm:text-lg">
-              Cada paso reduce incertidumbre para que avances con claridad desde el primer clic.
+              Nuestro proceso esta diseñado para ser simple, transparente, enfocado en tu talento
             </p>
           </div>
 
@@ -194,9 +216,9 @@ export default function PublicPage() {
             <Badge variant="outline" className="mb-4 rounded-full border-accent/35 bg-accent/12 text-accent">
               Valor diferencial
             </Badge>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Una experiencia que se siente premium</h2>
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Benificios para el candidato</h2>
             <p className="mt-4 text-base sm:text-lg">
-              Redisenamos el camino de seleccion para que el talento tenga visibilidad, contexto y oportunidades reales.
+              Creemos en un proceso de seleccion que te valora y te impulsa a crecer.
             </p>
           </div>
 
@@ -212,9 +234,9 @@ export default function PublicPage() {
                   className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.03]"
                 />
               </AspectRatio>
-              <h3 className="mt-4 text-2xl font-semibold">Evaluacion integral</h3>
+              <h3 className="mt-4 text-2xl font-semibold">Enfocado en el valor</h3>
               <p className="mt-2 text-muted-foreground">
-                Valoramos habilidades tecnicas, blandas y compatibilidad cultural para decisiones mas justas.
+                Valoramos no solo tus habilidades tecnicas, sino tambien tus habilidades blandas y ajuste cultural con nuestra organizacion.
               </p>
             </article>
 
@@ -229,9 +251,9 @@ export default function PublicPage() {
                   className="h-full w-full object-cover transition-transform duration-300 hover:scale-[1.03]"
                 />
               </AspectRatio>
-              <h3 className="mt-4 text-2xl font-semibold">Proceso sin sesgos</h3>
+              <h3 className="mt-4 text-2xl font-semibold">Proceso justo y sin sesgos</h3>
               <p className="mt-2 text-muted-foreground">
-                Disenamos cada etapa para dar visibilidad al valor real de tu perfil profesional.
+                Utilizamos tecnologia para garantizar igualdad de oportunidades para todos
               </p>
             </article>
 
@@ -240,7 +262,7 @@ export default function PublicPage() {
                 <div>
                   <h3 className="text-2xl font-semibold">Conexiones de calidad con empresas reales</h3>
                   <p className="mt-2 text-muted-foreground">
-                    Te acercamos a organizaciones innovadoras en Venezuela con vacantes de alto impacto y rutas de crecimiento visibles.
+                    Te conectamos con las mejores oportunidades laborales de venezuela
                   </p>
                   <Button asChild variant="outline" className="mt-5 rounded-full border-primary/35 bg-primary/8">
                     <Link href="/ofertas" className="gap-2">

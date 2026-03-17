@@ -64,9 +64,9 @@ export default async function LatestOffersSection() {
           <Badge variant="outline" className="mb-4 rounded-full border-primary/35 bg-primary/10 text-primary">
             Vacantes activas
           </Badge>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ofertas destacadas esta semana</h2>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ultimas ofertas</h2>
           <p className="mt-4 text-base sm:text-lg">
-            Encuentra oportunidades activas con requisitos claros y procesos de seleccion transparentes.
+            Encuentra oportunidades activas.
           </p>
         </div>
 
