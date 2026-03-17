@@ -1387,4 +1387,151 @@ export class JobsService {
       behavioral_ans_2: c.behavioral_ans_2 ?? '',
     };
   }
+
+  private parseDashboardDateRange(from?: string, to?: string) {
+    const now = new Date();
+    const defaultStart = new Date(now);
+    defaultStart.setDate(defaultStart.getDate() - 30);
+    defaultStart.setHours(0, 0, 0, 0);
+
+    const hasFrom = Boolean(from && from.trim().length > 0);
+    const hasTo = Boolean(to && to.trim().length > 0);
+
+    const startDate = hasFrom ? new Date(`${from}T00:00:00.000Z`) : defaultStart;
+    const endDate = hasTo ? new Date(`${to}T23:59:59.999Z`) : now;
+
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      throw new BadRequestException('Rango de fechas inválido');
+    }
+
+    if (endDate < startDate) {
+      throw new BadRequestException('La fecha final no puede ser menor a la inicial');
+    }
+
+    return {
+      startDate,
+      endDate,
+    };
+  }
+
+  async getAdminDashboardData(userId: string, from?: string, to?: string) {
+    const admin = await this.getCurrentAdmin(userId);
+    const companyId = admin.company_id;
+
+    if (!companyId) {
+      throw new BadRequestException('La empresa del admin no esta configurada');
+    }
+
+    const { startDate, endDate } = this.parseDashboardDateRange(from, to);
+
+    const [newOffers, newApplications, culturalAlignmentAggregate, newCandidatesCount, topOffersRows, progressRows] =
+      await Promise.all([
+        this.prisma.jobs.count({
+          where: {
+            company_id: companyId,
+            created_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+        }),
+        this.prisma.applications.count({
+          where: {
+            jobs: { company_id: companyId },
+            created_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+        }),
+        this.prisma.applications.aggregate({
+          where: {
+            jobs: { company_id: companyId },
+            created_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+          },
+          _avg: {
+            match_culture_score: true,
+          },
+        }),
+        this.prisma.candidates.count({
+          where: {
+            created_at: {
+              gte: startDate,
+              lte: endDate,
+            },
+            applications: {
+              some: {
+                jobs: { company_id: companyId },
+              },
+            },
+          },
+        }),
+        this.prisma.$queryRaw<Array<{ offer_name: string; candidates: bigint | number }>>`
+          SELECT j.title AS offer_name,
+                 COUNT(a.id) AS candidates
+          FROM jobs j
+          LEFT JOIN applications a
+            ON a.job_id = j.id
+           AND a.created_at >= ${startDate}
+           AND a.created_at <= ${endDate}
+          WHERE j.company_id = ${companyId}
+          GROUP BY j.id, j.title
+          ORDER BY candidates DESC, j.id DESC
+          LIMIT 5
+        `,
+        this.prisma.$queryRaw<Array<{ status: string; count: bigint | number }>>`
+          SELECT CASE
+                   WHEN ar.status = 'contacted' THEN 'pre_screening'
+                   ELSE ar.status
+                 END AS status,
+                 COUNT(ar.id) AS count
+          FROM applications_registers ar
+          INNER JOIN applications a ON a.id = ar.application_id
+          INNER JOIN jobs j ON j.id = a.job_id
+          WHERE j.company_id = ${companyId}
+            AND ar.created_at >= ${startDate}
+            AND ar.created_at <= ${endDate}
+          GROUP BY CASE
+                     WHEN ar.status = 'contacted' THEN 'pre_screening'
+                     ELSE ar.status
+                   END
+        `,
+      ]);
+
+    const parseCount = (value: bigint | number) => Number(value);
+    const culturalAlignment = Math.round((culturalAlignmentAggregate._avg.match_culture_score ?? 0) * 100);
+
+    const statusLabelMap = new Map<string, string>([
+      ['applied', 'Postulado'],
+      ['pre_screening', 'Preseleccionado'],
+      ['hired', 'Contratado'],
+      ['rejected', 'Rechazado'],
+    ]);
+
+    const progressCounts = new Map<string, number>();
+    progressRows.forEach((row) => {
+      progressCounts.set(row.status, parseCount(row.count));
+    });
+
+    return {
+      metrics: {
+        activeOffers: newOffers,
+        newCandidates: newCandidatesCount,
+        newApplications,
+        culturalAlignment,
+      },
+      candidateProgress: Array.from(statusLabelMap.entries()).map(([technicalName, label]) => ({
+        technical_name: technicalName,
+        label,
+        count: progressCounts.get(technicalName) ?? 0,
+      })),
+      topOffers: topOffersRows.map((row) => ({
+        name: row.offer_name,
+        candidates: parseCount(row.candidates),
+      })),
+    };
+  }
 }

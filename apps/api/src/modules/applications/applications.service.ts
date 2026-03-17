@@ -13,6 +13,18 @@ export class ApplicationsService {
     private readonly evaluationQueue: EvaluationQueueProducer,
   ) {}
 
+  private normalizeApplicationStatus(status: unknown): string | null {
+    const normalized = typeof status === 'string' ? status.trim() : '';
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  private async createApplicationStatusRegister(applicationId: number, status: string) {
+    await this.prisma.$executeRaw`
+      INSERT INTO "applications_registers" ("application_id", "status")
+      VALUES (${applicationId}, ${status})
+    `;
+  }
+
   private async getAdminUser(userId: string) {
     const admin = await this.prisma.user_admin.findFirst({
       where: { user_id: userId },
@@ -106,6 +118,9 @@ export class ApplicationsService {
       });
     }
 
+    const createdStatus = this.normalizeApplicationStatus(application.status) ?? 'applied';
+    await this.createApplicationStatusRegister(application.id, createdStatus);
+
     return application;
   }
 
@@ -179,11 +194,20 @@ export class ApplicationsService {
    * Update an existing application by id
    */
   async update(id: number, dto: UpdateApplicationDto) {
-    await this.findOne(id);
-    return this.prisma.applications.update({
+    const existing = await this.findOne(id);
+    const updated = await this.prisma.applications.update({
       where: { id },
       data: dto,
     });
+
+    const previousStatus = this.normalizeApplicationStatus(existing.status);
+    const nextStatus = this.normalizeApplicationStatus(updated.status);
+
+    if (nextStatus && nextStatus !== previousStatus) {
+      await this.createApplicationStatusRegister(updated.id, nextStatus);
+    }
+
+    return updated;
   }
 
   async updateStatusForAdmin(userId: string, applicationId: number, status: string) {
@@ -193,9 +217,17 @@ export class ApplicationsService {
       throw new BadRequestException('El estado es requerido');
     }
 
-    await this.getAdminScopedApplication(userId, applicationId);
+    const { application } = await this.getAdminScopedApplication(userId, applicationId);
+    const previousStatus = this.normalizeApplicationStatus(application.status);
 
-    return this.prisma.applications.update({
+    if (previousStatus === cleanStatus) {
+      return {
+        id: applicationId,
+        status: cleanStatus,
+      };
+    }
+
+    const updated = await this.prisma.applications.update({
       where: { id: applicationId },
       data: { status: cleanStatus },
       select: {
@@ -203,6 +235,10 @@ export class ApplicationsService {
         status: true,
       },
     });
+
+    await this.createApplicationStatusRegister(updated.id, cleanStatus);
+
+    return updated;
   }
 
   async findNotesForAdmin(userId: string, applicationId: number) {
