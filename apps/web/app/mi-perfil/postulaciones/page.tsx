@@ -40,7 +40,7 @@ async function fetchApplicationsServer(
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
 	try {
-		const response = await fetch(`${apiBaseUrl}/applications/me`, {
+		const response = await fetch(`${apiBaseUrl}/api/applications/me`, {
 			method: "GET",
 			headers: {
 				cookie,
@@ -49,7 +49,16 @@ async function fetchApplicationsServer(
 		})
 
 		if (response.ok) {
-			return (await response.json()) as JobApplication[]
+			const payload = (await response.json().catch(() => null)) as
+				| JobApplication[]
+				| { data?: JobApplication[] }
+				| null
+
+			const applications = payload && typeof payload === "object" && "data" in payload
+				? payload.data
+				: payload
+
+			return Array.isArray(applications) ? applications : []
 		}
 	} catch {
 		// Fallback to empty list if backend is unavailable.

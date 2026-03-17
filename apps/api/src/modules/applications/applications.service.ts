@@ -290,9 +290,11 @@ export class ApplicationsService {
       orderBy: { created_at: 'desc' },
       select: {
         id: true,
+        job_id: true,
         status: true,
         jobs: {
           select: {
+            id: true,
             title: true,
             city: true,
             state: true,
@@ -308,6 +310,7 @@ export class ApplicationsService {
 
     return applications.map((app) => ({
       id: app.id,
+      offer_id: app.jobs?.id ?? app.job_id ?? 0,
       title: app.jobs?.title ?? '',
       category: app.jobs?.job_categories?.name ?? '',
       city: app.jobs?.city ?? '',

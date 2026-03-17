@@ -25,6 +25,7 @@ export type ApplicationStatusCatalogItem = {
 
 export type JobApplication = {
   id: number
+  offer_id: number
   title: string
   category: string
   city: string
@@ -175,7 +176,7 @@ export default function PostulacionesList({
                 </Badge>
 
                 <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-background/70">
-                  <Link href={`/ofertas/${application.id}`}>Ver más</Link>
+                  <Link href={`/ofertas/${application.offer_id}`}>Ver más</Link>
                 </Button>
               </CardFooter>
             </Card>
