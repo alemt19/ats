@@ -33,6 +33,8 @@ powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | ie
   - `GEMINI_LLM_API_KEY`
   - `GEMINI_LLM_MODEL`
 - Optional env vars:
+  - `behavioral_question_1`
+  - `behavioral_question_2`
   - `GEMINI_EMBEDDING_MODEL` (default: `models/embedding-001`)
   - `EMBEDDING_TASK_TYPE` (default: `SEMANTIC_SIMILARITY`)
   - `EMBEDDING_OUTPUT_DIMENSIONALITY` (default: `1536`)

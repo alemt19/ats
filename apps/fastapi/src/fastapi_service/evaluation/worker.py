@@ -9,16 +9,25 @@ When a candidate applies to a job:
 """
 
 import asyncio
+import json
 import logging
 import os
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
+from urllib.request import Request, urlopen
 
 import psycopg
 from bullmq import Worker
+from google import genai
+from google.genai import types
 
+from fastapi_service.cv_parser import extract_text_from_cv, resolve_cv_format
 from fastapi_service.environment import load_environment
 from fastapi_service.evaluation.algorithm import analyze_embeddings
+from fastapi_service.evaluation.feedback_prompt import build_application_feedback_prompt
 
 logger = logging.getLogger("fastapi_service.evaluation.worker")
 logging.basicConfig(
@@ -32,6 +41,23 @@ QUEUE_NAME = "evaluation"
 TOP_SIMILAR_JOBS = 3
 CULTURE_PREFERENCE_WEIGHT = float(os.getenv("CULTURE_PREFERENCE_WEIGHT", "0.5"))
 CULTURE_VALUE_WEIGHT = float(os.getenv("CULTURE_VALUE_WEIGHT", "0.5"))
+BEHAVIORAL_QUESTION_1_DEFAULT = (
+    "Cuentame sobre una ocasion en la que tuviste que lidiar con un conflicto en un equipo. "
+    "Cual fue la situacion, como la manejaste y cual fue el resultado?"
+)
+BEHAVIORAL_QUESTION_2_DEFAULT = (
+    "Describe una situacion en la que fallaste o cometiste un error importante. "
+    "Como reaccionaste y que aprendiste de esa experiencia?"
+)
+
+_FEEDBACK_CULTURE_FIELD_MAP: dict[str, str] = {
+    "dress_code": "dress_code",
+    "colaboration_style": "collaboration_style",
+    "work_pace": "work_pace",
+    "level_of_autonomy": "level_of_autonomy",
+    "dealing_with_management": "dealing_with_management",
+    "level_of_monitoring": "level_of_monitoring",
+}
 
 _CULTURE_SCALE_BY_FIELD: dict[str, dict[str, int]] = {
     "dress_code": {
@@ -79,6 +105,33 @@ _CULTURE_FIELDS = [
 ]
 
 
+@lru_cache(maxsize=1)
+def _load_candidate_culture_preference_catalog() -> list[dict[str, Any]]:
+    catalog_path = (
+        Path(__file__).resolve().parents[5]
+        / "apps"
+        / "web"
+        / "public"
+        / "data"
+        / "culture_preference_candidate.json"
+    )
+
+    try:
+        return json.loads(catalog_path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        logger.warning(
+            "Candidate culture preference catalog not found at %s",
+            catalog_path,
+        )
+    except json.JSONDecodeError:
+        logger.exception(
+            "Candidate culture preference catalog is not valid JSON: %s",
+            catalog_path,
+        )
+
+    return []
+
+
 @dataclass
 class AttributeGroup:
     names: list[str]
@@ -96,8 +149,27 @@ class JobWeights:
 class EvaluationWorker:
     def __init__(self) -> None:
         self.database_url = os.getenv("DATABASE_URL", "")
+        self.llm_model = os.getenv("GEMINI_LLM_MODEL", "").strip()
+        self.behavioral_question_1 = (
+            os.getenv("behavioral_question_1")
+            or os.getenv("BEHAVIORAL_QUESTION_1")
+            or BEHAVIORAL_QUESTION_1_DEFAULT
+        )
+        self.behavioral_question_2 = (
+            os.getenv("behavioral_question_2")
+            or os.getenv("BEHAVIORAL_QUESTION_2")
+            or BEHAVIORAL_QUESTION_2_DEFAULT
+        )
+        llm_api_key = os.getenv("GEMINI_LLM_API_KEY", "").strip()
+
         if not self.database_url:
             raise RuntimeError("DATABASE_URL is required")
+        if not llm_api_key:
+            raise RuntimeError("GEMINI_LLM_API_KEY is required")
+        if not self.llm_model:
+            raise RuntimeError("GEMINI_LLM_MODEL is required")
+
+        self.client = genai.Client(api_key=llm_api_key)
         logger.info("Evaluation worker configured")
 
     def _set_evaluation_status(self, application_id: int, status: str) -> None:
@@ -198,6 +270,335 @@ class EvaluationWorker:
                 groups["value"].names.append(name)
                 groups["value"].embeddings.append(self._parse_vector(embedding_str))
                 groups["value"].mandatory_flags.append(False)
+
+    def _update_candidate_cv_text(self, candidate_id: int, text: str) -> None:
+        if not text.strip():
+            return
+
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE candidates SET cv_text = %s WHERE id = %s",
+                    (text, candidate_id),
+                )
+            conn.commit()
+
+    @staticmethod
+    def _download_file_content(url: str) -> bytes:
+        parsed = urlparse(url)
+        if parsed.scheme not in {"http", "https"}:
+            raise ValueError("Candidate CV URL is not valid")
+
+        request = Request(
+            url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; ATS-FastAPI/1.0)",
+            },
+        )
+        with urlopen(request, timeout=20) as response:  # nosec B310
+            return bytes(response.read())
+
+    def _get_candidate_cv_text(
+        self,
+        candidate_id: int,
+        stored_cv_text: str | None,
+        cv_file_url: str | None,
+    ) -> str:
+        cv_text = (stored_cv_text or "").strip()
+        if cv_text:
+            return cv_text
+
+        if not cv_file_url:
+            return ""
+
+        try:
+            cv_format = resolve_cv_format(filename=cv_file_url)
+            file_content = self._download_file_content(cv_file_url)
+            extracted = extract_text_from_cv(
+                file_content,
+                filename=cv_file_url,
+                content_type=(
+                    "application/pdf"
+                    if cv_format == "pdf"
+                    else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                ),
+            ).strip()
+            if extracted:
+                self._update_candidate_cv_text(candidate_id, extracted)
+            return extracted
+        except Exception:
+            logger.exception(
+                "Could not extract CV text for candidate %s from %s",
+                candidate_id,
+                cv_file_url,
+            )
+            return ""
+
+    @staticmethod
+    def _externalize_culture_preferences(
+        preferences: dict[str, str | None],
+    ) -> dict[str, str | None]:
+        return {
+            _FEEDBACK_CULTURE_FIELD_MAP.get(field_name, field_name): value
+            for field_name, value in preferences.items()
+        }
+
+    def _fetch_candidate_feedback_context(
+        self,
+        candidate_id: int,
+        cand_attrs: dict[str, AttributeGroup],
+    ) -> dict[str, Any]:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        name,
+                        lastname,
+                        cv_text,
+                        cv_file_url,
+                        behavioral_ans_1,
+                        behavioral_ans_2,
+                        dress_code,
+                        collaboration_style,
+                        work_pace,
+                        level_of_autonomy,
+                        dealing_with_management,
+                        level_of_monitoring
+                    FROM candidates
+                    WHERE id = %s
+                    """,
+                    (candidate_id,),
+                )
+                row = cur.fetchone()
+
+        if not row:
+            raise ValueError(f"Candidate {candidate_id} not found")
+
+        cv_text = self._get_candidate_cv_text(candidate_id, row[2], row[3])
+
+        return {
+            "nombre": " ".join(part for part in [row[0], row[1]] if part).strip(),
+            "cv_text": cv_text,
+            "pregunta_conductual_1": self.behavioral_question_1,
+            "pregunta_conductual_2": self.behavioral_question_2,
+            "respuesta_conductual_1": row[4] or "",
+            "respuesta_conductual_2": row[5] or "",
+            "preferencias_culturales": {
+                "dress_code": row[6],
+                "collaboration_style": row[7],
+                "work_pace": row[8],
+                "level_of_autonomy": row[9],
+                "dealing_with_management": row[10],
+                "level_of_monitoring": row[11],
+            },
+            "habilidades_tecnicas": cand_attrs["hard_skill"].names,
+            "habilidades_blandas": cand_attrs["soft_skill"].names,
+            "valores": cand_attrs["value"].names,
+        }
+
+    def _fetch_company_feedback_context(self, job_id: int) -> dict[str, Any]:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        comp.id,
+                        comp.name,
+                        comp.description,
+                        comp.mision,
+                        comp.dress_code,
+                        comp.colaboration_style,
+                        comp.work_pace,
+                        comp.level_of_autonomy,
+                        comp.dealing_with_management,
+                        comp.level_of_monitoring
+                    FROM jobs j
+                    LEFT JOIN companies comp ON comp.id = j.company_id
+                    WHERE j.id = %s
+                    """,
+                    (job_id,),
+                )
+                company_row = cur.fetchone()
+
+                if not company_row:
+                    raise ValueError(f"Could not fetch company context for job {job_id}")
+
+                company_id = company_row[0]
+                values: list[str] = []
+                if company_id is not None:
+                    cur.execute(
+                        """
+                        SELECT ga.name
+                        FROM company_attributes ca
+                        JOIN global_attributes ga ON ga.id = ca.attribute_id
+                        WHERE ca.company_id = %s AND ga.type = 'value'
+                        ORDER BY ga.name ASC
+                        """,
+                        (company_id,),
+                    )
+                    values = [name for (name,) in cur.fetchall() if name]
+
+        return {
+            "nombre": company_row[1] or "",
+            "descripcion": company_row[2] or "",
+            "mision": company_row[3] or "",
+            "preferencias_culturales": {
+                "dress_code": company_row[4],
+                "collaboration_style": company_row[5],
+                "work_pace": company_row[6],
+                "level_of_autonomy": company_row[7],
+                "dealing_with_management": company_row[8],
+                "level_of_monitoring": company_row[9],
+            },
+            "valores": values,
+        }
+
+    def _fetch_job_feedback_context(
+        self,
+        job_id: int,
+        job_attrs: dict[str, AttributeGroup],
+        weights: JobWeights,
+    ) -> dict[str, Any]:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    """
+                    SELECT
+                        title,
+                        description,
+                        position,
+                        workplace_type,
+                        employment_type,
+                        weight_technical,
+                        weight_soft,
+                        weight_culture
+                    FROM jobs
+                    WHERE id = %s
+                    """,
+                    (job_id,),
+                )
+                row = cur.fetchone()
+
+        if not row:
+            raise ValueError(f"Job {job_id} not found")
+
+        return {
+            "title": row[0] or "",
+            "description": row[1] or "",
+            "position": row[2] or "",
+            "workplace_type": row[3],
+            "employment_type": row[4],
+            "weight_technical": row[5] or weights.technical,
+            "weight_soft": row[6] or weights.soft,
+            "weight_culture": row[7] or weights.culture,
+            "habilidades_tecnicas": job_attrs["hard_skill"].names,
+            "habilidades_blandas": job_attrs["soft_skill"].names,
+        }
+
+    @staticmethod
+    def _normalize_feedback_title(title: Any) -> str:
+        cleaned = " ".join(str(title).replace("_", " ").split())
+        if not cleaned:
+            return ""
+        return cleaned[0].upper() + cleaned[1:]
+
+    def _normalize_ai_feedback_payload(self, payload: Any) -> dict[str, str]:
+        if not isinstance(payload, dict):
+            raise ValueError("LLM feedback payload must be a JSON object")
+
+        normalized: dict[str, str] = {}
+
+        for raw_title, raw_paragraph in payload.items():
+            title = self._normalize_feedback_title(raw_title)
+            paragraph = " ".join(str(raw_paragraph).split())
+
+            if not title or not paragraph:
+                continue
+
+            unique_title = title
+            suffix = 2
+            while unique_title in normalized:
+                unique_title = f"{title} {suffix}"
+                suffix += 1
+
+            normalized[unique_title] = paragraph
+
+        if not normalized:
+            raise ValueError("LLM feedback payload does not contain usable sections")
+
+        return normalized
+
+    def _update_application_ai_feedback(
+        self,
+        application_id: int,
+        ai_feedback: dict[str, str],
+    ) -> None:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "UPDATE applications SET ai_feedback = %s::jsonb WHERE id = %s",
+                    (json.dumps(ai_feedback, ensure_ascii=False), application_id),
+                )
+            conn.commit()
+
+    def _generate_application_ai_feedback(
+        self,
+        application_id: int,
+        job_id: int,
+        candidate_id: int,
+        scores: dict[str, Any],
+        job_attrs: dict[str, AttributeGroup],
+        cand_attrs: dict[str, AttributeGroup],
+        weights: JobWeights,
+    ) -> dict[str, str]:
+        company_preferences, candidate_preferences = self._fetch_culture_preferences(
+            job_id,
+            candidate_id,
+        )
+        candidate_context = self._fetch_candidate_feedback_context(candidate_id, cand_attrs)
+        company_context = self._fetch_company_feedback_context(job_id)
+        job_context = self._fetch_job_feedback_context(job_id, job_attrs, weights)
+
+        candidate_context["preferencias_culturales"] = self._externalize_culture_preferences(
+            candidate_preferences,
+        )
+        company_context["preferencias_culturales"] = self._externalize_culture_preferences(
+            company_preferences,
+        )
+
+        prompt = build_application_feedback_prompt(
+            scores={
+                "match_technical_score": float(scores["match_technical_score"]),
+                "match_soft_score": float(scores["match_soft_score"]),
+                "match_culture_score": float(scores["match_culture_score"]),
+                "overall_score": float(scores["overall_score"]),
+            },
+            candidate_context=candidate_context,
+            company_context=company_context,
+            job_context=job_context,
+            culture_preference_catalog=_load_candidate_culture_preference_catalog(),
+        )
+
+        response = self.client.models.generate_content(
+            model=self.llm_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+            ),
+        )
+
+        parsed = getattr(response, "parsed", None)
+        if isinstance(parsed, dict):
+            return self._normalize_ai_feedback_payload(parsed)
+
+        response_text = getattr(response, "text", "")
+        if not response_text:
+            raise ValueError(
+                f"LLM did not return ai_feedback for application {application_id}"
+            )
+
+        return self._normalize_ai_feedback_payload(json.loads(response_text))
 
     @staticmethod
     def _parse_vector(vector_str: str) -> list[float]:
@@ -524,6 +925,21 @@ class EvaluationWorker:
             await asyncio.to_thread(
                 self._update_application_scores, application_id, scores
             )
+            ai_feedback = await asyncio.to_thread(
+                self._generate_application_ai_feedback,
+                application_id,
+                job_id,
+                candidate_id,
+                scores,
+                job_attrs,
+                cand_attrs,
+                weights,
+            )
+            await asyncio.to_thread(
+                self._update_application_ai_feedback,
+                application_id,
+                ai_feedback,
+            )
 
             logger.info(
                 "Applied job scores: tech=%.3f soft=%.3f culture=%.3f overall=%.3f",
@@ -531,6 +947,11 @@ class EvaluationWorker:
                 scores["match_soft_score"],
                 scores["match_culture_score"],
                 scores["overall_score"],
+            )
+            logger.info(
+                "Application %s ai_feedback updated with %d sections",
+                application_id,
+                len(ai_feedback),
             )
 
             # Find and evaluate similar jobs
