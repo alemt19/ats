@@ -479,12 +479,27 @@ export default function OfertaAdminDetalleClient({
   const totalPages = Math.max(1, Math.ceil(total / query.pageSize))
   const startItem = total === 0 ? 0 : (query.page - 1) * query.pageSize + 1
   const endItem = Math.min(query.page * query.pageSize, total)
+
+  const workplaceTypeLabel = React.useMemo(
+    () =>
+      formCatalogs.workplaceTypes.find((option) => option.technical_name === offer.workplace_type)
+        ?.display_name ?? offer.workplace_type,
+    [formCatalogs.workplaceTypes, offer.workplace_type]
+  )
+
+  const employmentTypeLabel = React.useMemo(
+    () =>
+      formCatalogs.employmentTypes.find((option) => option.technical_name === offer.employment_type)
+        ?.display_name ?? offer.employment_type,
+    [formCatalogs.employmentTypes, offer.employment_type]
+  )
+
   const locationLabel = [offer.city, offer.state].filter((value) => Boolean(value)).join(", ")
   const metaChips = [
     locationLabel,
     offer.position,
-    offer.workplace_type,
-    offer.employment_type,
+    workplaceTypeLabel,
+    employmentTypeLabel,
   ].filter((value) => Boolean(value))
 
   const statusMap = React.useMemo(
