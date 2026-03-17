@@ -44,13 +44,14 @@ function getCvType(urlOrName?: string): "pdf" | "docx" | null {
     return null
   }
 
-  const normalized = urlOrName.toLowerCase()
+  const normalized = urlOrName.toLowerCase().trim()
+  const withoutQueryOrHash = normalized.split("?")[0]?.split("#")[0] ?? normalized
 
-  if (normalized.endsWith(".pdf")) {
+  if (withoutQueryOrHash.endsWith(".pdf")) {
     return "pdf"
   }
 
-  if (normalized.endsWith(".docx")) {
+  if (withoutQueryOrHash.endsWith(".docx")) {
     return "docx"
   }
 
@@ -63,35 +64,43 @@ export default function CandidateDetailReadonly({
   behavioralQuestion1,
   behavioralQuestion2,
 }: CandidateDetailReadonlyProps) {
+  const [activeTab, setActiveTab] = React.useState("datos")
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
 
   React.useEffect(() => {
-    if (cvPreviewType !== "docx" || !candidate.cv_url || !docxContainerRef.current) {
+    if (activeTab !== "competencias" || cvPreviewType !== "docx" || !candidate.cv_url) {
       return
     }
 
     let isCancelled = false
+    let frameId = 0
 
     const renderDocxPreview = async () => {
       try {
         const cvUrl = candidate.cv_url
+        const container = docxContainerRef.current
 
-        if (!cvUrl) {
+        if (!cvUrl || !container) {
           return
         }
 
         const { renderAsync } = await import("docx-preview")
         const response = await fetch(cvUrl)
+
+        if (!response.ok) {
+          throw new Error("No se pudo descargar el archivo .docx")
+        }
+
         const blob = await response.blob()
 
         if (isCancelled || !docxContainerRef.current) {
           return
         }
 
-        docxContainerRef.current.innerHTML = ""
-        await renderAsync(blob, docxContainerRef.current)
+        container.innerHTML = ""
+        await renderAsync(blob, container)
       } catch {
         if (!isCancelled && docxContainerRef.current) {
           docxContainerRef.current.innerHTML =
@@ -100,12 +109,28 @@ export default function CandidateDetailReadonly({
       }
     }
 
-    renderDocxPreview()
+    const renderWhenReady = () => {
+      if (isCancelled) {
+        return
+      }
+
+      if (!docxContainerRef.current) {
+        frameId = requestAnimationFrame(renderWhenReady)
+        return
+      }
+
+      void renderDocxPreview()
+    }
+
+    renderWhenReady()
 
     return () => {
       isCancelled = true
+      if (frameId) {
+        cancelAnimationFrame(frameId)
+      }
     }
-  }, [candidate.cv_url, cvPreviewType])
+  }, [activeTab, candidate.cv_url, cvPreviewType])
 
   return (
     <section className="mx-auto w-full max-w-6xl space-y-6">
@@ -121,7 +146,7 @@ export default function CandidateDetailReadonly({
         </div>
       </header>
 
-      <Tabs defaultValue="datos" className="gap-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
         <TabsList variant="line" className="w-full justify-start border-b border-border/70 pb-2">
           <TabsTrigger value="datos">Datos</TabsTrigger>
           <TabsTrigger value="competencias">Competencias y valores</TabsTrigger>
