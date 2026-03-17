@@ -56,6 +56,31 @@ export class JobsService {
     private readonly jobSummaryQueueProducer: JobSummaryQueueProducer,
   ) {}
 
+  private normalizeAiFeedbackSections(value: unknown): Record<string, string> | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const normalizedEntries = Object.entries(value as Record<string, unknown>)
+      .map(([title, content]) => {
+        const normalizedTitle = String(title).trim();
+        const normalizedContent = typeof content === 'string' ? content.trim() : '';
+
+        if (!normalizedTitle || !normalizedContent) {
+          return null;
+        }
+
+        return [normalizedTitle, normalizedContent] as const;
+      })
+      .filter((entry): entry is readonly [string, string] => Boolean(entry));
+
+    if (normalizedEntries.length === 0) {
+      return null;
+    }
+
+    return Object.fromEntries(normalizedEntries);
+  }
+
   private normalizeAttributeNames(values: string[]) {
     const unique = new Set<string>();
     const normalizedValues: string[] = [];
@@ -1328,10 +1353,7 @@ export class JobsService {
 
     const toPercent = (val: number | null) => Math.round((val ?? 0) * 100);
 
-    const aiSummary =
-      application.ai_feedback && typeof application.ai_feedback === 'object'
-        ? ((application.ai_feedback as Record<string, unknown>)['summary'] as string | undefined)
-        : undefined;
+    const aiFeedback = this.normalizeAiFeedbackSections(application.ai_feedback);
 
     return {
       candidate_id: c.id,
@@ -1345,7 +1367,7 @@ export class JobsService {
       state: c.state ?? undefined,
       country: c.country ?? undefined,
       offer_title: application.jobs?.title ?? '',
-      ai_summary: aiSummary ?? null,
+      ai_feedback: aiFeedback,
       application_status: application.status ?? 'applied',
       technical_score: toPercent(application.match_technical_score),
       soft_score: toPercent(application.match_soft_score),

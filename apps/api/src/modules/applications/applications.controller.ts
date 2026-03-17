@@ -1,6 +1,7 @@
 /** @format */
 
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -23,6 +24,18 @@ import { ApplicationsQueryDto, CreateApplicationDto, UpdateApplicationDto } from
 @Controller('applications')
 export class ApplicationsController {
   constructor(private readonly applicationsService: ApplicationsService) {}
+
+  private assertAdminScope(request: Request) {
+    const cookieHeader = request.headers.cookie;
+    if (!cookieHeader) {
+      throw new UnauthorizedException('Missing admin session cookie');
+    }
+
+    const match = cookieHeader.match(/(?:^|;\s*)ats_scope=(admin|candidate)(?:;|$)/);
+    if (match?.[1] !== 'admin') {
+      throw new UnauthorizedException('Admin session required');
+    }
+  }
 
   private getUserIdFromSession(session: any): string {
     const userId = session?.user?.id ?? session?.id;
@@ -92,6 +105,56 @@ export class ApplicationsController {
   @Get(':id/similar-jobs')
   findSimilarJobs(@Param('id', ParseIntPipe) id: number) {
     return this.applicationsService.findSimilarJobs(id);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Get(':id/notes')
+  findNotesForAdmin(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.applicationsService.findNotesForAdmin(userId, id);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Post(':id/notes')
+  createNoteForAdmin(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { text?: string },
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    const text = typeof body?.text === 'string' ? body.text : '';
+
+    if (!text.trim()) {
+      throw new BadRequestException('La nota no puede estar vacía');
+    }
+
+    return this.applicationsService.createNoteForAdmin(userId, id, text);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Patch(':id/admin-status')
+  updateStatusForAdmin(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status?: string },
+  ) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    const status = typeof body?.status === 'string' ? body.status : '';
+
+    if (!status.trim()) {
+      throw new BadRequestException('El estado es requerido');
+    }
+
+    return this.applicationsService.updateStatusForAdmin(userId, id, status);
   }
 
   @Patch(':id')

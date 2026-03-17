@@ -1,8 +1,8 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 
-import { getSession } from "../../../../../../../auth"
 import CandidateApplicationDetailClient, {
 	type ApplicationNote,
 	type ApplicationStatusOption,
@@ -23,62 +23,62 @@ async function readJsonFile<T>(relativePath: string): Promise<T> {
 async function fetchCandidateDetailServer(
 	offerId: number,
 	applicationId: number,
-	accessToken?: string
+	cookie?: string
 ): Promise<CandidateApplicationDetail> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
-	try {
-		const response = await fetch(
-			`${apiBaseUrl}/admin/ofertas/${offerId}/candidatos/${applicationId}`,
-			{
-				method: "GET",
-				headers: {
-					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-				},
-				cache: "no-store",
-			}
-		)
+	const response = await fetch(`${apiBaseUrl}/api/admin/ofertas/${offerId}/candidatos/${applicationId}`, {
+		method: "GET",
+		headers: {
+			...(cookie ? { cookie } : {}),
+		},
+		cache: "no-store",
+	})
 
-		if (response.ok) {
-			return (await response.json()) as CandidateApplicationDetail
-		}
-	} catch {
-		// Fallback while endpoint is pending on backend.
+	if (!response.ok) {
+		throw new Error("No se pudo cargar el detalle del candidato")
 	}
 
-	const fallback = await readJsonFile<CandidateApplicationDetail>(
-		"candidate_application_detail_dummy.json"
-	)
+	const payload = (await response.json().catch(() => null)) as
+		| CandidateApplicationDetail
+		| { data?: CandidateApplicationDetail }
+		| null
 
-	return {
-		...fallback,
-		application_id: applicationId,
+	const candidate = payload && typeof payload === "object" && "data" in payload ? payload.data : payload
+
+	if (!candidate) {
+		throw new Error("Respuesta inválida del backend")
 	}
+
+	return candidate as CandidateApplicationDetail
 }
 
 async function fetchApplicationNotesServer(
 	applicationId: number,
-	accessToken?: string
+	cookie?: string
 ): Promise<ApplicationNote[]> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
-	try {
-		const response = await fetch(`${apiBaseUrl}/applications/${applicationId}/notes`, {
-			method: "GET",
-			headers: {
-				...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-			},
-			cache: "no-store",
-		})
+	const response = await fetch(`${apiBaseUrl}/api/applications/${applicationId}/notes`, {
+		method: "GET",
+		headers: {
+			...(cookie ? { cookie } : {}),
+		},
+		cache: "no-store",
+	})
 
-		if (response.ok) {
-			return (await response.json()) as ApplicationNote[]
-		}
-	} catch {
-		// Fallback while endpoint is pending on backend.
+	if (!response.ok) {
+		throw new Error("No se pudieron cargar las notas")
 	}
 
-	return readJsonFile<ApplicationNote[]>("application_notes_dummy.json")
+	const payload = (await response.json().catch(() => null)) as
+		| ApplicationNote[]
+		| { data?: ApplicationNote[] }
+		| null
+
+	const notes = payload && typeof payload === "object" && "data" in payload ? payload.data : payload
+
+	return Array.isArray(notes) ? notes : []
 }
 
 async function getApplicationStatusOptionsServer() {
@@ -98,8 +98,7 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 		notFound()
 	}
 
-	const session = await getSession()
-	const accessToken = session?.accessToken
+	const cookie = (await headers()).get("cookie") ?? undefined
 	const behavioralQuestion1 =
 		process.env.behavioral_question_1 ??
 		"Cuéntame sobre una ocasión en la que tuviste que lidiar con un conflicto en un equipo. ¿Cuál fue la situación, cómo la manejaste y cuál fue el resultado?"
@@ -107,11 +106,21 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 		process.env.behavioral_question_2 ??
 		"Describe una situación en la que fallaste o cometiste un error importante. ¿Cómo reaccionaste y qué aprendiste de esa experiencia?"
 
-	const [candidate, statusOptions, culturePreferenceCatalog, initialNotes] = await Promise.all([
-		fetchCandidateDetailServer(offerId, applicationId, accessToken),
+	let candidate: CandidateApplicationDetail
+	let initialNotes: ApplicationNote[]
+
+	try {
+		;[candidate, initialNotes] = await Promise.all([
+			fetchCandidateDetailServer(offerId, applicationId, cookie),
+			fetchApplicationNotesServer(applicationId, cookie),
+		])
+	} catch {
+		notFound()
+	}
+
+	const [statusOptions, culturePreferenceCatalog] = await Promise.all([
 		getApplicationStatusOptionsServer(),
 		getCulturePreferenceCatalogServer(),
-		fetchApplicationNotesServer(applicationId, accessToken),
 	])
 
 	return (
@@ -123,10 +132,6 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 			initialNotes={initialNotes}
 			behavioralQuestion1={behavioralQuestion1}
 			behavioralQuestion2={behavioralQuestion2}
-			currentUser={{
-				id: session?.user?.id ?? "admin_1",
-				displayName: session?.user?.email ?? "Administrador",
-			}}
 		/>
 	)
 }

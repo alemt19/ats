@@ -1,6 +1,6 @@
 /** @format */
 
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EvaluationQueueProducer } from '../../common/queues/evaluation-queue.producer';
 import { CreateApplicationDto, UpdateApplicationDto } from './dto/applications.dto';
@@ -12,6 +12,72 @@ export class ApplicationsService {
     private readonly prisma: PrismaService,
     private readonly evaluationQueue: EvaluationQueueProducer,
   ) {}
+
+  private async getAdminUser(userId: string) {
+    const admin = await this.prisma.user_admin.findFirst({
+      where: { user_id: userId },
+      select: {
+        id: true,
+        company_id: true,
+        name: true,
+        lastname: true,
+        profile_picture: true,
+      },
+    });
+
+    if (!admin || !admin.company_id) {
+      throw new ForbiddenException('Administrador no autorizado');
+    }
+
+    return admin;
+  }
+
+  private async getAdminScopedApplication(userId: string, applicationId: number) {
+    const admin = await this.getAdminUser(userId);
+
+    const application = await this.prisma.applications.findFirst({
+      where: {
+        id: applicationId,
+        jobs: { company_id: admin.company_id },
+      },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+
+    if (!application) {
+      throw new NotFoundException(`Application with ID ${applicationId} not found`);
+    }
+
+    return { admin, application };
+  }
+
+  private mapApplicationNote(note: {
+    id: number;
+    recruiter_id: number | null;
+    text: string;
+    created_at: Date | null;
+    user_admin: {
+      name: string | null;
+      lastname: string | null;
+      profile_picture: string | null;
+    } | null;
+  }) {
+    const recruiterName = [note.user_admin?.name, note.user_admin?.lastname]
+      .filter((value): value is string => Boolean(value && value.trim()))
+      .join(' ')
+      .trim();
+
+    return {
+      id: note.id,
+      recruiter_id: note.recruiter_id,
+      recruiter_name: recruiterName || 'Administrador',
+      recruiter_avatar_url: note.user_admin?.profile_picture ?? undefined,
+      text: note.text,
+      created_at: note.created_at?.toISOString() ?? new Date().toISOString(),
+    };
+  }
 
   /**
    * Create a new application and enqueue evaluation
@@ -118,6 +184,82 @@ export class ApplicationsService {
       where: { id },
       data: dto,
     });
+  }
+
+  async updateStatusForAdmin(userId: string, applicationId: number, status: string) {
+    const cleanStatus = String(status).trim();
+
+    if (!cleanStatus) {
+      throw new BadRequestException('El estado es requerido');
+    }
+
+    await this.getAdminScopedApplication(userId, applicationId);
+
+    return this.prisma.applications.update({
+      where: { id: applicationId },
+      data: { status: cleanStatus },
+      select: {
+        id: true,
+        status: true,
+      },
+    });
+  }
+
+  async findNotesForAdmin(userId: string, applicationId: number) {
+    await this.getAdminScopedApplication(userId, applicationId);
+
+    const notes = await this.prisma.notes.findMany({
+      where: { application_id: applicationId },
+      orderBy: { created_at: 'desc' },
+      select: {
+        id: true,
+        recruiter_id: true,
+        text: true,
+        created_at: true,
+        user_admin: {
+          select: {
+            name: true,
+            lastname: true,
+            profile_picture: true,
+          },
+        },
+      },
+    });
+
+    return notes.map((note) => this.mapApplicationNote(note));
+  }
+
+  async createNoteForAdmin(userId: string, applicationId: number, text: string) {
+    const cleanText = String(text).trim();
+
+    if (!cleanText) {
+      throw new BadRequestException('La nota no puede estar vacía');
+    }
+
+    const { admin } = await this.getAdminScopedApplication(userId, applicationId);
+
+    const note = await this.prisma.notes.create({
+      data: {
+        application_id: applicationId,
+        recruiter_id: admin.id,
+        text: cleanText,
+      },
+      select: {
+        id: true,
+        recruiter_id: true,
+        text: true,
+        created_at: true,
+        user_admin: {
+          select: {
+            name: true,
+            lastname: true,
+            profile_picture: true,
+          },
+        },
+      },
+    });
+
+    return this.mapApplicationNote(note);
   }
 
   /**

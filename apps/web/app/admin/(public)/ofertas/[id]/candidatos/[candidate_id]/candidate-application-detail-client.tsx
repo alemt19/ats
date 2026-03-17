@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Globe, Loader2, Mail, Phone, Save } from "lucide-react"
+import { Globe, Loader2, Mail, MessageCircle, Phone, Save } from "lucide-react"
+import Link from "next/link"
 import { toast } from "sonner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
@@ -38,7 +39,7 @@ export type CulturePreferenceCategory = {
 
 export type ApplicationNote = {
   id: number
-  recruiter_id: string
+  recruiter_id: number | null
   recruiter_name: string
   recruiter_avatar_url?: string
   text: string
@@ -57,6 +58,7 @@ export type CandidateApplicationDetail = {
   state?: string
   country?: string
   offer_title: string
+  ai_feedback?: Record<string, string> | null
   ai_summary?: string | null
   application_status: string
   technical_score: number
@@ -71,12 +73,6 @@ export type CandidateApplicationDetail = {
   behavioral_ans_2: string
 }
 
-type CurrentUser = {
-  id: string
-  displayName: string
-  avatarUrl?: string
-}
-
 type CandidateApplicationDetailClientProps = {
   offerId: number
   candidate: CandidateApplicationDetail
@@ -85,17 +81,20 @@ type CandidateApplicationDetailClientProps = {
   initialNotes: ApplicationNote[]
   behavioralQuestion1: string
   behavioralQuestion2: string
-  currentUser: CurrentUser
 }
 
-function toInitials(name: string) {
-  return name
+function toInitials(name?: string | null) {
+  const safeName = typeof name === "string" ? name : ""
+
+  const initials = safeName
     .split(" ")
     .map((value) => value.trim())
     .filter(Boolean)
     .slice(0, 2)
     .map((value) => value[0]?.toUpperCase() ?? "")
     .join("")
+
+  return initials || "NA"
 }
 
 function getStatusBadgeVariant(status: string): "outline" | "secondary" | "destructive" | "success" {
@@ -178,19 +177,15 @@ export default function CandidateApplicationDetailClient({
   initialNotes,
   behavioralQuestion1,
   behavioralQuestion2,
-  currentUser,
 }: CandidateApplicationDetailClientProps) {
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
   const [applicationStatus, setApplicationStatus] = React.useState(candidate.application_status)
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false)
-  const [aiSummary, setAiSummary] = React.useState(candidate.ai_summary?.trim() || "")
-  const [isGeneratingSummary, setIsGeneratingSummary] = React.useState(false)
   const [notes, setNotes] = React.useState(initialNotes)
   const [newNote, setNewNote] = React.useState("")
   const [isSavingNote, setIsSavingNote] = React.useState(false)
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
-  const hasRequestedSummaryRef = React.useRef(false)
 
   React.useEffect(() => {
     if (cvPreviewType !== "docx" || !candidate.cv_url || !docxContainerRef.current) {
@@ -268,6 +263,45 @@ export default function CandidateApplicationDetailClient({
     [applicationStatus, statusOptions]
   )
 
+  const aiFeedbackSections = React.useMemo(() => {
+    const entries = Object.entries(candidate.ai_feedback ?? {}).filter(
+      ([title, content]) => title.trim().length > 0 && content.trim().length > 0
+    )
+
+    if (entries.length > 0) {
+      return entries
+    }
+
+    if (candidate.ai_summary?.trim()) {
+      return [["Resumen", candidate.ai_summary.trim()]]
+    }
+
+    return []
+  }, [candidate.ai_feedback, candidate.ai_summary])
+
+  const whatsappUrl = React.useMemo(() => {
+    const rawPhone = candidate.phone?.trim() ?? ""
+    if (!rawPhone) {
+      return null
+    }
+
+    const normalizedPhone = rawPhone.replace(/[^\d]/g, "")
+    if (!normalizedPhone) {
+      return null
+    }
+
+    return `https://wa.me/${normalizedPhone}`
+  }, [candidate.phone])
+
+  const mailtoUrl = React.useMemo(() => {
+    const email = candidate.email?.trim() ?? ""
+    if (!email) {
+      return null
+    }
+
+    return `mailto:${email}`
+  }, [candidate.email])
+
   const handleStatusChange = async (nextStatus: string) => {
     if (nextStatus === applicationStatus) {
       return
@@ -276,74 +310,28 @@ export default function CandidateApplicationDetailClient({
     setIsUpdatingStatus(true)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 450))
-
-      const response = await fetch("/data/update_application_status_dummy.json", {
-        cache: "no-store",
+      const response = await fetch(`/api/admin/ofertas/${offerId}/candidatos/${candidate.application_id}`, {
+        method: "PATCH",
+        headers: {
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ status: nextStatus }),
       })
 
       if (!response.ok) {
-        return
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null
+        throw new Error(payload?.message || "No se pudo actualizar el estado")
       }
 
-      const result = (await response.json()) as { ok?: boolean }
-
-      if (result.ok) {
-        setApplicationStatus(nextStatus)
-      }
+      setApplicationStatus(nextStatus)
+      toast.success("Estado actualizado")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo actualizar el estado"
+      toast.error(message)
     } finally {
       setIsUpdatingStatus(false)
     }
   }
-
-  React.useEffect(() => {
-    if (aiSummary || hasRequestedSummaryRef.current) {
-      return
-    }
-
-    hasRequestedSummaryRef.current = true
-
-    const generateSummary = async () => {
-      setIsGeneratingSummary(true)
-
-      try {
-        const response = await fetch(
-          `/api/admin/ofertas/${offerId}/candidatos/${candidate.candidate_id}/resumen-ia`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-            },
-            body: JSON.stringify({
-              offerId,
-              candidateId: candidate.candidate_id,
-            }),
-          }
-        )
-
-        if (!response.ok) {
-          throw new Error("No se pudo generar el resumen")
-        }
-
-        const payload = (await response.json()) as {
-          ok?: boolean
-          summary?: string
-        }
-
-        if (!payload.ok || !payload.summary) {
-          throw new Error("No se pudo generar el resumen")
-        }
-
-        setAiSummary(payload.summary)
-      } catch {
-        toast.error("No se pudo generar el resumen con IA. Intenta nuevamente.")
-      } finally {
-        setIsGeneratingSummary(false)
-      }
-    }
-
-    void generateSummary()
-  }, [aiSummary, candidate.candidate_id, offerId])
 
   const handleSaveNote = async () => {
     const cleanMessage = newNote.trim()
@@ -355,19 +343,30 @@ export default function CandidateApplicationDetailClient({
     setIsSavingNote(true)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      const response = await fetch(
+        `/api/admin/ofertas/${offerId}/candidatos/${candidate.application_id}/notas`,
+        {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({ text: cleanMessage }),
+        }
+      )
 
-      const noteToInsert: ApplicationNote = {
-        id: Date.now(),
-        recruiter_id: currentUser.id,
-        recruiter_name: currentUser.displayName,
-        recruiter_avatar_url: currentUser.avatarUrl,
-        text: cleanMessage,
-        created_at: new Date().toISOString(),
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null
+        throw new Error(payload?.message || "No se pudo guardar la nota")
       }
+
+      const noteToInsert = (await response.json()) as ApplicationNote
 
       setNotes((prev) => [noteToInsert, ...prev])
       setNewNote("")
+      toast.success("Nota guardada")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo guardar la nota"
+      toast.error(message)
     } finally {
       setIsSavingNote(false)
     }
@@ -425,6 +424,41 @@ export default function CandidateApplicationDetailClient({
                       <span>No disponible</span>
                     )}
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="h-auto w-full justify-start px-3 py-2 whitespace-normal"
+                    disabled={!whatsappUrl}
+                  >
+                    <a
+                      href={whatsappUrl ?? "#"}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex w-full min-w-0 items-center gap-2 text-left text-sm"
+                    >
+                      <MessageCircle className="size-4 shrink-0" />
+                      <span className="min-w-0 wrap-break-word">Enviar mensaje por WhatsApp</span>
+                    </a>
+                  </Button>
+
+                  <Button asChild variant="outline" className="h-auto w-full justify-start px-3 py-2" disabled={!mailtoUrl}>
+                    <a href={mailtoUrl ?? "#"} className="flex w-full min-w-0 items-center gap-2 text-left text-sm">
+                      <Mail className="size-4 shrink-0" />
+                      <span className="min-w-0 wrap-break-word">Enviar correo</span>
+                    </a>
+                  </Button>
+
+                  <Button asChild className="h-auto w-full justify-start px-3 py-2 whitespace-normal">
+                    <Link
+                      href={`/admin/candidatos/${candidate.candidate_id}`}
+                      className="flex w-full min-w-0 items-center text-left text-sm"
+                    >
+                      <span className="min-w-0 wrap-break-word">Ver perfil completo del candidato</span>
+                    </Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -538,8 +572,8 @@ export default function CandidateApplicationDetailClient({
                               {preference.categoryName}: {preference.displayName}
                             </Badge>
                           </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>{preference.description}</p>
+                          <TooltipContent className="max-w-xs border border-border bg-background text-foreground shadow-lg">
+                            <p className="text-sm leading-relaxed text-foreground">{preference.description}</p>
                           </TooltipContent>
                         </Tooltip>
                       ))}
@@ -547,19 +581,21 @@ export default function CandidateApplicationDetailClient({
                   </div>
                 </section>
 
-                <section className="space-y-2">
-                  <h3 className="font-medium">Resumen</h3>
-                  {isGeneratingSummary ? (
-                    <div className="rounded-lg border p-3">
-                      <p className="text-muted-foreground flex items-center gap-2 text-sm">
-                        <Loader2 className="size-4 animate-spin" />
-                        Generando resumen con IA...
-                      </p>
-                    </div>
+                <section className="space-y-3">
+                  <h3 className="font-medium">Retroalimentación</h3>
+                  {aiFeedbackSections.length > 0 ? (
+                    aiFeedbackSections.map(([title, content]) => (
+                      <div key={title} className="rounded-lg border p-3">
+                        <h4 className="text-base font-bold md:text-lg">{title}</h4>
+                        <p className="text-muted-foreground mt-1 whitespace-pre-line text-sm">
+                          {content}
+                        </p>
+                      </div>
+                    ))
                   ) : (
                     <div className="rounded-lg border p-3">
                       <p className="text-muted-foreground text-sm">
-                        {aiSummary || "No hay resumen disponible todavía."}
+                        No hay retroalimentación disponible todavía.
                       </p>
                     </div>
                   )}
@@ -601,12 +637,12 @@ export default function CandidateApplicationDetailClient({
                   <h3 className="font-medium">Preguntas Conductuales</h3>
 
                   <div className="space-y-1 rounded-lg border p-3">
-                    <p className="text-sm font-medium">{behavioralQuestion1}</p>
+                    <p className="text-sm font-bold">{behavioralQuestion1}</p>
                     <p className="text-muted-foreground text-sm">{candidate.behavioral_ans_1 || "Sin respuesta."}</p>
                   </div>
 
                   <div className="space-y-1 rounded-lg border p-3">
-                    <p className="text-sm font-medium">{behavioralQuestion2}</p>
+                    <p className="text-sm font-bold">{behavioralQuestion2}</p>
                     <p className="text-muted-foreground text-sm">{candidate.behavioral_ans_2 || "Sin respuesta."}</p>
                   </div>
                 </section>
@@ -631,21 +667,25 @@ export default function CandidateApplicationDetailClient({
                 </Button>
 
                 <div className="space-y-4">
-                  {notes.map((note) => (
-                    <article key={note.id} className="flex items-start gap-3">
-                      <Avatar>
-                        <AvatarImage src={note.recruiter_avatar_url} alt={note.recruiter_name} />
-                        <AvatarFallback>{toInitials(note.recruiter_name)}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <p className="font-medium">{note.recruiter_name}</p>
-                          <p className="text-muted-foreground text-xs">{formatRelativeDate(note.created_at)}</p>
+                  {notes.length > 0 ? (
+                    notes.map((note) => (
+                      <article key={note.id} className="flex items-start gap-3">
+                        <Avatar>
+                          <AvatarImage src={note.recruiter_avatar_url} alt={note.recruiter_name} />
+                          <AvatarFallback>{toInitials(note.recruiter_name)}</AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2 text-sm">
+                            <p className="font-medium">{note.recruiter_name}</p>
+                            <p className="text-muted-foreground text-xs">{formatRelativeDate(note.created_at)}</p>
+                          </div>
+                          <p className="text-muted-foreground text-sm">{note.text}</p>
                         </div>
-                        <p className="text-muted-foreground text-sm">{note.text}</p>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    ))
+                  ) : (
+                    <p className="text-muted-foreground text-sm">Todavía no hay notas internas.</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
