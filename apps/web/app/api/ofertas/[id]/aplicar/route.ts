@@ -78,5 +78,25 @@ export async function POST(
     return NextResponse.json({ message }, { status: applyRes.status >= 400 ? applyRes.status : 500 })
   }
 
-  return NextResponse.json({ ok: true })
+  const applyData =
+    applyPayload && typeof applyPayload === "object" && "data" in applyPayload
+      ? (applyPayload as { data?: Record<string, unknown> }).data
+      : (applyPayload as Record<string, unknown> | null)
+
+  const applicationId = typeof applyData?.id === "number" ? applyData.id : null
+  const evaluationStatus =
+    typeof applyData?.evaluation_status === "string" ? applyData.evaluation_status : "pending"
+
+  if (!applicationId) {
+    return NextResponse.json(
+      { message: "No se pudo obtener el identificador de la postulación" },
+      { status: 502 }
+    )
+  }
+
+  return NextResponse.json({
+    ok: true,
+    applicationId,
+    evaluationStatus,
+  })
 }

@@ -6,6 +6,14 @@ import { toast } from "sonner"
 
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "react/components/ui/dialog"
 
 type PostularseButtonProps = {
   jobId: number
@@ -23,6 +31,12 @@ type ProfileCompletionResponse = {
   isComplete: boolean
   missingFields: string[]
   message?: string
+}
+
+type ApplyResponse = {
+  ok: boolean
+  applicationId: number
+  evaluationStatus: "pending" | "processing" | "completed" | "failed"
 }
 
 export default function PostularseButton({
@@ -47,6 +61,8 @@ export default function PostularseButton({
   const [statusDisplayName, setStatusDisplayName] = React.useState(
     initialStatusDisplayName ?? ""
   )
+  const [applicationId, setApplicationId] = React.useState<number | null>(null)
+  const [showSuccessDialog, setShowSuccessDialog] = React.useState(false)
 
   const redirectToLogin = React.useCallback(() => {
     const redirect = pathname ? `?redirect=${encodeURIComponent(pathname)}` : ""
@@ -149,10 +165,18 @@ export default function PostularseButton({
         return
       }
 
+      const applyPayload = (await applyRes.json().catch(() => null)) as ApplyResponse | null
+      const nextApplicationId =
+        applyPayload && typeof applyPayload.applicationId === "number"
+          ? applyPayload.applicationId
+          : null
+
       setIsApplied(true)
       setAppliedAt((current) => current ?? new Date().toISOString())
       setStatusTechnicalName(appliedStatusTechnicalName)
       setStatusDisplayName(appliedStatusDisplayName)
+      setApplicationId(nextApplicationId)
+      setShowSuccessDialog(true)
       toast.success("Te has postulado exitosamente, ¡buena suerte!")
     } catch {
       toast.error("No se pudo completar la postulación")
@@ -165,21 +189,62 @@ export default function PostularseButton({
     const formattedAppliedDate = appliedAt ? formatAppliedDate(appliedAt) : null
 
     return (
-      <div className="space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" disabled>
-            Ya postulado
-          </Button>
-          {statusDisplayName ? (
-            <Badge variant={statusTechnicalName === "rejected" ? "destructive" : statusTechnicalName === "contacted" ? "success" : "outline"}>
-              Estado: {statusDisplayName}
-            </Badge>
+      <>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button type="button" disabled>
+              Ya postulado
+            </Button>
+            {statusDisplayName ? (
+              <Badge variant={statusTechnicalName === "rejected" ? "destructive" : statusTechnicalName === "contacted" ? "success" : "outline"}>
+                Estado: {statusDisplayName}
+              </Badge>
+            ) : null}
+          </div>
+          {formattedAppliedDate ? (
+            <p className="text-sm text-muted-foreground">Te postulaste el {formattedAppliedDate}.</p>
           ) : null}
         </div>
-        {formattedAppliedDate ? (
-          <p className="text-sm text-muted-foreground">Te postulaste el {formattedAppliedDate}.</p>
-        ) : null}
-      </div>
+
+        <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+          <DialogContent className="max-w-xl rounded-2xl">
+            <DialogHeader>
+              <DialogTitle>Postulación enviada</DialogTitle>
+              <DialogDescription>
+                Tu postulación ya está en proceso. En la vista de tus postulaciones podrás ver 3 ofertas similares
+                cuando termine la evaluación.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-sm text-foreground/80">
+              {applicationId ? (
+                <p>Id de postulación: #{applicationId}</p>
+              ) : (
+                <p>Tu postulación fue registrada correctamente.</p>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowSuccessDialog(false)}
+              >
+                Seguir en esta oferta
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowSuccessDialog(false)
+                  router.push("/mi-perfil/postulaciones")
+                }}
+              >
+                Ir a mis postulaciones
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     )
   }
 

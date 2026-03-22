@@ -18,26 +18,6 @@ export class ApplicationsService {
     return normalized.length > 0 ? normalized : null;
   }
 
-  private normalizeAiFeedback(value: Prisma.JsonValue | null): Record<string, string> | null {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) {
-      return null;
-    }
-
-    const normalizedEntries = Object.entries(value as Record<string, unknown>)
-      .map(([rawTitle, rawParagraph]) => {
-        const title = String(rawTitle ?? '').trim();
-        const paragraph = String(rawParagraph ?? '').trim();
-        return [title, paragraph] as const;
-      })
-      .filter(([title, paragraph]) => title.length > 0 && paragraph.length > 0);
-
-    if (normalizedEntries.length === 0) {
-      return null;
-    }
-
-    return Object.fromEntries(normalizedEntries);
-  }
-
   private async createApplicationStatusRegister(applicationId: number, status: string) {
     await this.prisma.$executeRaw`
       INSERT INTO "applications_registers" ("application_id", "status")
@@ -181,35 +161,19 @@ export class ApplicationsService {
       select: {
         status: true,
         created_at: true,
-        evaluation_status: true,
-        match_technical_score: true,
-        match_soft_score: true,
-        match_culture_score: true,
-        overall_score: true,
-        ai_feedback: true,
       },
     });
 
-    if (!application) {
+    if (!application?.status) {
       return {
         alreadyApplied: false,
       };
     }
 
-    const scores = {
-      technical: application.match_technical_score,
-      soft: application.match_soft_score,
-      culture: application.match_culture_score,
-      overall: application.overall_score,
-    };
-
     return {
       alreadyApplied: true,
-      statusTechnicalName: application.status ?? 'applied',
+      statusTechnicalName: application.status,
       appliedAt: application.created_at?.toISOString() ?? null,
-      evaluationStatus: application.evaluation_status ?? null,
-      scores,
-      aiFeedback: this.normalizeAiFeedback(application.ai_feedback),
     };
   }
 
@@ -362,11 +326,16 @@ export class ApplicationsService {
       orderBy: { created_at: 'desc' },
       select: {
         id: true,
-        job_id: true,
         status: true,
+        evaluation_status: true,
+        created_at: true,
+        overall_score: true,
+        match_technical_score: true,
+        match_soft_score: true,
+        match_culture_score: true,
+        job_id: true,
         jobs: {
           select: {
-            id: true,
             title: true,
             city: true,
             state: true,
@@ -382,7 +351,7 @@ export class ApplicationsService {
 
     return applications.map((app) => ({
       id: app.id,
-      offer_id: app.jobs?.id ?? app.job_id ?? 0,
+      offer_id: app.job_id ?? 0,
       title: app.jobs?.title ?? '',
       category: app.jobs?.job_categories?.name ?? '',
       city: app.jobs?.city ?? '',
@@ -390,6 +359,12 @@ export class ApplicationsService {
       position: app.jobs?.position ?? '',
       salary: Number(app.jobs?.salary ?? 0),
       status: app.status ?? 'applied',
+      evaluation_status: app.evaluation_status ?? 'pending',
+      applied_at: app.created_at?.toISOString() ?? null,
+      overall_score: app.overall_score ?? null,
+      match_technical_score: app.match_technical_score ?? null,
+      match_soft_score: app.match_soft_score ?? null,
+      match_culture_score: app.match_culture_score ?? null,
     }));
   }
 
@@ -409,6 +384,10 @@ export class ApplicationsService {
             description: true,
             status: true,
             company_id: true,
+            city: true,
+            state: true,
+            position: true,
+            salary: true,
           },
         },
       },

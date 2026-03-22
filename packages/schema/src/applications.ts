@@ -34,6 +34,38 @@ export const CreateApplicationSchema = ApplicationSchema.omit({
 
 export const UpdateApplicationSchema = CreateApplicationSchema.partial();
 
+export const ApplyApplicationResultSchema = z.object({
+	applicationId: z.number().int(),
+	evaluationStatus: EvaluationStatusEnum.nullable().default('pending'),
+});
+
+export const SimilarApplicationJobSchema = z.object({
+	id: z.number().int(),
+	application_id: z.number().int(),
+	similar_job_id: z.number().int(),
+	similarity_score: z.number(),
+	match_technical_score: z.number().nullable(),
+	match_soft_score: z.number().nullable(),
+	match_culture_score: z.number().nullable(),
+	overall_score: z.number().nullable(),
+	rank: z.number().int(),
+	jobs: z
+		.object({
+			id: z.number().int(),
+			title: z.string(),
+			description: z.string().nullable().optional(),
+			status: z.string().nullable().optional(),
+			company_id: z.number().int().nullable().optional(),
+			city: z.string().nullable().optional(),
+			state: z.string().nullable().optional(),
+			position: z.string().nullable().optional(),
+			salary: z.string().nullable().optional(),
+		})
+		.nullable(),
+});
+
 export type Application = z.infer<typeof ApplicationSchema>;
 export type CreateApplicationData = z.infer<typeof CreateApplicationSchema>;
 export type UpdateApplicationData = z.infer<typeof UpdateApplicationSchema>;
+export type ApplyApplicationResult = z.infer<typeof ApplyApplicationResultSchema>;
+export type SimilarApplicationJob = z.infer<typeof SimilarApplicationJobSchema>;

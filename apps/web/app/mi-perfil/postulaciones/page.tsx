@@ -38,30 +38,38 @@ async function fetchApplicationsServer(
 	cookie: string
 ): Promise<JobApplication[]> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+	const endpoints = [
+		`${apiBaseUrl}/api/applications/me`,
+		`${apiBaseUrl}/applications/me`,
+	]
 
-	try {
-		const response = await fetch(`${apiBaseUrl}/api/applications/me`, {
-			method: "GET",
-			headers: {
-				cookie,
-			},
-			cache: "no-store",
-		})
+	for (const endpoint of endpoints) {
+		try {
+			const response = await fetch(endpoint, {
+				method: "GET",
+				headers: {
+					cookie,
+				},
+				cache: "no-store",
+			})
 
-		if (response.ok) {
-			const payload = (await response.json().catch(() => null)) as
-				| JobApplication[]
-				| { data?: JobApplication[] }
-				| null
+			if (response.ok) {
+				const payload = (await response.json().catch(() => null)) as
+					| { data?: JobApplication[] }
+					| JobApplication[]
+					| null
 
-			const applications = payload && typeof payload === "object" && "data" in payload
-				? payload.data
-				: payload
+				if (Array.isArray(payload)) {
+					return payload
+				}
 
-			return Array.isArray(applications) ? applications : []
+				if (Array.isArray(payload?.data)) {
+					return payload.data
+				}
+			}
+		} catch {
+			// Try next endpoint variant.
 		}
-	} catch {
-		// Fallback to empty list if backend is unavailable.
 	}
 
 	return []
