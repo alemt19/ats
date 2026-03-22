@@ -3,10 +3,12 @@
 import * as React from "react"
 import { BriefcaseBusiness, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardFooter, CardHeader } from "react/components/ui/card"
+import { Skeleton } from "react/components/ui/skeleton"
 import {
   Select,
   SelectContent,
@@ -14,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
+import { trackUxEvent } from "react/lib/analytics-events"
 import { usePostulacionesFilters } from "./postulaciones-shell"
 
 export type ApplicationStatus = string
@@ -35,12 +38,19 @@ export type JobApplication = {
   status: ApplicationStatus
   evaluation_status?: "pending" | "processing" | "completed" | "failed" | null
   applied_at?: string | null
+  overall_score?: number | null
+  match_technical_score?: number | null
+  match_soft_score?: number | null
+  match_culture_score?: number | null
 }
 
 type SimilarJob = {
   id: number
   rank: number
   similarity_score: number
+  match_technical_score?: number | null
+  match_soft_score?: number | null
+  match_culture_score?: number | null
   overall_score: number | null
   jobs: {
     id: number
@@ -70,10 +80,112 @@ function getStatusBadgeVariant(status: ApplicationStatus) {
   }
 }
 
+function getEvaluationLabel(status: JobApplication["evaluation_status"]) {
+  switch (status) {
+    case "completed":
+      return "Evaluación completada"
+    case "processing":
+      return "Evaluación en proceso"
+    case "failed":
+      return "Evaluación con error"
+    case "pending":
+    default:
+      return "Evaluación pendiente"
+  }
+}
+
+function canOpenSimilarJobs(status: JobApplication["evaluation_status"]) {
+  return status === "completed" || status === "failed"
+}
+
+function getSimilarJobsCtaHint(status: JobApplication["evaluation_status"]) {
+  if (status === "pending") {
+    return "Tus recomendaciones se habilitan cuando termine el análisis inicial."
+  }
+
+  if (status === "processing") {
+    return "Estamos procesando tu evaluación. Podrás ver similares al completar este paso."
+  }
+
+  if (status === "failed") {
+    return "Ocurrió un problema temporal con el análisis. Puedes reintentar cargar similares."
+  }
+
+  return null
+}
+
+function formatRatioScore(value: number | null | undefined) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "-"
+  }
+
+  return `${Math.max(0, Math.min(100, value * 100)).toFixed(1)}%`
+}
+
+function buildRecommendationReasons(application: JobApplication, similarJob: SimilarJob) {
+  const reasons: string[] = []
+
+  if (typeof similarJob.overall_score === "number" && similarJob.overall_score >= 0.75) {
+    reasons.push("Alto encaje general con tu perfil")
+  }
+
+  if (
+    typeof similarJob.match_technical_score === "number" &&
+    similarJob.match_technical_score >= 0.7
+  ) {
+    reasons.push("Buena afinidad tecnica")
+  }
+
+  if (
+    typeof similarJob.match_culture_score === "number" &&
+    similarJob.match_culture_score >= 0.7
+  ) {
+    reasons.push("Buena afinidad cultural")
+  }
+
+  if (
+    similarJob.jobs?.city &&
+    similarJob.jobs?.state &&
+    similarJob.jobs.city.toLowerCase() === application.city.toLowerCase() &&
+    similarJob.jobs.state.toLowerCase() === application.state.toLowerCase()
+  ) {
+    reasons.push("Misma ubicación que tu postulación actual")
+  }
+
+  if (reasons.length === 0) {
+    reasons.push("Relación semántica con la oferta a la que aplicaste")
+  }
+
+  return reasons.slice(0, 3)
+}
+
+function SimilarJobsSkeleton() {
+  const items = Array.from({ length: 3 })
+
+  return (
+    <div className="space-y-2">
+      {items.map((_, index) => (
+        <div
+          key={`similar-skeleton-${index}`}
+          className="rounded-xl border border-border/60 bg-background/60 p-3"
+        >
+          <Skeleton className="h-4 w-44" />
+          <Skeleton className="mt-2 h-3 w-56" />
+          <div className="mt-2 flex gap-2">
+            <Skeleton className="h-5 w-24" />
+            <Skeleton className="h-5 w-28" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function PostulacionesList({
   applications,
   statusCatalog,
 }: PostulacionesListProps) {
+  const searchParams = useSearchParams()
   const {
     query,
     statusFilter,
@@ -166,6 +278,10 @@ export default function PostulacionesList({
 
   const handleToggleSimilar = React.useCallback(
     async (application: JobApplication) => {
+      if (!canOpenSimilarJobs(application.evaluation_status)) {
+        return
+      }
+
       const nextExpanded = expandedApplicationId === application.id ? null : application.id
       setExpandedApplicationId(nextExpanded)
 
@@ -174,11 +290,48 @@ export default function PostulacionesList({
         similarJobsByApplicationId[nextExpanded] === undefined &&
         !loadingSimilarByApplicationId[nextExpanded]
       ) {
+        trackUxEvent("open_similar_block", {
+          applicationId: nextExpanded,
+          evaluationStatus: application.evaluation_status ?? null,
+        })
         await loadSimilarJobs(nextExpanded)
       }
     },
     [expandedApplicationId, loadSimilarJobs, loadingSimilarByApplicationId, similarJobsByApplicationId]
   )
+
+  React.useEffect(() => {
+    const openSimilarParam = searchParams.get("openSimilar")
+    const parsed = Number(openSimilarParam)
+
+    if (!openSimilarParam || !Number.isFinite(parsed) || parsed <= 0) {
+      return
+    }
+
+    if (!applications.some((application) => application.id === parsed)) {
+      return
+    }
+
+    const targetApplication = applications.find((application) => application.id === parsed)
+    if (!targetApplication || !canOpenSimilarJobs(targetApplication.evaluation_status)) {
+      return
+    }
+
+    setExpandedApplicationId(parsed)
+
+    if (
+      similarJobsByApplicationId[parsed] === undefined &&
+      !loadingSimilarByApplicationId[parsed]
+    ) {
+      void loadSimilarJobs(parsed)
+    }
+  }, [
+    applications,
+    loadSimilarJobs,
+    loadingSimilarByApplicationId,
+    searchParams,
+    similarJobsByApplicationId,
+  ])
 
   return (
     <div className="space-y-6">
@@ -249,6 +402,13 @@ export default function PostulacionesList({
                   <Wallet className="size-4" />
                   <span>${application.salary} / mes</span>
                 </p>
+
+                <div className="rounded-xl border border-border/60 bg-background/60 p-3">
+                  <p className="text-xs text-foreground/70">{getEvaluationLabel(application.evaluation_status)}</p>
+                  <p className="text-sm font-semibold text-foreground">
+                    Compatibilidad general: {formatRatioScore(application.overall_score)}
+                  </p>
+                </div>
               </CardContent>
 
               <CardFooter className="items-center justify-between gap-3 pt-2">
@@ -258,20 +418,30 @@ export default function PostulacionesList({
                   {statusLabelMap.get(application.status) ?? application.status}
                 </Badge>
 
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="rounded-full border-border/70 bg-background/70"
-                    onClick={() => void handleToggleSimilar(application)}
-                  >
-                    <Sparkles className="size-4" />
-                    {expandedApplicationId === application.id ? "Ocultar similares" : "Ver similares"}
-                  </Button>
+                <div className="flex flex-col items-end gap-1">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-full border-border/70 bg-background/70"
+                      onClick={() => void handleToggleSimilar(application)}
+                      disabled={!canOpenSimilarJobs(application.evaluation_status)}
+                      title={getSimilarJobsCtaHint(application.evaluation_status) ?? undefined}
+                    >
+                      <Sparkles className="size-4" />
+                      {expandedApplicationId === application.id ? "Ocultar similares" : "Ver similares"}
+                    </Button>
 
-                  <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-background/70">
-                    <Link href={`/ofertas/${application.offer_id}`}>Ver más</Link>
-                  </Button>
+                    <Button asChild size="sm" variant="outline" className="rounded-full border-border/70 bg-background/70">
+                      <Link href={`/ofertas/${application.offer_id}`}>Ver más</Link>
+                    </Button>
+                  </div>
+
+                  {getSimilarJobsCtaHint(application.evaluation_status) ? (
+                    <p className="max-w-[260px] text-right text-xs text-foreground/60">
+                      {getSimilarJobsCtaHint(application.evaluation_status)}
+                    </p>
+                  ) : null}
                 </div>
               </CardFooter>
 
@@ -280,23 +450,50 @@ export default function PostulacionesList({
                   <p className="text-sm font-medium text-foreground">3 ofertas similares para esta postulación</p>
 
                   {loadingSimilarByApplicationId[application.id] ? (
-                    <p className="text-sm text-foreground/70">Buscando ofertas similares...</p>
+                    <SimilarJobsSkeleton />
                   ) : null}
 
                   {!loadingSimilarByApplicationId[application.id] &&
                   similarErrorByApplicationId[application.id] ? (
-                    <p className="text-sm text-destructive">{similarErrorByApplicationId[application.id]}</p>
+                    <div className="space-y-2 rounded-xl border border-destructive/30 bg-destructive/5 p-3">
+                      <p className="text-sm text-destructive">{similarErrorByApplicationId[application.id]}</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => {
+                          trackUxEvent("retry_similar_load", {
+                            applicationId: application.id,
+                          })
+                          void loadSimilarJobs(application.id)
+                        }}
+                      >
+                        Reintentar
+                      </Button>
+                    </div>
                   ) : null}
 
                   {!loadingSimilarByApplicationId[application.id] &&
                   !similarErrorByApplicationId[application.id] &&
                   (similarJobsByApplicationId[application.id]?.length ?? 0) === 0 ? (
-                    <p className="text-sm text-foreground/70">
-                      {application.evaluation_status === "pending" ||
-                      application.evaluation_status === "processing"
-                        ? "La evaluación sigue en proceso. Las ofertas similares aparecerán aquí en unos momentos."
-                        : "Todavía no hay ofertas similares para esta postulación."}
-                    </p>
+                    <div className="space-y-2 rounded-xl border border-border/60 bg-background/60 p-3">
+                      <p className="text-sm text-foreground/70">
+                        {application.evaluation_status === "pending" ||
+                        application.evaluation_status === "processing"
+                          ? "La evaluación sigue en proceso. Las ofertas similares aparecerán aquí en unos momentos."
+                          : "Todavía no hay ofertas similares para esta postulación."}
+                      </p>
+                      {application.evaluation_status === "completed" ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild size="sm" variant="outline" className="rounded-full">
+                            <Link href="/mi-perfil/competencias-valores">Mejorar mi perfil</Link>
+                          </Button>
+                          <Button asChild size="sm" variant="outline" className="rounded-full">
+                            <Link href="/ofertas">Explorar ofertas recientes</Link>
+                          </Button>
+                        </div>
+                      ) : null}
+                    </div>
                   ) : null}
 
                   {!loadingSimilarByApplicationId[application.id] &&
@@ -313,16 +510,35 @@ export default function PostulacionesList({
                               #{similarJob.rank} {similarJob.jobs?.title ?? "Oferta similar"}
                             </p>
                             <p className="text-xs text-foreground/70">
-                              Similitud: {(similarJob.similarity_score * 100).toFixed(1)}%
+                              Similitud entre ofertas: {(similarJob.similarity_score * 100).toFixed(1)}%
                               {typeof similarJob.overall_score === "number"
-                                ? ` · Match total: ${(similarJob.overall_score * 100).toFixed(1)}%`
+                                ? ` · Compatibilidad con tu perfil: ${(similarJob.overall_score * 100).toFixed(1)}%`
                                 : ""}
                             </p>
+
+                            <div className="flex flex-wrap gap-1 pt-1">
+                              {buildRecommendationReasons(application, similarJob).map((reason) => (
+                                <Badge key={`${similarJob.id}-${reason}`} variant="outline" className="text-[11px]">
+                                  {reason}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
 
                           {similarJob.jobs?.id ? (
                             <Button asChild size="sm" variant="secondary" className="rounded-full">
-                              <Link href={`/ofertas/${similarJob.jobs.id}`}>Ver oferta</Link>
+                              <Link
+                                href={`/ofertas/${similarJob.jobs.id}?returnTo=postulaciones&openSimilar=${application.id}`}
+                                onClick={() => {
+                                  trackUxEvent("click_similar_detail", {
+                                    applicationId: application.id,
+                                    similarJobId: similarJob.id,
+                                    offerId: similarJob.jobs?.id ?? null,
+                                  })
+                                }}
+                              >
+                                Ver oferta
+                              </Link>
                             </Button>
                           ) : null}
                         </div>

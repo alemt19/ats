@@ -51,9 +51,11 @@ type OfferEnvelope = {
 
 type ApplicationInfoResponse = {
 	alreadyApplied: boolean
+	applicationId?: number | null
 	statusTechnicalName?: string
 	appliedAt?: string | null
-	evaluationStatus?: string | null
+	evaluationUpdatedAt?: string | null
+	evaluationStatus?: "pending" | "processing" | "completed" | "failed" | null
 	scores?: {
 		technical?: number | null
 		soft?: number | null
@@ -68,6 +70,49 @@ type ApplicationInfoEnvelope = {
 	data?: ApplicationInfoResponse
 }
 
+type SimilarJobPreview = {
+	id: number
+	rank: number
+	similarity_score: number
+	overall_score: number | null
+	jobs: {
+		id: number
+		title: string
+		city: string | null
+		state: string | null
+		position: string | null
+		salary: string | null
+	} | null
+}
+
+function getEvaluationStatusLabel(status: ApplicationInfoResponse["evaluationStatus"]) {
+	if (status === "completed") {
+		return "Completada"
+	}
+
+	if (status === "processing") {
+		return "En proceso"
+	}
+
+	if (status === "failed") {
+		return "Con error"
+	}
+
+	if (status === "pending") {
+		return "En cola"
+	}
+
+	return "Sin estado"
+}
+
+function toEvaluationStatus(value: unknown): ApplicationInfoResponse["evaluationStatus"] {
+	if (value === "pending" || value === "processing" || value === "completed" || value === "failed") {
+		return value
+	}
+
+	return null
+}
+
 function normalizeApplicationInfo(payload: unknown): ApplicationInfoResponse {
 	if (!payload || typeof payload !== "object") {
 		return { alreadyApplied: false }
@@ -75,8 +120,17 @@ function normalizeApplicationInfo(payload: unknown): ApplicationInfoResponse {
 
 	const source = payload as Record<string, unknown>
 	const alreadyApplied = source.alreadyApplied === true
+	const applicationId = typeof source.applicationId === "number" ? source.applicationId : null
 	const statusTechnicalName =
 		typeof source.statusTechnicalName === "string" ? source.statusTechnicalName : undefined
+	const evaluationUpdatedAt =
+		typeof source.evaluationUpdatedAt === "string"
+			? source.evaluationUpdatedAt
+			: typeof source.evaluation_updated_at === "string"
+				? source.evaluation_updated_at
+				: typeof source.updated_at === "string"
+					? source.updated_at
+					: null
 	const appliedAt =
 		typeof source.appliedAt === "string"
 			? source.appliedAt
@@ -84,11 +138,7 @@ function normalizeApplicationInfo(payload: unknown): ApplicationInfoResponse {
 				? source.applied_at
 				: null
 	const evaluationStatus =
-		typeof source.evaluationStatus === "string"
-			? source.evaluationStatus
-			: typeof source.evaluation_status === "string"
-				? source.evaluation_status
-				: null
+		toEvaluationStatus(source.evaluationStatus) ?? toEvaluationStatus(source.evaluation_status)
 
 	const rawScores =
 		source.scores && typeof source.scores === "object"
@@ -124,8 +174,10 @@ function normalizeApplicationInfo(payload: unknown): ApplicationInfoResponse {
 
 	return {
 		alreadyApplied,
+		applicationId,
 		statusTechnicalName,
 		appliedAt,
+		evaluationUpdatedAt,
 		evaluationStatus,
 		scores,
 		aiFeedback: aiFeedback && Object.keys(aiFeedback).length > 0 ? aiFeedback : null,
@@ -141,8 +193,146 @@ function formatScore(value: number | null | undefined) {
 	return `${percentage.toFixed(1)}%`
 }
 
+function formatDateTime(value: string | null | undefined) {
+	if (!value) {
+		return "-"
+	}
+
+	const date = new Date(value)
+	if (Number.isNaN(date.getTime())) {
+		return "-"
+	}
+
+	return new Intl.DateTimeFormat("es-VE", {
+		year: "numeric",
+		month: "long",
+		day: "numeric",
+		hour: "2-digit",
+		minute: "2-digit",
+	}).format(date)
+}
+
+type TimelineState = "done" | "current" | "upcoming" | "error"
+
+type TimelineStep = {
+	title: string
+	description: string
+	state: TimelineState
+}
+
+function buildEvaluationTimeline(status: ApplicationInfoResponse["evaluationStatus"]): TimelineStep[] {
+	if (status === "completed") {
+		return [
+			{
+				title: "Postulación enviada",
+				description: "Tu candidatura fue registrada correctamente.",
+				state: "done",
+			},
+			{
+				title: "Evaluación en proceso",
+				description: "Revisamos afinidad técnica, blanda y cultural.",
+				state: "done",
+			},
+			{
+				title: "Resultado disponible",
+				description: "Ya puedes revisar compatibilidad y feedback.",
+				state: "done",
+			},
+		]
+	}
+
+	if (status === "processing") {
+		return [
+			{
+				title: "Postulación enviada",
+				description: "Tu candidatura fue registrada correctamente.",
+				state: "done",
+			},
+			{
+				title: "Evaluación en proceso",
+				description: "Estamos analizando tu perfil para esta oferta.",
+				state: "current",
+			},
+			{
+				title: "Resultado disponible",
+				description: "Te mostraremos tu compatibilidad al finalizar.",
+				state: "upcoming",
+			},
+		]
+	}
+
+	if (status === "failed") {
+		return [
+			{
+				title: "Postulación enviada",
+				description: "Tu candidatura fue registrada correctamente.",
+				state: "done",
+			},
+			{
+				title: "Evaluación en proceso",
+				description: "Intentamos calcular tu evaluación automáticamente.",
+				state: "done",
+			},
+			{
+				title: "Evaluación con error",
+				description: "Tuvimos un problema temporal. Intenta revisar mas tarde.",
+				state: "error",
+			},
+		]
+	}
+
+	return [
+		{
+			title: "Postulación enviada",
+			description: "Tu candidatura fue registrada correctamente.",
+			state: "current",
+		},
+		{
+			title: "Evaluación en cola",
+			description: "Tu evaluación comenzará en breve.",
+			state: "upcoming",
+		},
+		{
+			title: "Resultado disponible",
+			description: "Verás feedback y ofertas similares al finalizar.",
+			state: "upcoming",
+		},
+	]
+}
+
+function getTimelineStyles(state: TimelineState) {
+	switch (state) {
+		case "done":
+			return {
+				dot: "bg-primary",
+				card: "border-primary/35 bg-primary/5",
+			}
+		case "current":
+			return {
+				dot: "bg-accent",
+				card: "border-accent/40 bg-accent/10",
+			}
+		case "error":
+			return {
+				dot: "bg-destructive",
+				card: "border-destructive/35 bg-destructive/10",
+			}
+		case "upcoming":
+		default:
+			return {
+				dot: "bg-muted-foreground/40",
+				card: "border-border/70 bg-background/70",
+			}
+	}
+}
+
 type OfertasDetailPageProps = {
 	params: Promise<{ id: string }>
+	searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
+
+function pickSingleParam(value: string | string[] | undefined) {
+	return Array.isArray(value) ? value[0] : value
 }
 
 async function readJsonFile<T>(relativePath: string): Promise<T> {
@@ -249,6 +439,92 @@ async function fetchApplicationInfoServer(
 	}
 }
 
+async function fetchSimilarJobsPreviewServer(
+	applicationId: number,
+	cookieHeader: string,
+	accessToken?: string
+): Promise<SimilarJobPreview[]> {
+	if (!Number.isFinite(applicationId) || applicationId <= 0) {
+		return []
+	}
+
+	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+	const endpoints = [
+		`${apiBaseUrl}/api/applications/${applicationId}/similar-jobs`,
+		`${apiBaseUrl}/applications/${applicationId}/similar-jobs`,
+	]
+
+	for (const endpoint of endpoints) {
+		try {
+			const response = await fetch(endpoint, {
+				method: "GET",
+				headers: {
+					cookie: cookieHeader,
+					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+				},
+				cache: "no-store",
+			})
+
+			if (!response.ok) {
+				continue
+			}
+
+			const payload = (await response.json()) as unknown
+			if (!Array.isArray(payload)) {
+				return []
+			}
+
+			return payload
+				.map((item) => {
+					if (!item || typeof item !== "object") {
+						return null
+					}
+
+					const source = item as Record<string, unknown>
+					const jobs =
+						source.jobs && typeof source.jobs === "object"
+							? (source.jobs as Record<string, unknown>)
+							: null
+
+					const id = Number(source.id)
+					const rank = Number(source.rank)
+					const similarityScore = Number(source.similarity_score)
+					const overallScore =
+						typeof source.overall_score === "number" && Number.isFinite(source.overall_score)
+							? source.overall_score
+							: null
+
+					if (!Number.isFinite(id) || !Number.isFinite(rank) || !Number.isFinite(similarityScore)) {
+						return null
+					}
+
+					return {
+						id,
+						rank,
+						similarity_score: similarityScore,
+						overall_score: overallScore,
+						jobs: jobs
+							? {
+								id: Number(jobs.id),
+								title: typeof jobs.title === "string" ? jobs.title : "Oferta similar",
+								city: typeof jobs.city === "string" ? jobs.city : null,
+								state: typeof jobs.state === "string" ? jobs.state : null,
+								position: typeof jobs.position === "string" ? jobs.position : null,
+								salary: typeof jobs.salary === "string" ? jobs.salary : null,
+							}
+							: null,
+					}
+				})
+				.filter((value): value is SimilarJobPreview => Boolean(value))
+				.slice(0, 3)
+		} catch {
+			// Try next endpoint variant.
+		}
+	}
+
+	return []
+}
+
 function formatPublishedDate(value: string) {
 	const date = new Date(value)
 
@@ -263,9 +539,17 @@ function formatPublishedDate(value: string) {
 	}).format(date)
 }
 
-export default async function OfertaDetallePage({ params }: OfertasDetailPageProps) {
+export default async function OfertaDetallePage({ params, searchParams }: OfertasDetailPageProps) {
 	const resolvedParams = await params
+	const resolvedSearchParams = (await searchParams) ?? {}
 	const offerId = Number(resolvedParams.id)
+	const returnTo = pickSingleParam(resolvedSearchParams.returnTo)
+	const openSimilarParam = pickSingleParam(resolvedSearchParams.openSimilar)
+	const openSimilarId = Number(openSimilarParam)
+	const returnToPostulacionesHref =
+		returnTo === "postulaciones" && Number.isFinite(openSimilarId) && openSimilarId > 0
+			? `/mi-perfil/postulaciones?openSimilar=${openSimilarId}`
+			: "/mi-perfil/postulaciones"
 
 	if (!Number.isFinite(offerId)) {
 		notFound()
@@ -318,7 +602,21 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 
 	const applicationInfo = isCandidate
 		? await fetchApplicationInfoServer(offerId, cookieHeader, accessToken)
-		: { alreadyApplied: false, appliedAt: null }
+		: { alreadyApplied: false, appliedAt: null, evaluationStatus: null }
+	const applicationIdForSimilarPreview =
+		typeof applicationInfo.applicationId === "number" ? applicationInfo.applicationId : null
+	const shouldLoadSimilarPreview =
+		isCandidate &&
+		applicationInfo.alreadyApplied &&
+		applicationInfo.evaluationStatus === "completed" &&
+		applicationIdForSimilarPreview !== null
+	const similarJobsPreview = shouldLoadSimilarPreview
+		? await fetchSimilarJobsPreviewServer(
+				applicationIdForSimilarPreview,
+				cookieHeader,
+				accessToken
+		  )
+		: []
 
 	const statusMap = buildStatusMap(applicationStatusItems)
 	const appliedStatusDisplayName = statusMap.get("applied") ?? "Postulado"
@@ -334,8 +632,27 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 	const aiFeedbackEntries = Object.entries(applicationInfo.aiFeedback ?? {}).filter(
 		([title, text]) => title.trim().length > 0 && text.trim().length > 0
 	)
-	const canShowEvaluationInsights =
-		isCandidate && applicationInfo.alreadyApplied && hasScoresReady && aiFeedbackEntries.length > 0
+	const availableScoreCount = [
+		scoreValues?.technical,
+		scoreValues?.soft,
+		scoreValues?.culture,
+		scoreValues?.overall,
+	].filter((value) => typeof value === "number").length
+	const hasLowDataCoverage = availableScoreCount < 3 || aiFeedbackEntries.length < 2
+	const canShowTransparencyPanel =
+		isCandidate &&
+		applicationInfo.alreadyApplied &&
+		(availableScoreCount > 0 || aiFeedbackEntries.length > 0 || applicationInfo.evaluationStatus === "completed")
+	const timelineSteps = buildEvaluationTimeline(applicationInfo.evaluationStatus)
+	const myApplicationsHref = "/mi-perfil/postulaciones"
+	const similarJobsHref =
+		typeof applicationInfo.applicationId === "number"
+			? `/mi-perfil/postulaciones?openSimilar=${applicationInfo.applicationId}`
+			: myApplicationsHref
+	const canDeepLinkToSimilarJobs =
+		applicationInfo.evaluationStatus === "completed" && typeof applicationInfo.applicationId === "number"
+	const hasAnyScores = availableScoreCount > 0
+	const canShowSimilarJobsPreview = shouldLoadSimilarPreview && similarJobsPreview.length > 0
 
 	const workplaceTypeLabel = getMappedLabel(
 		jobParameters,
@@ -352,9 +669,9 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 		<section className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10 sm:px-6">
 			<div>
 					<Button asChild variant="ghost" className="-ml-2 rounded-full">
-					<Link href="/ofertas">
+					<Link href={returnTo === "postulaciones" ? returnToPostulacionesHref : "/ofertas"}>
 							<ArrowLeft aria-hidden="true" className="size-4" />
-						Volver atrás
+						{returnTo === "postulaciones" ? "Volver a mis postulaciones" : "Volver atrás"}
 					</Link>
 				</Button>
 			</div>
@@ -410,48 +727,173 @@ export default async function OfertaDetallePage({ params }: OfertasDetailPagePro
 						initialAppliedAt={applicationInfo.appliedAt}
 						initialStatusTechnicalName={applicationInfo.statusTechnicalName}
 						initialStatusDisplayName={currentStatusDisplayName}
+						initialEvaluationStatus={applicationInfo.evaluationStatus}
 						appliedStatusTechnicalName="applied"
 						appliedStatusDisplayName={appliedStatusDisplayName}
 					/>
 
-					{canShowEvaluationInsights ? (
+					{isCandidate && applicationInfo.alreadyApplied ? (
+						<>
+							<Separator />
+							<div className="space-y-3">
+								<div>
+									<h3 className="text-lg font-semibold">Estado de tu evaluación</h3>
+									<p className="text-sm text-muted-foreground">
+										Este es el progreso de tu postulación en el proceso automático de análisis.
+									</p>
+								</div>
+
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+									{timelineSteps.map((step) => {
+										const styles = getTimelineStyles(step.state)
+
+										return (
+											<div key={step.title} className={`rounded-xl border p-3 ${styles.card}`}>
+												<div className="flex items-center gap-2">
+													<span className={`size-2 rounded-full ${styles.dot}`} />
+													<p className="text-sm font-semibold text-foreground">{step.title}</p>
+												</div>
+												<p className="mt-1 text-xs text-muted-foreground">{step.description}</p>
+											</div>
+										)
+									})}
+								</div>
+
+								<div className="flex flex-wrap gap-2">
+									<Button asChild variant="outline" className="rounded-full">
+										<Link href={myApplicationsHref}>Ir a mis postulaciones</Link>
+									</Button>
+									{canDeepLinkToSimilarJobs ? (
+										<Button asChild className="rounded-full">
+											<Link href={similarJobsHref}>Ver ofertas similares</Link>
+										</Button>
+									) : null}
+								</div>
+
+								{applicationInfo.evaluationStatus === "completed" && !canDeepLinkToSimilarJobs ? (
+									<p className="text-xs text-muted-foreground">
+										Tu resultado ya está listo. Abre Mis postulaciones y usa el botón Ver similares en la tarjeta correspondiente.
+									</p>
+								) : null}
+							</div>
+						</>
+					) : null}
+
+					{canShowSimilarJobsPreview ? (
+						<>
+							<Separator />
+							<div className="space-y-3">
+								<div className="flex items-center justify-between gap-3">
+									<div>
+										<h3 className="text-lg font-semibold">Ofertas similares para ti</h3>
+										<p className="text-sm text-muted-foreground">
+											Recomendaciones basadas en la oferta a la que ya postulaste y tu evaluación actual.
+										</p>
+									</div>
+									<Button asChild size="sm" variant="outline" className="rounded-full">
+										<Link href={similarJobsHref}>Ver todas en mis postulaciones</Link>
+									</Button>
+								</div>
+
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+									{similarJobsPreview.map((similarJob) => (
+										<div key={similarJob.id} className="rounded-xl border border-border/70 bg-background/70 p-3">
+											<p className="text-sm font-semibold text-foreground">
+												#{similarJob.rank} {similarJob.jobs?.title ?? "Oferta similar"}
+											</p>
+											<p className="mt-1 text-xs text-muted-foreground">
+												Similitud entre ofertas: {(similarJob.similarity_score * 100).toFixed(1)}%
+												{typeof similarJob.overall_score === "number"
+													? ` · Compatibilidad con tu perfil: ${(similarJob.overall_score * 100).toFixed(1)}%`
+													: ""}
+											</p>
+											{similarJob.jobs?.city && similarJob.jobs?.state ? (
+												<p className="mt-1 text-xs text-muted-foreground">
+													{similarJob.jobs.city}, {similarJob.jobs.state}
+												</p>
+											) : null}
+											{similarJob.jobs?.id ? (
+												<Button asChild size="sm" className="mt-2 rounded-full">
+													<Link href={`/ofertas/${similarJob.jobs.id}?returnTo=postulaciones&openSimilar=${applicationIdForSimilarPreview ?? ""}`}>
+														Ver oferta
+													</Link>
+												</Button>
+											) : null}
+										</div>
+									))}
+								</div>
+							</div>
+						</>
+					) : null}
+
+					{canShowTransparencyPanel ? (
 						<>
 							<Separator />
 							<div className="space-y-4">
 								<div>
-									<h3 className="text-lg font-semibold">Tu evaluacion de compatibilidad</h3>
+									<h3 className="text-lg font-semibold">Lectura transparente del resultado</h3>
 									<p className="text-sm text-muted-foreground">
-										Este analisis fue generado automaticamente para orientar tanto al candidato como al equipo reclutador.
+										Esta sección muestra solo datos devueltos por la evaluación backend, sin clasificación o interpretación adicional en frontend.
 									</p>
 								</div>
 
-								<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-									<div className="rounded-xl border bg-muted/35 p-3">
-										<p className="text-xs text-muted-foreground">Tecnico</p>
-										<p className="text-base font-semibold">{formatScore(scoreValues?.technical)}</p>
+								<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+									<div className="rounded-xl border border-border/70 bg-background/70 p-3">
+										<p className="text-sm font-semibold text-foreground">Estado de evaluación</p>
+										<p className="mt-1 text-xs text-muted-foreground">
+											{getEvaluationStatusLabel(applicationInfo.evaluationStatus)}
+										</p>
 									</div>
-									<div className="rounded-xl border bg-muted/35 p-3">
-										<p className="text-xs text-muted-foreground">Habilidades blandas</p>
-										<p className="text-base font-semibold">{formatScore(scoreValues?.soft)}</p>
+
+									<div className="rounded-xl border border-border/70 bg-background/70 p-3">
+										<p className="text-sm font-semibold text-foreground">Última actualización</p>
+										<p className="mt-1 text-xs text-muted-foreground">
+											{formatDateTime(applicationInfo.evaluationUpdatedAt)}
+										</p>
 									</div>
-									<div className="rounded-xl border bg-muted/35 p-3">
-										<p className="text-xs text-muted-foreground">Cultura</p>
-										<p className="text-base font-semibold">{formatScore(scoreValues?.culture)}</p>
-									</div>
-									<div className="rounded-xl border bg-primary/10 p-3">
-										<p className="text-xs text-muted-foreground">Compatibilidad general</p>
-										<p className="text-base font-semibold text-primary">{formatScore(scoreValues?.overall)}</p>
+
+									<div className="rounded-xl border border-border/70 bg-background/70 p-3">
+										<p className="text-sm font-semibold text-foreground">Cobertura de datos</p>
+										<p className="mt-1 text-xs text-muted-foreground">
+											{availableScoreCount}/4 dimensiones con puntaje y {aiFeedbackEntries.length} secciones de feedback.
+										</p>
 									</div>
 								</div>
 
-								<div className="space-y-3">
-									{aiFeedbackEntries.map(([title, content]) => (
-										<div key={title} className="rounded-xl border bg-background/70 p-4">
-											<h4 className="text-sm font-semibold text-foreground">{title}</h4>
-											<p className="mt-2 text-sm leading-relaxed text-muted-foreground">{content}</p>
+								{hasAnyScores ? (
+									<div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+										<div className="rounded-xl border bg-muted/35 p-3">
+											<p className="text-xs text-muted-foreground">Técnico</p>
+											<p className="text-base font-semibold">{formatScore(scoreValues?.technical)}</p>
 										</div>
-									))}
+										<div className="rounded-xl border bg-muted/35 p-3">
+											<p className="text-xs text-muted-foreground">Habilidades blandas</p>
+											<p className="text-base font-semibold">{formatScore(scoreValues?.soft)}</p>
+										</div>
+										<div className="rounded-xl border bg-muted/35 p-3">
+											<p className="text-xs text-muted-foreground">Cultura</p>
+											<p className="text-base font-semibold">{formatScore(scoreValues?.culture)}</p>
+										</div>
+										<div className="rounded-xl border bg-primary/10 p-3">
+											<p className="text-xs text-muted-foreground">Compatibilidad general</p>
+											<p className="text-base font-semibold text-primary">{formatScore(scoreValues?.overall)}</p>
+										</div>
+									</div>
+								) : null}
+
+								<div className="space-y-3">
+									{aiFeedbackEntries.length > 0 ? (
+										aiFeedbackEntries.map(([title, content]) => (
+											<div key={title} className="rounded-xl border bg-background/70 p-4">
+												<h4 className="text-sm font-semibold text-foreground">{title}</h4>
+												<p className="mt-2 text-sm leading-relaxed text-muted-foreground">{content}</p>
+											</div>
+										))
+									) : (
+										<p className="text-sm text-muted-foreground">No hay secciones de feedback disponibles para esta evaluación.</p>
+									)}
 								</div>
+
 							</div>
 						</>
 					) : null}
