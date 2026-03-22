@@ -74,6 +74,38 @@ type OfertasClientProps = {
 
 const PAGE_SIZE = 10
 
+function humanizeTechnicalStatus(value: string) {
+  return value
+    .split("_")
+    .filter((chunk) => chunk.length > 0)
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1).toLowerCase())
+    .join(" ")
+}
+
+function getApplicationStatusLabel(statusTechnicalName: string | null | undefined) {
+  const normalized = String(statusTechnicalName ?? "").trim().toLowerCase()
+
+  switch (normalized) {
+    case "applied":
+      return "Postulado"
+    case "in_review":
+    case "review":
+    case "reviewing":
+      return "En revision"
+    case "shortlisted":
+      return "Preseleccionado"
+    case "interview":
+    case "interview_scheduled":
+      return "Entrevista"
+    case "hired":
+      return "Seleccionado"
+    case "rejected":
+      return "No seleccionado"
+    default:
+      return normalized ? humanizeTechnicalStatus(normalized) : "Postulado"
+  }
+}
+
 function workplaceBadgeVariant(type: string) {
   switch (type) {
     case "remote":
@@ -527,7 +559,14 @@ export default function OfertasClient({
                     className="gradient-border interactive-lift gap-3 rounded-3xl bg-card/92 py-4 shadow-soft hover:interactive-lift-hover"
                   >
                     <CardHeader className="pb-0">
-                      <CardTitle className="text-xl">{offer.title}</CardTitle>
+                      <div className="flex items-start justify-between gap-3">
+                        <CardTitle className="text-xl">{offer.title}</CardTitle>
+                        {offer.hasApplied ? (
+                          <Badge className="rounded-full bg-emerald-600 text-white hover:bg-emerald-600">
+                            {getApplicationStatusLabel(offer.applicationStatusTechnicalName)}
+                          </Badge>
+                        ) : null}
+                      </div>
                     </CardHeader>
 
                     <CardContent className="space-y-2">
@@ -563,9 +602,20 @@ export default function OfertasClient({
                     </CardContent>
 
                     <CardFooter>
-                      <Button asChild size="sm" variant="outline" className="rounded-full border-primary/35 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
-                        <Link href={`/ofertas/${offer.id}`}>Ver más</Link>
-                      </Button>
+                      {offer.hasApplied ? (
+                        <div className="flex flex-wrap gap-2">
+                          <Button asChild size="sm" className="rounded-full">
+                            <Link href="/mi-perfil/postulaciones">Ver mi postulacion</Link>
+                          </Button>
+                          <Button asChild size="sm" variant="outline" className="rounded-full border-primary/35 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
+                            <Link href={`/ofertas/${offer.id}`}>Ver detalles</Link>
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button asChild size="sm" variant="outline" className="rounded-full border-primary/35 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
+                          <Link href={`/ofertas/${offer.id}`}>Ver mas</Link>
+                        </Button>
+                      )}
                     </CardFooter>
                   </Card>
                 ))

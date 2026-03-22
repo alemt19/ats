@@ -7,6 +7,11 @@ import {
   normalizeOffersQuery,
 } from "./offers-types"
 
+type OffersServerContext = {
+  cookieHeader?: string
+  accessToken?: string
+}
+
 type BackendOffersResponse =
   | OffersResponse
   | {
@@ -115,20 +120,35 @@ function parseBackendResponse(payload: BackendOffersResponse, query: OffersQuery
   }
 }
 
-export async function getOffersServer(queryInput?:
-  Partial<Record<keyof OffersQueryParams, string | number | undefined>>
+export async function getOffersServer(
+  queryInput?: Partial<Record<keyof OffersQueryParams, string | number | undefined>>,
+  context?: OffersServerContext
 ): Promise<OffersResponse> {
   const query = normalizeOffersQuery(queryInput)
   const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-  const endpoints = [
-    `${apiBaseUrl}/api/jobs?${toSearchParams(query).toString()}`,
-    `${apiBaseUrl}/jobs?${toSearchParams(query).toString()}`,
+  const search = toSearchParams(query).toString()
+  const authenticatedEndpoints = [
+    `${apiBaseUrl}/api/jobs/me?${search}`,
+    `${apiBaseUrl}/jobs/me?${search}`,
   ]
+  const publicEndpoints = [
+    `${apiBaseUrl}/api/jobs?${search}`,
+    `${apiBaseUrl}/jobs?${search}`,
+  ]
+  const endpoints = context?.cookieHeader
+    ? [...authenticatedEndpoints, ...publicEndpoints]
+    : publicEndpoints
 
   for (const endpoint of endpoints) {
     try {
       const response = await fetch(endpoint, {
         method: "GET",
+        headers: context?.cookieHeader
+          ? {
+              cookie: context.cookieHeader,
+              ...(context.accessToken ? { Authorization: `Bearer ${context.accessToken}` } : {}),
+            }
+          : undefined,
         cache: "no-store",
       })
 

@@ -11,6 +11,9 @@ export type JobOffer = {
   salary: number
   workplace_type: WorkplaceType
   employment_type: EmploymentType
+  hasApplied?: boolean
+  applicationId?: number | null
+  applicationStatusTechnicalName?: string | null
 }
 
 export type JobParameterOption = {

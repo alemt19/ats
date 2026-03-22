@@ -1,3 +1,6 @@
+import { headers } from "next/headers"
+
+import { getSession } from "../../../auth"
 import OfertasClient from "./ofertas-client"
 import { type OffersQueryParams, normalizeOffersQuery } from "./offers-types"
 import { getOffersCatalogsServer } from "./offers-catalogs-service"
@@ -13,6 +16,9 @@ function pickSingleParam(value: string | string[] | undefined) {
 
 export default async function OfertasPage({ searchParams }: OfertasPageProps) {
   const resolvedParams = (await searchParams) ?? {}
+  const requestHeaders = await headers()
+  const cookieHeader = requestHeaders.get("cookie") ?? undefined
+  const session = await getSession()
 
   const query: OffersQueryParams = normalizeOffersQuery({
     title: pickSingleParam(resolvedParams.title),
@@ -25,7 +31,10 @@ export default async function OfertasPage({ searchParams }: OfertasPageProps) {
   })
 
   const [initialData, initialCatalogs] = await Promise.all([
-    getOffersServer(query),
+    getOffersServer(query, {
+      cookieHeader,
+      accessToken: session?.accessToken,
+    }),
     getOffersCatalogsServer(),
   ])
 

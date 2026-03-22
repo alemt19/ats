@@ -4,6 +4,7 @@ import { getOffersServer } from "../../(public)/ofertas/offers-service"
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
+  const cookieHeader = request.headers.get("cookie") ?? undefined
 
   try {
     const data = await getOffersServer({
@@ -14,6 +15,8 @@ export async function GET(request: Request) {
       city: searchParams.get("city") ?? undefined,
       page: searchParams.get("page") ?? undefined,
       pageSize: searchParams.get("pageSize") ?? undefined,
+    }, {
+      cookieHeader,
     })
 
     return NextResponse.json(data)
