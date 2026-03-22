@@ -996,7 +996,7 @@ export class JobsService {
     city?: string;
     page?: number;
     pageSize?: number;
-  }) {
+  }, userId?: string) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 10;
     const skip = (page - 1) * pageSize;
@@ -1072,18 +1072,91 @@ export class JobsService {
       }),
     ]);
 
+    const baseItems = jobs.map((job) => ({
+      id: job.id,
+      title: job.title,
+      category: job.job_categories?.name?.trim() || 'Sin categoria',
+      city: job.city?.trim() || '',
+      state: job.state?.trim() || '',
+      position: job.position?.trim() || '',
+      salary: Number.parseFloat(job.salary ?? '0') || 0,
+      workplace_type: job.workplace_type ?? 'onsite',
+      employment_type: job.employment_type ?? 'full_time',
+    }));
+
+    if (!userId || baseItems.length === 0) {
+      return {
+        items: baseItems,
+        total,
+        page,
+        pageSize,
+      };
+    }
+
+    const candidate = await this.prisma.candidates.findUnique({
+      where: { user_id: userId },
+      select: { id: true },
+    });
+
+    if (!candidate) {
+      return {
+        items: baseItems.map((item) => ({
+          ...item,
+          hasApplied: false,
+          applicationId: null,
+          applicationStatusTechnicalName: null,
+        })),
+        total,
+        page,
+        pageSize,
+      };
+    }
+
+    const jobIds = baseItems.map((item) => item.id);
+    const applications = await this.prisma.applications.findMany({
+      where: {
+        candidate_id: candidate.id,
+        job_id: { in: jobIds },
+      },
+      select: {
+        id: true,
+        job_id: true,
+        status: true,
+      },
+    });
+
+    const applicationByJobId = new Map<number, { applicationId: number; status: string | null }>();
+    applications.forEach((application) => {
+      if (!application.job_id || applicationByJobId.has(application.job_id)) {
+        return;
+      }
+
+      applicationByJobId.set(application.job_id, {
+        applicationId: application.id,
+        status: application.status,
+      });
+    });
+
     return {
-      items: jobs.map((job) => ({
-        id: job.id,
-        title: job.title,
-        category: job.job_categories?.name?.trim() || 'Sin categoria',
-        city: job.city?.trim() || '',
-        state: job.state?.trim() || '',
-        position: job.position?.trim() || '',
-        salary: Number.parseFloat(job.salary ?? '0') || 0,
-        workplace_type: job.workplace_type ?? 'onsite',
-        employment_type: job.employment_type ?? 'full_time',
-      })),
+      items: baseItems.map((item) => {
+        const application = applicationByJobId.get(item.id);
+
+        if (!application) {
+          return {
+            ...item,
+            hasApplied: false,
+            applicationId: null,
+            applicationStatusTechnicalName: null,
+          };
+        }
+
+        return {
+          ...item,
+          hasApplied: true,
+          applicationId: application.applicationId,
+          applicationStatusTechnicalName: application.status,
+        };
+      }),
       total,
       page,
       pageSize,

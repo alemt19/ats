@@ -102,9 +102,16 @@ export class ApplicationsController {
     return this.applicationsService.findOne(id);
   }
 
+  @UseGuards(BetterAuthGuard)
   @Get(':id/similar-jobs')
-  findSimilarJobs(@Param('id', ParseIntPipe) id: number) {
-    return this.applicationsService.findSimilarJobs(id);
+  findSimilarJobs(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    this.assertCandidateScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.applicationsService.findSimilarJobs(userId, id);
   }
 
   @UseGuards(BetterAuthGuard)

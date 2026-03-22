@@ -18,6 +18,31 @@ export class ApplicationsService {
     return normalized.length > 0 ? normalized : null;
   }
 
+  private normalizeAiFeedbackSections(value: unknown): Record<string, string> | null {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) {
+      return null;
+    }
+
+    const normalizedEntries = Object.entries(value as Record<string, unknown>)
+      .map(([title, content]) => {
+        const normalizedTitle = String(title).trim();
+        const normalizedContent = typeof content === 'string' ? content.trim() : '';
+
+        if (!normalizedTitle || !normalizedContent) {
+          return null;
+        }
+
+        return [normalizedTitle, normalizedContent] as const;
+      })
+      .filter((entry): entry is readonly [string, string] => Boolean(entry));
+
+    if (normalizedEntries.length === 0) {
+      return null;
+    }
+
+    return Object.fromEntries(normalizedEntries);
+  }
+
   private async createApplicationStatusRegister(applicationId: number, status: string) {
     await this.prisma.$executeRaw`
       INSERT INTO "applications_registers" ("application_id", "status")
@@ -159,8 +184,16 @@ export class ApplicationsService {
         job_id: jobId,
       },
       select: {
+        id: true,
         status: true,
+        evaluation_status: true,
         created_at: true,
+        updated_at: true,
+        overall_score: true,
+        match_technical_score: true,
+        match_soft_score: true,
+        match_culture_score: true,
+        ai_feedback: true,
       },
     });
 
@@ -170,10 +203,22 @@ export class ApplicationsService {
       };
     }
 
+    const aiFeedback = this.normalizeAiFeedbackSections(application.ai_feedback);
+
     return {
       alreadyApplied: true,
+      applicationId: application.id,
       statusTechnicalName: application.status,
+      evaluationStatus: application.evaluation_status ?? null,
       appliedAt: application.created_at?.toISOString() ?? null,
+      evaluationUpdatedAt: application.updated_at?.toISOString() ?? null,
+      scores: {
+        technical: application.match_technical_score ?? null,
+        soft: application.match_soft_score ?? null,
+        culture: application.match_culture_score ?? null,
+        overall: application.overall_score ?? null,
+      },
+      aiFeedback,
     };
   }
 
@@ -371,8 +416,30 @@ export class ApplicationsService {
   /**
    * Retrieve similar jobs analysis for an application
    */
-  async findSimilarJobs(applicationId: number) {
-    await this.findOne(applicationId);
+  async findSimilarJobs(userId: string, applicationId: number) {
+    const candidate = await this.prisma.candidates.findUnique({
+      where: { user_id: userId },
+      select: { id: true },
+    });
+
+    if (!candidate) {
+      throw new NotFoundException('Candidate not found');
+    }
+
+    const application = await this.prisma.applications.findFirst({
+      where: {
+        id: applicationId,
+        candidate_id: candidate.id,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!application) {
+      throw new NotFoundException(`Application with ID ${applicationId} not found`);
+    }
+
     return this.prisma.application_similar_jobs.findMany({
       where: { application_id: applicationId },
       orderBy: { rank: 'asc' },
