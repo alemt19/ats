@@ -1,6 +1,7 @@
 /** @format */
 
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './modules/auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { JobsModule } from './modules/jobs/jobs.module';
@@ -11,9 +12,11 @@ import { RecruitersModule } from './modules/recruiters/recruiters.module';
 import { JobCategoriesModule } from './modules/job-categories/job-categories.module';
 import { StorageModule } from './common/storage/storage.module';
 import { QueuesModule } from './common/queues/queues.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
 	imports: [
+		ScheduleModule.forRoot(),
 		StorageModule,
 		QueuesModule,
 		PrismaModule,
@@ -24,7 +27,7 @@ import { QueuesModule } from './common/queues/queues.module';
 		ApplicationsModule,
 		RecruitersModule,
 		JobCategoriesModule,
-		QueuesModule,
+		NotificationsModule,
 	],
 })
 export class AppModule {}

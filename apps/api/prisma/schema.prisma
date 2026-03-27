@@ -249,10 +249,29 @@ model User {
   // relations to existing domain tables (one-to-one)
   candidate candidates? @relation()
   admin     user_admin? @relation()
+  notifications notifications[]
 
   // adapter relations
   accounts account[]
   sessions session[]
+}
+
+model notifications {
+  id          Int       @id @default(autoincrement())
+  user_id     String
+  type        String    @db.VarChar(100)
+  entity_type String    @db.VarChar(100)
+  entity_id   Int
+  title       String    @db.VarChar(255)
+  message     String
+  metadata    Json?
+  read_at     DateTime? @db.Timestamp(6)
+  created_at  DateTime  @default(now()) @db.Timestamp(6)
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, type, entity_type, entity_id], map: "notifications_user_type_entity_unique")
+  @@index([user_id, created_at], map: "idx_notifications_user_created")
+  @@index([read_at], map: "idx_notifications_read_at")
 }
 
 model account {

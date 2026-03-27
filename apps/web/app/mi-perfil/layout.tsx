@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 
 import { hasAuthAccess } from "../../auth"
 import LayoutClient from "./layout-client"
+import { fetchMyNotificationsServer } from "react/lib/notifications"
 
 export default async function Layout({ children }: Readonly<{
     children: React.ReactNode
@@ -11,5 +13,15 @@ export default async function Layout({ children }: Readonly<{
         redirect("/login")
     }
 
-    return <LayoutClient>{children}</LayoutClient>
+    const cookie = (await headers()).get("cookie") ?? ""
+    const notifications = await fetchMyNotificationsServer(cookie)
+
+    return (
+        <LayoutClient
+            notifications={notifications.items}
+            unreadCount={notifications.unreadCount}
+        >
+            {children}
+        </LayoutClient>
+    )
 }

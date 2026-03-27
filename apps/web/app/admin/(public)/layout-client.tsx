@@ -52,6 +52,8 @@ import {
 } from "react/components/ui/sidebar"
 import { Skeleton } from "react/components/ui/skeleton"
 import { useAdminSession } from "react/hooks/use-segmented-session"
+import NotificationsPanel from "react/components/layout/notifications-panel"
+import type { UserNotification } from "react/lib/notifications"
 
 const adminLinks = [
 	{
@@ -123,6 +125,10 @@ function getAdminBreadcrumbLabel(pathname: string) {
 
 	if (pathname.startsWith("/admin/mi-perfil")) {
 		return "Mi perfil"
+	}
+
+	if (pathname.startsWith("/admin/notificaciones")) {
+		return "Notificaciones"
 	}
 
 	return "Dashboard"
@@ -227,9 +233,15 @@ function getAdminBreadcrumbItems(pathname: string) {
 
 type AdminPublicLayoutClientProps = {
 	children: React.ReactNode
+	notifications: UserNotification[]
+	unreadCount: number
 }
 
-export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutClientProps) {
+export default function AdminPublicLayoutClient({
+	children,
+	notifications,
+	unreadCount,
+}: AdminPublicLayoutClientProps) {
 	const pathname = usePathname()
 	const { user, isPending: isAdminPending } = useAdminSession()
 	const { company, isLoading: isCompanyLoading } = useCompany()
@@ -257,7 +269,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 		<SidebarProvider className="bg-background">
 			<a
 				href="#admin-main-content"
-				className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm"
+				className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-60 focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm"
 			>
 				Saltar al contenido principal
 			</a>
@@ -282,7 +294,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 										{companyName.slice(0, 2).toUpperCase()}
 									</div>
 								)}
-								<span className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight">
+								<span className="font-display text-base font-semibold tracking-tight">
 									{companyName}
 								</span>
 							</Link>
@@ -299,7 +311,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 										<SidebarMenuButton
 											asChild
 											isActive={pathname.startsWith(item.href)}
-											className="rounded-xl text-muted-foreground transition-colors duration-[240ms] hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+											className="rounded-xl text-muted-foreground transition-colors duration-240 hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
 										>
 											<Link href={item.href}>
 												<item.icon aria-hidden="true" />
@@ -314,7 +326,7 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 										<CollapsibleTrigger asChild>
 											<SidebarMenuButton
 												isActive={isConfigurationSection}
-												className="rounded-xl text-muted-foreground transition-colors duration-[240ms] hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+												className="rounded-xl text-muted-foreground transition-colors duration-240 hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
 											>
 												<Settings aria-hidden="true" />
 												<span>Configuración</span>
@@ -432,6 +444,14 @@ export default function AdminPublicLayoutClient({ children }: AdminPublicLayoutC
 								})}
 							</BreadcrumbList>
 						</Breadcrumb>
+
+						<div className="ml-auto">
+							<NotificationsPanel
+								notifications={notifications}
+								unreadCount={unreadCount}
+								scope="admin"
+							/>
+						</div>
 					</header>
 
 					<main id="admin-main-content" className="flex-1" tabIndex={-1}>

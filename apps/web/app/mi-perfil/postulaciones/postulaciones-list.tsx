@@ -195,9 +195,21 @@ export default function PostulacionesList({
   } = usePostulacionesFilters()
 
   const categories = React.useMemo(() => {
-    const unique = new Set(applications.map((item) => item.category))
+    const normalizedCategories = applications
+      .map((item) => String(item.category ?? "").trim())
+      .filter((value) => value.length > 0)
+
+    const unique = new Set(normalizedCategories)
     return ["all", ...Array.from(unique).sort()]
   }, [applications])
+
+  const safeStatusCatalog = React.useMemo(
+    () =>
+      statusCatalog.filter(
+        (statusItem) => String(statusItem.technical_name ?? "").trim().length > 0
+      ),
+    [statusCatalog]
+  )
 
   const filteredApplications = React.useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
@@ -355,7 +367,7 @@ export default function PostulacionesList({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            {statusCatalog.map((statusItem) => (
+            {safeStatusCatalog.map((statusItem) => (
               <SelectItem key={statusItem.technical_name} value={statusItem.technical_name}>
                 {statusItem.display_name}
               </SelectItem>
@@ -438,7 +450,7 @@ export default function PostulacionesList({
                   </div>
 
                   {getSimilarJobsCtaHint(application.evaluation_status) ? (
-                    <p className="max-w-[260px] text-right text-xs text-foreground/60">
+                    <p className="max-w-65 text-right text-xs text-foreground/60">
                       {getSimilarJobsCtaHint(application.evaluation_status)}
                     </p>
                   ) : null}

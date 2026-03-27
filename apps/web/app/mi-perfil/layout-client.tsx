@@ -4,7 +4,9 @@ import { usePathname } from "next/navigation"
 
 import SidebarClient from "../../react/components/layout/sidebar-client"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "react/components/ui/breadcrumb"
+import NotificationsPanel from "react/components/layout/notifications-panel"
 import { SidebarTrigger } from "react/components/ui/sidebar"
+import type { UserNotification } from "react/lib/notifications"
 
 function getBreadcrumbLabel(pathname: string) {
     if (pathname === "/mi-perfil/competencias-valores") {
@@ -26,14 +28,20 @@ function getBreadcrumbLabel(pathname: string) {
         return "Mis Postulaciones"
     }
 
+    if (pathname === "/mi-perfil/notificaciones") {
+        return "Notificaciones"
+    }
+
     return "Mis datos"
 }
 
 type LayoutClientProps = {
     children: React.ReactNode
+    notifications: UserNotification[]
+    unreadCount: number
 }
 
-export default function LayoutClient({ children }: LayoutClientProps) {
+export default function LayoutClient({ children, notifications, unreadCount }: LayoutClientProps) {
     const pathname = usePathname()
     const currentPage = getBreadcrumbLabel(pathname)
 
@@ -57,7 +65,16 @@ export default function LayoutClient({ children }: LayoutClientProps) {
                             </BreadcrumbItem>
                         </BreadcrumbList>
                     </Breadcrumb>
+
+                    <div className="ml-auto">
+                        <NotificationsPanel
+                            notifications={notifications}
+                            unreadCount={unreadCount}
+                            scope="candidate"
+                        />
+                    </div>
                 </header>
+
                 <main className="flex-1">{children}</main>
             </div>
         </SidebarClient>
