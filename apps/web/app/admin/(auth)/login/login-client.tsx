@@ -148,10 +148,10 @@ export default function AdminLoginClientPage() {
 						className="object-cover"
 						priority
 					/>
-					<div className="absolute inset-0 bg-black/40" />
+					<div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/55 to-black/30" />
 
 					<div className="absolute inset-x-0 top-0 p-8 text-white">
-						<div className="flex items-center gap-3">
+						<div className="inline-flex max-w-[calc(100%-1rem)] items-center gap-3 rounded-xl border border-white/25 bg-black/45 px-4 py-3 shadow-[0_10px_30px_rgba(0,0,0,0.45)] backdrop-blur-sm">
 							{company?.logo ? (
 								<img
 									src={company.logo}
@@ -163,7 +163,7 @@ export default function AdminLoginClientPage() {
 									{companyName.slice(0, 2).toUpperCase()}
 								</div>
 							)}
-							<p className="text-xl font-semibold drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">{companyName}</p>
+							<p className="line-clamp-2 text-xl font-semibold leading-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)]">{companyName}</p>
 						</div>
 					</div>
 				</div>
