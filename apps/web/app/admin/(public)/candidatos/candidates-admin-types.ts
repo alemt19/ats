@@ -38,8 +38,11 @@ export type CandidateApplication = {
   created_at: string | null
 }
 
+export type CandidateProfileFilter = "normal" | "hired"
+
 export type CandidatesQueryParams = {
   search: string
+  profile: CandidateProfileFilter
   page: number
   pageSize: number
 }
@@ -59,9 +62,12 @@ export function normalizeCandidatesQuery(
 ): CandidatesQueryParams {
   const pageValue = Number(query?.page)
   const pageSizeValue = Number(query?.pageSize)
+  const profileValue = String(query?.profile ?? "normal").trim().toLowerCase()
+  const profile: CandidateProfileFilter = profileValue === "hired" ? "hired" : "normal"
 
   return {
     search: String(query?.search ?? "").trim(),
+    profile,
     page: Number.isFinite(pageValue) && pageValue > 0 ? pageValue : DEFAULT_PAGE,
     pageSize: Number.isFinite(pageSizeValue) && pageSizeValue > 0 ? pageSizeValue : DEFAULT_PAGE_SIZE,
   }

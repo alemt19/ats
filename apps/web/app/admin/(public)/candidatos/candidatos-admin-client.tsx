@@ -15,6 +15,13 @@ import {
   PaginationItem,
   PaginationLink,
 } from "react/components/ui/pagination"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "react/components/ui/select"
 import { Skeleton } from "react/components/ui/skeleton"
 import {
   Table,
@@ -81,10 +88,11 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
     () =>
       normalizeCandidatesQuery({
         search: searchParams.get("search") ?? initialQuery.search,
+        profile: searchParams.get("profile") ?? initialQuery.profile,
         page: searchParams.get("page") ?? String(initialQuery.page),
         pageSize: searchParams.get("pageSize") ?? String(initialQuery.pageSize),
       }),
-    [initialQuery.page, initialQuery.pageSize, initialQuery.search, searchParams]
+    [initialQuery.page, initialQuery.pageSize, initialQuery.profile, initialQuery.search, searchParams]
   )
 
   const [searchInput, setSearchInput] = React.useState(query.search)
@@ -97,12 +105,14 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
     (updates: Partial<CandidatesQueryParams>, resetPage = false) => {
       const next = normalizeCandidatesQuery({
         search: updates.search ?? query.search,
+        profile: updates.profile ?? query.profile,
         page: resetPage ? "1" : String(updates.page ?? query.page),
         pageSize: String(updates.pageSize ?? query.pageSize),
       })
 
       const nextParams = new URLSearchParams()
       if (next.search) nextParams.set("search", next.search)
+      if (next.profile !== "normal") nextParams.set("profile", next.profile)
       if (next.page !== 1) nextParams.set("page", String(next.page))
       if (next.pageSize !== PAGE_SIZE) nextParams.set("pageSize", String(next.pageSize))
 
@@ -123,10 +133,11 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
   }, [query.search, searchInput, updateUrl])
 
   const { data, isFetching } = useQuery<CandidatesResponse>({
-    queryKey: ["admin-candidates", query.search, query.page, query.pageSize],
+    queryKey: ["admin-candidates", query.search, query.profile, query.page, query.pageSize],
     queryFn: async () => {
       const params = new URLSearchParams()
       if (query.search) params.set("search", query.search)
+      if (query.profile !== "normal") params.set("profile", query.profile)
       params.set("page", String(query.page))
       params.set("pageSize", String(query.pageSize))
 
@@ -164,14 +175,31 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
 
       <Card className="gradient-border container mx-auto gap-4 rounded-3xl bg-card/90 shadow-soft @container">
         <CardHeader>
-          <div className="relative w-full max-w-xl">
-            <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
-            <Input
-              placeholder="Buscar por nombre, correo o cédula"
-              className="pl-9"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-            />
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="relative w-full max-w-xl">
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+              <Input
+                placeholder="Buscar por nombre, correo o cédula"
+                className="pl-9"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+              />
+            </div>
+
+            <Select
+              value={query.profile}
+              onValueChange={(value) =>
+                updateUrl({ profile: value as "normal" | "hired" }, true)
+              }
+            >
+              <SelectTrigger className="w-full border-border/70 bg-background/70 md:w-56">
+                <SelectValue placeholder="Tipo de candidato" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="normal">Candidatos normales</SelectItem>
+                <SelectItem value="hired">Solo contratados</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardHeader>
 
@@ -218,7 +246,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
                 {!isFetching && !candidates.length ? (
                   <TableRow>
                     <TableCell colSpan={4} className="text-muted-foreground py-10 text-center">
-                      No se encontraron candidatos con la búsqueda ingresada.
+                      No se encontraron candidatos para el filtro seleccionado.
                     </TableCell>
                   </TableRow>
                 ) : null}

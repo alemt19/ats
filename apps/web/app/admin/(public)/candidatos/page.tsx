@@ -16,6 +16,9 @@ export default async function AdminCandidatosPage({ searchParams }: AdminCandida
 		search: Array.isArray(resolvedSearchParams?.search)
 			? resolvedSearchParams?.search[0]
 			: resolvedSearchParams?.search,
+		profile: Array.isArray(resolvedSearchParams?.profile)
+			? resolvedSearchParams?.profile[0]
+			: resolvedSearchParams?.profile,
 		page: Array.isArray(resolvedSearchParams?.page)
 			? resolvedSearchParams?.page[0]
 			: resolvedSearchParams?.page,

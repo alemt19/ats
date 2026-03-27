@@ -6,6 +6,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "react/components/ui/radio-group"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "react/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "react/components/ui/tabs"
 import { cn } from "react/lib/utils"
 
@@ -75,6 +82,7 @@ export default function CandidateDetailReadonly({
   behavioralQuestion2,
 }: CandidateDetailReadonlyProps) {
   const [activeTab, setActiveTab] = React.useState("datos")
+  const [applicationStatusFilter, setApplicationStatusFilter] = React.useState("all")
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
@@ -88,6 +96,14 @@ export default function CandidateDetailReadonly({
     const params = new URLSearchParams({ search: fullNameValue })
     return params.toString()
   }, [candidate.lastname, candidate.name])
+
+  const filteredApplications = React.useMemo(() => {
+    if (applicationStatusFilter === "all") {
+      return applications
+    }
+
+    return applications.filter((application) => application.status === applicationStatusFilter)
+  }, [applicationStatusFilter, applications])
 
   React.useEffect(() => {
     if (activeTab !== "competencias" || cvPreviewType !== "docx" || !candidate.cv_url) {
@@ -392,11 +408,31 @@ export default function CandidateDetailReadonly({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {applications.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Este candidato no tiene postulaciones registradas.</p>
+              <div className="mb-4">
+                <Select value={applicationStatusFilter} onValueChange={setApplicationStatusFilter}>
+                  <SelectTrigger className="w-full border-border/70 bg-background/70 sm:w-64">
+                    <SelectValue placeholder="Filtrar por estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los estados</SelectItem>
+                    {statusCatalog.map((item) => (
+                      <SelectItem key={item.technical_name} value={item.technical_name}>
+                        {item.display_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {filteredApplications.length === 0 ? (
+                <p className="text-muted-foreground text-sm">
+                  {applications.length === 0
+                    ? "Este candidato no tiene postulaciones registradas."
+                    : "No hay postulaciones para el estado seleccionado."}
+                </p>
               ) : (
                 <div className="space-y-3">
-                  {applications.map((application) => (
+                  {filteredApplications.map((application) => (
                     <div
                       key={application.application_id}
                       className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/60 p-3 sm:flex-row sm:items-center sm:justify-between"

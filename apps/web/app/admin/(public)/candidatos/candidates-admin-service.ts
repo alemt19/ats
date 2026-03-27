@@ -3,6 +3,7 @@ import "server-only"
 import {
   type CandidateApplication,
   type Candidate,
+  type CandidateProfileFilter,
   type CandidateListItem,
   type CandidatesQueryParams,
   type CandidatesResponse,
@@ -54,6 +55,7 @@ type BackendCandidateRecord = {
 type BackendCandidateApplicationRecord = {
   application_id?: number
   offer_id?: number
+  candidate_id?: number
   offer_title?: string | null
   status?: string | null
   created_at?: string | null
@@ -138,10 +140,24 @@ function mapListItem(candidate: Candidate): CandidateListItem {
   }
 }
 
-function applyFilters(candidates: CandidateListItem[], query: CandidatesQueryParams): CandidatesResponse {
+function applyFilters(
+  candidates: CandidateListItem[],
+  query: CandidatesQueryParams,
+  hiredCandidateIds: Set<number>
+): CandidatesResponse {
   const normalizedSearch = query.search.toLowerCase()
 
   const filtered = candidates.filter((candidate) => {
+    const isHired = hiredCandidateIds.has(candidate.id)
+
+    if (query.profile === "hired" && !isHired) {
+      return false
+    }
+
+    if (query.profile === "normal" && isHired) {
+      return false
+    }
+
     if (!normalizedSearch) {
       return true
     }
@@ -164,6 +180,62 @@ function applyFilters(candidates: CandidateListItem[], query: CandidatesQueryPar
     page: query.page,
     pageSize: query.pageSize,
   }
+}
+
+async function fetchHiredCandidateIdsFromBackend(): Promise<Set<number>> {
+  const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+  const endpoints = [`${apiBaseUrl}/api/applications`, `${apiBaseUrl}/applications`]
+  const take = 100
+
+  for (const baseEndpoint of endpoints) {
+    try {
+      const hiredIds = new Set<number>()
+      let skip = 0
+
+      while (true) {
+        const pageEndpoint = `${baseEndpoint}?skip=${skip}&take=${take}`
+        const response = await fetch(pageEndpoint, {
+          method: "GET",
+          cache: "no-store",
+        })
+
+        if (!response.ok) {
+          hiredIds.clear()
+          break
+        }
+
+        const payload = (await response.json()) as
+          | BackendCandidateApplicationRecord[]
+          | BackendEnvelope<BackendCandidateApplicationRecord[]>
+
+        const records = unwrapEnvelope(payload)
+
+        if (!Array.isArray(records)) {
+          hiredIds.clear()
+          break
+        }
+
+        records.forEach((record) => {
+          const candidateId = Number(record.candidate_id ?? 0)
+          const status = safeText(record.status).toLowerCase()
+
+          if (candidateId > 0 && status === "hired") {
+            hiredIds.add(candidateId)
+          }
+        })
+
+        if (records.length < take) {
+          return hiredIds
+        }
+
+        skip += take
+      }
+    } catch {
+      // Try next endpoint variant.
+    }
+  }
+
+  return new Set<number>()
 }
 
 async function fetchCandidatesFromBackend(): Promise<Candidate[]> {
@@ -255,9 +327,12 @@ export async function getCandidatesServer(
   queryInput?: Partial<Record<keyof CandidatesQueryParams, string | number | undefined>>
 ): Promise<CandidatesResponse> {
   const query = normalizeCandidatesQuery(queryInput)
-  const allCandidates = await fetchCandidatesFromBackend()
+  const [allCandidates, hiredCandidateIds] = await Promise.all([
+    fetchCandidatesFromBackend(),
+    fetchHiredCandidateIdsFromBackend(),
+  ])
   const listItems = allCandidates.map(mapListItem)
-  return applyFilters(listItems, query)
+  return applyFilters(listItems, query, hiredCandidateIds)
 }
 
 export async function getCandidateByIdServer(candidateId: number): Promise<Candidate | null> {

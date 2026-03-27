@@ -11,6 +11,7 @@ export async function GET(request: Request) {
   try {
     const data = await getCandidatesServer({
       search: url.searchParams.get("search") ?? undefined,
+      profile: url.searchParams.get("profile") ?? undefined,
       page: url.searchParams.get("page") ?? undefined,
       pageSize: url.searchParams.get("pageSize") ?? undefined,
     })
