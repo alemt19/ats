@@ -41,6 +41,13 @@ type ApplyResponse = {
   evaluationStatus: "pending" | "processing" | "completed" | "failed"
 }
 
+type RefreshApplicationResponse = {
+  ok: boolean
+  applicationId?: number
+  status?: string | null
+  evaluationStatus?: "pending" | "processing" | "completed" | "failed"
+}
+
 type EvaluationStatus = "pending" | "processing" | "completed" | "failed" | null
 
 type ProfileSection = {
@@ -151,6 +158,7 @@ export default function PostularseButton({
   const [showSuccessDialog, setShowSuccessDialog] = React.useState(false)
   const [showProfileChecklistDialog, setShowProfileChecklistDialog] = React.useState(false)
   const [missingFields, setMissingFields] = React.useState<string[]>([])
+  const [isRefreshing, setIsRefreshing] = React.useState(false)
 
   const redirectToLogin = React.useCallback(() => {
     const redirect = pathname ? `?redirect=${encodeURIComponent(pathname)}` : ""
@@ -271,6 +279,48 @@ export default function PostularseButton({
     }
   }
 
+  const handleRefreshApplication = async () => {
+    if (!isLoggedIn || !isCandidate || !isApplied) {
+      return
+    }
+
+    setIsRefreshing(true)
+
+    try {
+      const response = await fetch(`/api/ofertas/${jobId}/refrescar-postulacion`, {
+        method: "POST",
+        cache: "no-store",
+      })
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        const message = (payload as { message?: string } | null)?.message ?? "No se pudo refrescar la postulación"
+        toast.error(message)
+        return
+      }
+
+      const payload = (await response.json().catch(() => null)) as RefreshApplicationResponse | null
+      const nextApplicationId =
+        payload && typeof payload.applicationId === "number" ? payload.applicationId : null
+
+      setEvaluationStatus(payload?.evaluationStatus ?? "pending")
+      if (nextApplicationId) {
+        setApplicationId(nextApplicationId)
+      }
+
+      trackUxEvent("refresh_application", {
+        jobId,
+        applicationId: nextApplicationId,
+      })
+
+      toast.success("Postulación refrescada. Recalcularemos tu evaluación con tu perfil actualizado.")
+    } catch {
+      toast.error("No se pudo refrescar la postulación")
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
+
   if (isApplied) {
     const formattedAppliedDate = appliedAt ? formatAppliedDate(appliedAt) : null
 
@@ -280,6 +330,14 @@ export default function PostularseButton({
           <div className="flex flex-wrap items-center gap-2">
             <Button type="button" disabled>
               Ya postulado
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void handleRefreshApplication()}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? "Refrescando..." : "Refrescar postulación"}
             </Button>
             {statusDisplayName ? (
               <Badge variant={statusTechnicalName === "rejected" ? "destructive" : statusTechnicalName === "contacted" ? "success" : "outline"}>

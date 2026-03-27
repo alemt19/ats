@@ -86,6 +86,15 @@ function buildAdminOfferDetail(dummy: JobOfferDummy): AdminOfferDetail {
     category: dummy.category,
     technical_skills: ["SQL", "Python", "Power BI"],
     soft_skills: ["Comunicación", "Pensamiento crítico"],
+    technical_skill_items: [
+      { name: "SQL", is_mandatory: true },
+      { name: "Python", is_mandatory: true },
+      { name: "Power BI", is_mandatory: false },
+    ],
+    soft_skill_items: [
+      { name: "Comunicación", is_mandatory: true },
+      { name: "Pensamiento crítico", is_mandatory: false },
+    ],
     published_at: buildPublishedAtById(dummy.id),
     candidates_count: 35,
   }
@@ -277,6 +286,15 @@ export async function getAdminOfferDetailServer(offerId: number, cookie?: string
       category: "Tecnología",
       technical_skills: ["SQL", "Python", "Power BI"],
       soft_skills: ["Comunicación", "Pensamiento crítico"],
+      technical_skill_items: [
+        { name: "SQL", is_mandatory: true },
+        { name: "Python", is_mandatory: true },
+        { name: "Power BI", is_mandatory: false },
+      ],
+      soft_skill_items: [
+        { name: "Comunicación", is_mandatory: true },
+        { name: "Pensamiento crítico", is_mandatory: false },
+      ],
       published_at: "2026-02-20T00:00:00.000Z",
       candidates_count: 35,
     }

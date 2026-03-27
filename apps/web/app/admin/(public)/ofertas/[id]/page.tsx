@@ -109,22 +109,11 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       a.localeCompare(b)
     )
 
-    const stateOptions = Array.from(
-      new Set(
-        [
-          ...offersCatalogs.states,
-          ...states.map((state) => state.name.trim()),
-          companyState,
-        ].filter((stateName) => stateName.length > 0)
-      )
-    ).sort((a, b) => a.localeCompare(b))
-
     return {
       statuses: getParameterOptions(parameters, "status"),
       workplaceTypes: getParameterOptions(parameters, "workplace_type"),
       employmentTypes: getParameterOptions(parameters, "employment_type"),
       categories,
-      stateOptions,
       fixedLocation: {
         state: companyState,
       },
@@ -151,7 +140,6 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
         { technical_name: "internship", display_name: "Pasantía" },
       ],
       categories: [{ id: 1, name: "Tecnologia" }],
-      stateOptions: ["Carabobo"],
       fixedLocation: {
         state: "Carabobo",
       },

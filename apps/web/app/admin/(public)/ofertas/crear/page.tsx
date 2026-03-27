@@ -149,7 +149,6 @@ async function fetchCreateOfferCatalogsServer(input: {
 			employmentTypes:
 				parameters.find((item) => item.technical_name === "employment_type")?.values ?? [],
 			categories: input.categories,
-			stateOptions,
 			fixedLocation: {
 				state: resolvedState,
 			},
@@ -182,8 +181,6 @@ async function fetchCreateOfferCatalogsServer(input: {
 				{ technical_name: "internship", display_name: "Pasantía" },
 			],
 			categories: input.categories.length > 0 ? input.categories : [{ id: 1, name: "Tecnología" }],
-			stateOptions:
-				input.stateOptions.length > 0 ? input.stateOptions : [normalizedState || fallbackState || "Distrito Capital"],
 			fixedLocation: {
 				state: normalizedState || fallbackState || "Distrito Capital",
 			},

@@ -4,7 +4,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { PrismaService } from '../../prisma/prisma.service';
 import { EvaluationQueueProducer } from '../../common/queues/evaluation-queue.producer';
 import { CreateApplicationDto, UpdateApplicationDto } from './dto/applications.dto';
-import type { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 
 @Injectable()
 export class ApplicationsService {
@@ -219,6 +219,67 @@ export class ApplicationsService {
         overall: application.overall_score ?? null,
       },
       aiFeedback,
+    };
+  }
+
+  async refreshMyApplicationByJob(userId: string, jobId: number) {
+    const candidate = await this.prisma.candidates.findUnique({
+      where: { user_id: userId },
+      select: { id: true },
+    });
+
+    if (!candidate) {
+      throw new NotFoundException('Candidate not found');
+    }
+
+    const application = await this.prisma.applications.findFirst({
+      where: {
+        candidate_id: candidate.id,
+        job_id: jobId,
+      },
+      select: {
+        id: true,
+        status: true,
+        candidate_id: true,
+        job_id: true,
+      },
+    });
+
+    if (!application) {
+      throw new NotFoundException('No existe una postulación para esta oferta');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.application_similar_jobs.deleteMany({
+        where: { application_id: application.id },
+      }),
+      this.prisma.applications.update({
+        where: { id: application.id },
+        data: {
+          match_technical_score: null,
+          match_soft_score: null,
+          match_culture_score: null,
+          overall_score: null,
+          ai_feedback: Prisma.JsonNull,
+          evaluation_status: 'pending',
+          updated_at: new Date(),
+        },
+      }),
+    ]);
+
+    if (application.candidate_id && application.job_id) {
+      await this.evaluationQueue.enqueueEvaluation({
+        applicationId: application.id,
+        candidateId: application.candidate_id,
+        jobId: application.job_id,
+      });
+    }
+
+    return {
+      ok: true,
+      applicationId: application.id,
+      status: application.status,
+      evaluationStatus: 'pending',
     };
   }
 

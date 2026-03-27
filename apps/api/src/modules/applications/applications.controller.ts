@@ -97,6 +97,18 @@ export class ApplicationsController {
     return this.applicationsService.findMyApplicationByJob(userId, jobId);
   }
 
+  @UseGuards(BetterAuthGuard)
+  @Post('me/:jobId/refresh')
+  refreshMyApplicationByJob(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+    @Param('jobId', ParseIntPipe) jobId: number,
+  ) {
+    this.assertCandidateScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.applicationsService.refreshMyApplicationByJob(userId, jobId);
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.applicationsService.findOne(id);
