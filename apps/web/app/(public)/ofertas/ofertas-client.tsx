@@ -192,6 +192,7 @@ function FiltersPanel({
   employmentTypeOptions: JobParameterOption[]
 }) {
   const [cityOpen, setCityOpen] = React.useState(false)
+  const uniqueCategories = React.useMemo(() => Array.from(new Set(categories)), [categories])
 
   return (
     <div className="space-y-4">
@@ -202,7 +203,7 @@ function FiltersPanel({
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((item) => (
+            {uniqueCategories.map((item) => (
               <SelectItem key={item} value={item}>
                 {item === "all" ? "Todas las categorías" : item}
               </SelectItem>
