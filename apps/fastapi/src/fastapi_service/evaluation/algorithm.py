@@ -36,15 +36,6 @@ class MatchResult:
     details: list[MatchDetail] = field(default_factory=list)
 
 
-def cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
-    """Cosine similarity between two vectors. Assumes vectors may or may not be normalized."""
-    norm_a = np.linalg.norm(vec_a)
-    norm_b = np.linalg.norm(vec_b)
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return float(np.dot(vec_a, vec_b) / (norm_a * norm_b))
-
-
 def analyze_embeddings(
     base_texts: list[str],
     compare_texts: list[str],
@@ -80,9 +71,24 @@ def analyze_embeddings(
         ]
         return MatchResult(final_score=0.0, details=missing_details)
 
+    # O(1) exact match lookup
     compare_texts_lower = [t.lower() for t in compare_texts]
-    compare_vecs = [np.array(e, dtype=np.float64) for e in compare_embeddings]
+    compare_texts_lower_dict: dict[str, int] = {t: i for i, t in enumerate(compare_texts_lower)}
     effective_mandatory_flags = mandatory_flags or [False] * len(base_texts)
+
+    # Build normalized matrices for vectorized cosine similarity: base [N,D], compare [M,D]
+    base_matrix = np.array(base_embeddings, dtype=np.float64)
+    compare_matrix = np.array(compare_embeddings, dtype=np.float64)
+
+    base_norms = np.linalg.norm(base_matrix, axis=1, keepdims=True)
+    compare_norms = np.linalg.norm(compare_matrix, axis=1, keepdims=True)
+    base_matrix_norm = np.where(base_norms > 0, base_matrix / base_norms, base_matrix)
+    compare_matrix_norm = np.where(compare_norms > 0, compare_matrix / compare_norms, compare_matrix)
+
+    # All-vs-all cosine similarity in one BLAS call: [N, M]
+    similarity_matrix = base_matrix_norm @ compare_matrix_norm.T
+    best_scores = np.max(similarity_matrix, axis=1)   # [N] best score per requirement
+    best_idxs = np.argmax(similarity_matrix, axis=1)  # [N] index of best match
 
     total_score = 0.0
     details: list[MatchDetail] = []
@@ -91,11 +97,12 @@ def analyze_embeddings(
         req_lower = req.lower()
 
         # Step 1: Exact match
-        if req_lower in compare_texts_lower:
+        if req_lower in compare_texts_lower_dict:
+            exact_idx = compare_texts_lower_dict[req_lower]
             details.append(
                 MatchDetail(
                     requirement=req,
-                    matched_to=req,
+                    matched_to=compare_texts[exact_idx],
                     score=1.0,
                     match_type="exact",
                 )
@@ -103,16 +110,9 @@ def analyze_embeddings(
             total_score += 1.0
             continue
 
-        # Step 2: Semantic match
-        req_vec = np.array(base_embeddings[i], dtype=np.float64)
-        best_score = -1.0
-        best_idx = -1
-
-        for j, cand_vec in enumerate(compare_vecs):
-            score = cosine_similarity(req_vec, cand_vec)
-            if score > best_score:
-                best_score = score
-                best_idx = j
+        # Step 2: Semantic match (use precomputed best score/idx)
+        best_score = float(best_scores[i])
+        best_idx = int(best_idxs[i])
 
         if best_score >= SIMILARITY_THRESHOLD:
             details.append(
@@ -144,14 +144,10 @@ def analyze_embeddings(
     weight = max(0.0, min(1.0, IS_MANDATORY_WEIGHT))
 
     if mandatory_indexes and weight > 0.0:
-        mandatory_hits = 0
-
-        for idx in mandatory_indexes:
-            req_vec = np.array(base_embeddings[idx], dtype=np.float64)
-            best_similarity = max(cosine_similarity(req_vec, cand_vec) for cand_vec in compare_vecs)
-            if best_similarity > IS_MANDATORY_RECALL:
-                mandatory_hits += 1
-
+        # Reuse precomputed best_scores — no redundant similarity recomputation
+        mandatory_hits = sum(
+            1 for idx in mandatory_indexes if float(best_scores[idx]) > IS_MANDATORY_RECALL
+        )
         mandatory_score = mandatory_hits / len(mandatory_indexes)
         final_score = (final_score * (1.0 - weight)) + (mandatory_score * weight)
 

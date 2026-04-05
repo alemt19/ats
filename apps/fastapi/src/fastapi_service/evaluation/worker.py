@@ -551,11 +551,15 @@ class EvaluationWorker:
         job_attrs: dict[str, AttributeGroup],
         cand_attrs: dict[str, AttributeGroup],
         weights: JobWeights,
+        preloaded_culture_prefs: tuple[dict[str, str | None], dict[str, str | None]] | None = None,
     ) -> dict[str, str]:
-        company_preferences, candidate_preferences = self._fetch_culture_preferences(
-            job_id,
-            candidate_id,
-        )
+        if preloaded_culture_prefs is not None:
+            company_preferences, candidate_preferences = preloaded_culture_prefs
+        else:
+            company_preferences, candidate_preferences = self._fetch_culture_preferences(
+                job_id,
+                candidate_id,
+            )
         candidate_context = self._fetch_candidate_feedback_context(candidate_id, cand_attrs)
         company_context = self._fetch_company_feedback_context(job_id)
         job_context = self._fetch_job_feedback_context(job_id, job_attrs, weights)
@@ -728,6 +732,7 @@ class EvaluationWorker:
         job_attrs: dict[str, AttributeGroup],
         cand_attrs: dict[str, AttributeGroup],
         weights: JobWeights,
+        preloaded_culture_prefs: tuple[dict[str, str | None], dict[str, str | None]] | None = None,
     ) -> dict[str, Any]:
         """Calculate match scores for a candidate against a job."""
         tech_result = analyze_embeddings(
@@ -754,9 +759,12 @@ class EvaluationWorker:
             job_attrs["value"].mandatory_flags,
         )
 
-        company_preferences, candidate_preferences = self._fetch_culture_preferences(
-            job_id, candidate_id
-        )
+        if preloaded_culture_prefs is not None:
+            company_preferences, candidate_preferences = preloaded_culture_prefs
+        else:
+            company_preferences, candidate_preferences = self._fetch_culture_preferences(
+                job_id, candidate_id
+            )
         culture_preference_score = self._calculate_culture_preference_score(
             company_preferences, candidate_preferences
         )
@@ -904,16 +912,15 @@ class EvaluationWorker:
                 self._set_evaluation_status, application_id, "processing"
             )
 
-            # Fetch attributes for the applied job and candidate
-            job_attrs = await asyncio.to_thread(
-                self._fetch_attributes, "job", job_id
+            # Fetch all independent data in parallel: attrs, weights, culture prefs
+            job_attrs, cand_attrs, weights, culture_prefs = await asyncio.gather(
+                asyncio.to_thread(self._fetch_attributes, "job", job_id),
+                asyncio.to_thread(self._fetch_attributes, "candidate", candidate_id),
+                asyncio.to_thread(self._fetch_job_weights, job_id),
+                asyncio.to_thread(self._fetch_culture_preferences, job_id, candidate_id),
             )
-            cand_attrs = await asyncio.to_thread(
-                self._fetch_attributes, "candidate", candidate_id
-            )
-            weights = await asyncio.to_thread(self._fetch_job_weights, job_id)
 
-            # Evaluate for the applied job
+            # Evaluate for the applied job (uses preloaded culture prefs — no extra DB call)
             scores = await asyncio.to_thread(
                 self._evaluate_candidate_for_job,
                 job_id,
@@ -921,24 +928,10 @@ class EvaluationWorker:
                 job_attrs,
                 cand_attrs,
                 weights,
+                culture_prefs,
             )
             await asyncio.to_thread(
                 self._update_application_scores, application_id, scores
-            )
-            ai_feedback = await asyncio.to_thread(
-                self._generate_application_ai_feedback,
-                application_id,
-                job_id,
-                candidate_id,
-                scores,
-                job_attrs,
-                cand_attrs,
-                weights,
-            )
-            await asyncio.to_thread(
-                self._update_application_ai_feedback,
-                application_id,
-                ai_feedback,
             )
 
             logger.info(
@@ -948,42 +941,66 @@ class EvaluationWorker:
                 scores["match_culture_score"],
                 scores["overall_score"],
             )
+
+            # Run LLM feedback and pgvector similarity search in parallel
+            ai_feedback, similar_jobs = await asyncio.gather(
+                asyncio.to_thread(
+                    self._generate_application_ai_feedback,
+                    application_id,
+                    job_id,
+                    candidate_id,
+                    scores,
+                    job_attrs,
+                    cand_attrs,
+                    weights,
+                    culture_prefs,
+                ),
+                asyncio.to_thread(self._find_similar_jobs, job_id),
+            )
+
+            await asyncio.to_thread(
+                self._update_application_ai_feedback,
+                application_id,
+                ai_feedback,
+            )
             logger.info(
                 "Application %s ai_feedback updated with %d sections",
                 application_id,
                 len(ai_feedback),
             )
 
-            # Find and evaluate similar jobs
-            similar_jobs = await asyncio.to_thread(
-                self._find_similar_jobs, job_id
-            )
+            # Evaluate similar jobs in parallel (each fetches its own attrs+weights concurrently)
+            if similar_jobs:
+                async def _process_one_similar_job(
+                    rank: int, similar_job_id: int, similarity_score: float
+                ) -> None:
+                    similar_job_attrs, similar_weights = await asyncio.gather(
+                        asyncio.to_thread(self._fetch_attributes, "job", similar_job_id),
+                        asyncio.to_thread(self._fetch_job_weights, similar_job_id),
+                    )
+                    similar_scores = await asyncio.to_thread(
+                        self._evaluate_candidate_for_job,
+                        similar_job_id,
+                        candidate_id,
+                        similar_job_attrs,
+                        cand_attrs,
+                        similar_weights,
+                    )
+                    await asyncio.to_thread(
+                        self._insert_similar_job_analysis,
+                        application_id, similar_job_id, similarity_score,
+                        similar_scores, rank,
+                    )
+                    logger.info(
+                        "Similar job #%d (id=%s, sim=%.3f): overall=%.3f",
+                        rank, similar_job_id, similarity_score,
+                        similar_scores["overall_score"],
+                    )
 
-            for rank, (similar_job_id, similarity_score) in enumerate(similar_jobs, start=1):
-                similar_job_attrs = await asyncio.to_thread(
-                    self._fetch_attributes, "job", similar_job_id
-                )
-                similar_weights = await asyncio.to_thread(
-                    self._fetch_job_weights, similar_job_id
-                )
-                similar_scores = await asyncio.to_thread(
-                    self._evaluate_candidate_for_job,
-                    similar_job_id,
-                    candidate_id,
-                    similar_job_attrs,
-                    cand_attrs,
-                    similar_weights,
-                )
-                await asyncio.to_thread(
-                    self._insert_similar_job_analysis,
-                    application_id, similar_job_id, similarity_score,
-                    similar_scores, rank,
-                )
-                logger.info(
-                    "Similar job #%d (id=%s, sim=%.3f): overall=%.3f",
-                    rank, similar_job_id, similarity_score,
-                    similar_scores["overall_score"],
-                )
+                await asyncio.gather(*[
+                    _process_one_similar_job(rank, similar_job_id, similarity_score)
+                    for rank, (similar_job_id, similarity_score) in enumerate(similar_jobs, start=1)
+                ])
 
             await asyncio.to_thread(
                 self._set_evaluation_status, application_id, "completed"
