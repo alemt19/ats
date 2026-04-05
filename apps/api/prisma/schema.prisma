@@ -25,6 +25,7 @@ model applications {
   notes                 notes[]
   similar_jobs          application_similar_jobs[]
   applications_registers applications_registers[]
+  feedback              application_feedback[]
 
   @@unique([job_id, candidate_id], map: "applications_job_id_candidate_id_idx")
   @@index([ai_feedback], map: "idx_applications_ai_feedback", type: Gin)
@@ -327,6 +328,27 @@ model verification {
 
   @@index([identifier])
   @@map("verification_token")
+}
+
+model application_feedback {
+  id                    Int                  @id @default(autoincrement())
+  application_id        Int
+  author_type           feedback_author_enum
+  overall_rating        Int
+  process_rating        Int?
+  match_accuracy_rating Int?
+  comments              String?
+  created_at            DateTime             @default(now()) @db.Timestamp(6)
+
+  application           applications         @relation(fields: [application_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([application_id, author_type], map: "application_feedback_application_id_author_type_idx")
+  @@index([application_id], map: "idx_application_feedback_application_id")
+}
+
+enum feedback_author_enum {
+  employer
+  candidate
 }
 
 enum attribute_type_enum {
