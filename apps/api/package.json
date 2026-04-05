@@ -11,7 +11,8 @@
         "prisma:generate": "prisma generate",
         "prisma:push": "prisma db push",
         "prisma:studio": "prisma studio",
-        "prisma:seed": "prisma db seed"
+        "prisma:seed": "prisma db seed",
+        "trigger:evaluations": "ts-node scripts/trigger-evaluations.ts"
     },
     "prisma": {
         "seed": "ts-node prisma/seed.ts"

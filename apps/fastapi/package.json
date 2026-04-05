@@ -10,6 +10,7 @@
         "build": "uv run -- python -m compileall src",
         "start": "uv run -- uvicorn fastapi_service.main:app --host 0.0.0.0 --port 8000",
         "lint": "uv run -- ruff check .",
-        "check-types": "uv run -- mypy src"
+        "check-types": "uv run -- mypy src",
+        "seed:embeddings": "uv run -- python scripts/generate-seed-embeddings.py"
     }
 }

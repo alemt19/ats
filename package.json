@@ -7,7 +7,10 @@
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
-    "typecheck": "turbo run check-types"
+    "typecheck": "turbo run check-types",
+    "seed": "pnpm --filter api prisma:seed",
+    "seed:embeddings": "pnpm --filter fastapi seed:embeddings",
+    "seed:trigger": "pnpm --filter api trigger:evaluations"
   },
   "devDependencies": {
     "prettier": "3.7.4",
