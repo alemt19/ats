@@ -31,6 +31,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Button } from "../ui/button"
 import { ChevronDown, LogOut, Menu, Moon, Sun, User } from "lucide-react"
+import NotificationsPanel from "./notifications-panel"
+import type { UserNotification } from "react/lib/notifications"
 
 type NavbarProps = {
   companyName?: string
@@ -41,10 +43,23 @@ export default function Navbar({ companyName, logoSrc }: NavbarProps) {
   const { user, isPending, isAuthenticated } = useCandidateSession()
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
+  const [notifications, setNotifications] = React.useState<UserNotification[]>([])
+  const [unreadCount, setUnreadCount] = React.useState(0)
 
   React.useEffect(() => {
     setMounted(true)
   }, [])
+
+  React.useEffect(() => {
+    if (!isAuthenticated) return
+    void fetch("/api/notifications/me", { cache: "no-store" })
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { items?: UserNotification[]; unreadCount?: number } | null) => {
+        if (!data) return
+        setNotifications(data.items ?? [])
+        setUnreadCount(data.unreadCount ?? 0)
+      })
+  }, [isAuthenticated])
 
   const isAuthResolved = !isPending
   const resolvedCompanyName = companyName ?? "Ats"
@@ -164,6 +179,14 @@ export default function Navbar({ companyName, logoSrc }: NavbarProps) {
               <Moon aria-hidden="true" className="size-4" />
             )}
           </Button>
+
+          {isAuthenticated && (
+            <NotificationsPanel
+              notifications={notifications}
+              unreadCount={unreadCount}
+              scope="candidate"
+            />
+          )}
 
           {!isAuthResolved ? (
             <div className="h-9 w-33 animate-pulse rounded-full bg-muted" />

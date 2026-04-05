@@ -188,6 +188,7 @@ function FiltersPanel({
   compact?: boolean
 }) {
   const [cityOpen, setCityOpen] = React.useState(false)
+  const uniqueCategories = React.useMemo(() => Array.from(new Set(catalogs.categories)), [catalogs.categories])
 
   return (
     <div className={cn("grid gap-3", compact ? "grid-cols-2 xl:grid-cols-5" : "grid-cols-1 sm:grid-cols-2")}>
@@ -199,7 +200,7 @@ function FiltersPanel({
           </SelectTrigger>
           <SelectContent className="border-border/70 bg-popover/95">
             <SelectItem value="all">Todas</SelectItem>
-            {catalogs.categories.map((item) => (
+            {uniqueCategories.map((item) => (
               <SelectItem key={item} value={item}>
                 {item}
               </SelectItem>
