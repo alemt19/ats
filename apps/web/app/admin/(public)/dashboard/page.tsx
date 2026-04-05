@@ -2,13 +2,27 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
 import { headers } from "next/headers"
-import { CheckCircle2, CircleX, Send, UserRoundPlus } from "lucide-react"
+import { CheckCircle2, CircleX, Send, Star, UserRoundPlus } from "lucide-react"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import { Button } from "react/components/ui/button"
 import { Input } from "react/components/ui/input"
 import { Progress } from "react/components/ui/progress"
 import TopOffersChart from "react/components/admin/top-offers-chart"
+
+type FeedbackStats = {
+    employer: {
+        avg_overall: number
+        avg_process: number
+        avg_match_accuracy: number
+        count: number
+    } | null
+    candidate: {
+        avg_overall: number
+        avg_process: number
+        count: number
+    } | null
+}
 
 type DashboardData = {
     metrics: {
@@ -52,6 +66,29 @@ function normalizeStatusCatalog(rawCatalog: RawStatusCatalogItem[]): StatusCatal
             display_name: item.display_name,
         }))
         .filter((item) => item.technical_name.length > 0)
+}
+
+async function getFeedbackStats(cookie: string): Promise<FeedbackStats> {
+    const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+
+    try {
+        const response = await fetch(`${apiBaseUrl}/api/applications/admin/feedback-stats`, {
+            method: "GET",
+            headers: cookie ? { cookie } : undefined,
+            cache: "no-store",
+        })
+
+        if (!response.ok) return { employer: null, candidate: null }
+
+        const payload = (await response.json().catch(() => null)) as
+            | FeedbackStats
+            | { data?: FeedbackStats }
+            | null
+        const stats = payload && typeof payload === "object" && "data" in payload ? payload.data : payload
+        return stats ?? { employer: null, candidate: null }
+    } catch {
+        return { employer: null, candidate: null }
+    }
 }
 
 async function getDashboardData(from?: string, to?: string): Promise<DashboardData> {
@@ -108,6 +145,20 @@ async function getDashboardData(from?: string, to?: string): Promise<DashboardDa
     }
 }
 
+function FeedbackStatRow({ label, value }: { label: string; value: number | null | undefined }) {
+    const rating = value ?? 0
+    const pct = Math.round((rating / 5) * 100)
+    return (
+        <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+                <span className="text-foreground/70">{label}</span>
+                <span className="font-medium tabular-nums">{rating > 0 ? `${rating.toFixed(1)} / 5` : "—"}</span>
+            </div>
+            <Progress value={pct} className="h-1.5" />
+        </div>
+    )
+}
+
 type DashboardPageProps = {
     searchParams?: Promise<{
         from?: string | string[]
@@ -119,10 +170,12 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
     const params = await searchParams
     const from = Array.isArray(params?.from) ? params?.from[0] : params?.from
     const to = Array.isArray(params?.to) ? params?.to[0] : params?.to
+    const cookie = (await headers()).get("cookie") ?? ""
 
-    const [data, statusCatalogRaw] = await Promise.all([
+    const [data, statusCatalogRaw, feedbackStats] = await Promise.all([
         getDashboardData(from, to),
         readJsonFile<RawStatusCatalogItem[]>("application_status.json").catch(() => []),
+        getFeedbackStats(cookie),
     ])
 
     const normalizedStatusCatalog = normalizeStatusCatalog(statusCatalogRaw)
@@ -250,6 +303,60 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                 </CardHeader>
                 <CardContent>
                     <TopOffersChart data={data.topOffers} maxCandidates={maxTopOfferCandidates} />
+                </CardContent>
+            </Card>
+
+            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader>
+                    <CardTitle>Satisfacción del proceso de selección</CardTitle>
+                    <CardDescription className="text-xs text-foreground/60">
+                        Promedio de calificaciones post-contratación recopiladas de empleadores y candidatos
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {!feedbackStats.employer && !feedbackStats.candidate ? (
+                        <p className="text-sm text-foreground/60">
+                            Aún no hay calificaciones registradas. Aparecerán aquí cuando empleadores y candidatos completen sus evaluaciones post-contratación.
+                        </p>
+                    ) : (
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            {feedbackStats.employer && (
+                                <div className="space-y-4 rounded-xl border border-border/70 bg-background/85 p-5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
+                                            <Star aria-hidden="true" className="size-4 text-primary" />
+                                        </span>
+                                        <div>
+                                            <p className="text-sm font-semibold">Empleadores</p>
+                                            <p className="text-xs text-foreground/60">{feedbackStats.employer.count} evaluaciones</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <FeedbackStatRow label="Satisfacción general" value={feedbackStats.employer.avg_overall} />
+                                        <FeedbackStatRow label="Precisión del matching IA" value={feedbackStats.employer.avg_match_accuracy} />
+                                        <FeedbackStatRow label="Eficiencia del proceso" value={feedbackStats.employer.avg_process} />
+                                    </div>
+                                </div>
+                            )}
+                            {feedbackStats.candidate && (
+                                <div className="space-y-4 rounded-xl border border-border/70 bg-background/85 p-5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                                            <Star aria-hidden="true" className="size-4 text-amber-500" />
+                                        </span>
+                                        <div>
+                                            <p className="text-sm font-semibold">Candidatos</p>
+                                            <p className="text-xs text-foreground/60">{feedbackStats.candidate.count} evaluaciones</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <FeedbackStatRow label="Satisfacción general" value={feedbackStats.candidate.avg_overall} />
+                                        <FeedbackStatRow label="Transparencia del proceso" value={feedbackStats.candidate.avg_process} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

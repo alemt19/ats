@@ -3,7 +3,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EvaluationQueueProducer } from '../../common/queues/evaluation-queue.producer';
-import { CreateApplicationDto, UpdateApplicationDto } from './dto/applications.dto';
+import { CreateApplicationDto, UpdateApplicationDto, CreateApplicationFeedbackDto } from './dto/applications.dto';
 import { Prisma } from '../../generated/prisma/client';
 
 @Injectable()
@@ -344,7 +344,42 @@ export class ApplicationsService {
 
     await this.createApplicationStatusRegister(updated.id, cleanStatus);
 
+    if (cleanStatus === 'hired') {
+      await this.createHiredNotification(applicationId);
+    }
+
     return updated;
+  }
+
+  private async createHiredNotification(applicationId: number) {
+    const application = await this.prisma.applications.findUnique({
+      where: { id: applicationId },
+      select: {
+        id: true,
+        candidates: { select: { user_id: true } },
+        jobs: { select: { id: true, title: true } },
+      },
+    });
+
+    const candidateUserId = application?.candidates?.user_id;
+    if (!candidateUserId) return;
+
+    const jobTitle = application.jobs?.title?.trim() || 'la oferta';
+
+    await this.prisma.notifications.create({
+      data: {
+        user_id: candidateUserId,
+        type: 'application_hired',
+        entity_type: 'application',
+        entity_id: applicationId,
+        title: '¡Felicitaciones! Fuiste contratado',
+        message: `Tu postulacion a ${jobTitle} ha sido aceptada. ¡Bienvenido al equipo!`,
+        metadata: {
+          job_id: application.jobs?.id ?? null,
+          job_title: application.jobs?.title ?? null,
+        },
+      },
+    });
   }
 
   async findNotesForAdmin(userId: string, applicationId: number) {
@@ -520,5 +555,138 @@ export class ApplicationsService {
         },
       },
     });
+  }
+
+  async createFeedback(userId: string, applicationId: number, dto: CreateApplicationFeedbackDto, scope: 'admin' | 'candidate') {
+    const authorType = scope === 'admin' ? 'employer' : 'candidate';
+
+    if (scope === 'admin') {
+      const { application } = await this.getAdminScopedApplication(userId, applicationId);
+      if (application.status !== 'hired') {
+        throw new BadRequestException('Solo se puede dejar feedback de candidatos contratados');
+      }
+    } else {
+      const candidate = await this.prisma.candidates.findUnique({
+        where: { user_id: userId },
+        select: { id: true },
+      });
+
+      if (!candidate) {
+        throw new NotFoundException('Candidato no encontrado');
+      }
+
+      const application = await this.prisma.applications.findFirst({
+        where: { id: applicationId, candidate_id: candidate.id },
+        select: { id: true },
+      });
+
+      if (!application) {
+        throw new NotFoundException(`Postulación con ID ${applicationId} no encontrada`);
+      }
+    }
+
+    const data: Prisma.application_feedbackUncheckedCreateInput = {
+      application_id: applicationId,
+      author_type: authorType as any,
+      overall_rating: dto.overall_rating,
+      process_rating: dto.process_rating ?? null,
+      comments: dto.comments ?? null,
+    };
+
+    if (scope === 'admin' && dto.match_accuracy_rating !== undefined) {
+      data.match_accuracy_rating = dto.match_accuracy_rating;
+    }
+
+    return this.prisma.application_feedback.upsert({
+      where: {
+        application_id_author_type: {
+          application_id: applicationId,
+          author_type: authorType as any,
+        },
+      },
+      create: data,
+      update: {
+        overall_rating: data.overall_rating,
+        process_rating: data.process_rating,
+        match_accuracy_rating: data.match_accuracy_rating ?? null,
+        comments: data.comments,
+      },
+      select: {
+        id: true,
+        author_type: true,
+        overall_rating: true,
+        process_rating: true,
+        match_accuracy_rating: true,
+        comments: true,
+        created_at: true,
+      },
+    });
+  }
+
+  async getFeedback(applicationId: number) {
+    const feedbacks = await this.prisma.application_feedback.findMany({
+      where: { application_id: applicationId },
+      select: {
+        id: true,
+        author_type: true,
+        overall_rating: true,
+        process_rating: true,
+        match_accuracy_rating: true,
+        comments: true,
+        created_at: true,
+      },
+    });
+
+    const employer = feedbacks.find((f) => f.author_type === 'employer') ?? null;
+    const candidate = feedbacks.find((f) => f.author_type === 'candidate') ?? null;
+
+    return { employer, candidate };
+  }
+
+  async getFeedbackStats(userId: string) {
+    const admin = await this.getAdminUser(userId);
+
+    const stats = await this.prisma.$queryRaw<
+      Array<{
+        author_type: string;
+        avg_overall: number;
+        avg_process: number;
+        avg_match_accuracy: number;
+        count: bigint;
+      }>
+    >`
+      SELECT
+        af.author_type,
+        ROUND(AVG(af.overall_rating)::numeric, 2)        AS avg_overall,
+        ROUND(AVG(af.process_rating)::numeric, 2)        AS avg_process,
+        ROUND(AVG(af.match_accuracy_rating)::numeric, 2) AS avg_match_accuracy,
+        COUNT(*)                                          AS count
+      FROM application_feedback af
+      INNER JOIN applications a ON a.id = af.application_id
+      INNER JOIN jobs j ON j.id = a.job_id
+      WHERE j.company_id = ${admin.company_id}
+      GROUP BY af.author_type
+    `;
+
+    const employer = stats.find((s) => s.author_type === 'employer') ?? null;
+    const candidate = stats.find((s) => s.author_type === 'candidate') ?? null;
+
+    return {
+      employer: employer
+        ? {
+            avg_overall: Number(employer.avg_overall),
+            avg_process: Number(employer.avg_process),
+            avg_match_accuracy: Number(employer.avg_match_accuracy),
+            count: Number(employer.count),
+          }
+        : null,
+      candidate: candidate
+        ? {
+            avg_overall: Number(candidate.avg_overall),
+            avg_process: Number(candidate.avg_process),
+            count: Number(candidate.count),
+          }
+        : null,
+    };
   }
 }

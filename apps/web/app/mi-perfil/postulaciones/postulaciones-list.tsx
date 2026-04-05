@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { BriefcaseBusiness, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
+import { BriefcaseBusiness, Loader2, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import { toast } from "sonner"
 
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
@@ -16,6 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
+import { StarRating } from "react/components/ui/star-rating"
+import { Textarea } from "react/components/ui/textarea"
 import { trackUxEvent } from "react/lib/analytics-events"
 import { usePostulacionesFilters } from "./postulaciones-shell"
 
@@ -157,6 +160,106 @@ function buildRecommendationReasons(application: JobApplication, similarJob: Sim
   }
 
   return reasons.slice(0, 3)
+}
+
+type CandidateFeedbackSectionProps = {
+  applicationId: number
+}
+
+function CandidateFeedbackSection({ applicationId }: CandidateFeedbackSectionProps) {
+  const [overallRating, setOverallRating] = React.useState(0)
+  const [processRating, setProcessRating] = React.useState(0)
+  const [comments, setComments] = React.useState("")
+  const [isSaving, setIsSaving] = React.useState(false)
+  const [submitted, setSubmitted] = React.useState(false)
+
+  React.useEffect(() => {
+    fetch(`/api/applications/${applicationId}/feedback`)
+      .then((res) => res.json())
+      .then((data: { candidate?: { overall_rating: number } | null }) => {
+        if (data?.candidate) {
+          setSubmitted(true)
+        }
+      })
+      .catch(() => null)
+  }, [applicationId])
+
+  const handleSubmit = async () => {
+    if (overallRating === 0) {
+      toast.error("La calificación general es obligatoria")
+      return
+    }
+
+    setIsSaving(true)
+
+    try {
+      const response = await fetch(`/api/applications/${applicationId}/feedback`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          overall_rating: overallRating,
+          process_rating: processRating > 0 ? processRating : undefined,
+          comments: comments.trim() || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as { message?: string } | null
+        throw new Error(payload?.message ?? "No se pudo guardar el feedback")
+      }
+
+      setSubmitted(true)
+      toast.success("¡Gracias por tu feedback!")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo guardar el feedback"
+      toast.error(message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  if (submitted) {
+    return (
+      <div className="rounded-xl border border-border/60 bg-background/60 p-3 text-sm text-foreground/70">
+        ¡Gracias por compartir tu experiencia!
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-3">
+      <p className="text-sm font-medium">¿Cómo fue tu experiencia en este proceso?</p>
+      <StarRating
+        label="Experiencia general *"
+        value={overallRating}
+        onChange={setOverallRating}
+        size="sm"
+      />
+      <StarRating
+        label="Transparencia del proceso"
+        value={processRating}
+        onChange={setProcessRating}
+        size="sm"
+      />
+      <Textarea
+        placeholder="Comentarios opcionales..."
+        value={comments}
+        onChange={(e) => setComments(e.target.value)}
+        maxLength={1000}
+        rows={2}
+        className="text-sm"
+      />
+      <Button
+        size="sm"
+        className="w-full rounded-full"
+        onClick={handleSubmit}
+        disabled={isSaving || overallRating === 0}
+      >
+        {isSaving && <Loader2 className="mr-2 size-4 animate-spin" />}
+        Enviar feedback
+      </Button>
+    </div>
+  )
 }
 
 function SimilarJobsSkeleton() {
@@ -456,6 +559,12 @@ export default function PostulacionesList({
                   ) : null}
                 </div>
               </CardFooter>
+
+              {application.status === "hired" && (
+                <CardContent className="border-t border-border/60 pt-4">
+                  <CandidateFeedbackSection applicationId={application.id} />
+                </CardContent>
+              )}
 
               {expandedApplicationId === application.id ? (
                 <CardContent className="space-y-3 border-t border-border/60 pt-4">

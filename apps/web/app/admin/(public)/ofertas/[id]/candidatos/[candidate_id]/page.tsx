@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 
 import CandidateApplicationDetailClient, {
+	type ApplicationFeedback,
 	type ApplicationNote,
 	type ApplicationStatusOption,
 	type CandidateApplicationDetail,
@@ -81,6 +82,28 @@ async function fetchApplicationNotesServer(
 	return Array.isArray(notes) ? notes : []
 }
 
+async function fetchApplicationFeedbackServer(
+	applicationId: number,
+	cookie?: string
+): Promise<ApplicationFeedback> {
+	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
+
+	const response = await fetch(`${apiBaseUrl}/api/applications/${applicationId}/feedback`, {
+		method: "GET",
+		headers: {
+			...(cookie ? { cookie } : {}),
+		},
+		cache: "no-store",
+	})
+
+	if (!response.ok) {
+		return { employer: null, candidate: null }
+	}
+
+	const payload = (await response.json().catch(() => null)) as ApplicationFeedback | null
+	return payload ?? { employer: null, candidate: null }
+}
+
 async function getApplicationStatusOptionsServer() {
 	return readJsonFile<ApplicationStatusOption[]>("application_status.json")
 }
@@ -108,6 +131,7 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 
 	let candidate: CandidateApplicationDetail
 	let initialNotes: ApplicationNote[]
+	let initialFeedback: ApplicationFeedback
 
 	try {
 		;[candidate, initialNotes] = await Promise.all([
@@ -117,6 +141,8 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 	} catch {
 		notFound()
 	}
+
+	initialFeedback = await fetchApplicationFeedbackServer(applicationId, cookie)
 
 	const [statusOptions, culturePreferenceCatalog] = await Promise.all([
 		getApplicationStatusOptionsServer(),
@@ -130,6 +156,7 @@ export default async function CandidateDetailPage({ params }: CandidateDetailPag
 			statusOptions={statusOptions}
 			culturePreferenceCatalog={culturePreferenceCatalog}
 			initialNotes={initialNotes}
+			initialFeedback={initialFeedback}
 			behavioralQuestion1={behavioralQuestion1}
 			behavioralQuestion2={behavioralQuestion2}
 		/>

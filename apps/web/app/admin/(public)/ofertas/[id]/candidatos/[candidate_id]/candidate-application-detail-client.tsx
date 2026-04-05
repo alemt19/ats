@@ -17,8 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
+import { StarRating } from "react/components/ui/star-rating"
 import { Textarea } from "react/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "react/components/ui/tooltip"
+import { EmployerFeedbackModal } from "./employer-feedback-modal"
 
 export type ApplicationStatusOption = {
   techical_name: string
@@ -44,6 +46,21 @@ export type ApplicationNote = {
   recruiter_avatar_url?: string
   text: string
   created_at: string
+}
+
+export type ApplicationFeedbackEntry = {
+  id: number
+  author_type: "employer" | "candidate"
+  overall_rating: number
+  process_rating: number | null
+  match_accuracy_rating: number | null
+  comments: string | null
+  created_at: string
+}
+
+export type ApplicationFeedback = {
+  employer: ApplicationFeedbackEntry | null
+  candidate: ApplicationFeedbackEntry | null
 }
 
 export type CandidateApplicationDetail = {
@@ -79,6 +96,7 @@ type CandidateApplicationDetailClientProps = {
   statusOptions: ApplicationStatusOption[]
   culturePreferenceCatalog: CulturePreferenceCategory[]
   initialNotes: ApplicationNote[]
+  initialFeedback: ApplicationFeedback
   behavioralQuestion1: string
   behavioralQuestion2: string
 }
@@ -175,6 +193,7 @@ export default function CandidateApplicationDetailClient({
   statusOptions,
   culturePreferenceCatalog,
   initialNotes,
+  initialFeedback,
   behavioralQuestion1,
   behavioralQuestion2,
 }: CandidateApplicationDetailClientProps) {
@@ -184,6 +203,8 @@ export default function CandidateApplicationDetailClient({
   const [notes, setNotes] = React.useState(initialNotes)
   const [newNote, setNewNote] = React.useState("")
   const [isSavingNote, setIsSavingNote] = React.useState(false)
+  const [showFeedbackModal, setShowFeedbackModal] = React.useState(false)
+  const [feedback, setFeedback] = React.useState<ApplicationFeedback>(initialFeedback)
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -325,11 +346,26 @@ export default function CandidateApplicationDetailClient({
 
       setApplicationStatus(nextStatus)
       toast.success("Estado actualizado")
+
+      if (nextStatus === "hired" && !feedback.employer) {
+        setShowFeedbackModal(true)
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo actualizar el estado"
       toast.error(message)
     } finally {
       setIsUpdatingStatus(false)
+    }
+  }
+
+  const handleFeedbackClose = async () => {
+    setShowFeedbackModal(false)
+    const response = await fetch(
+      `/api/admin/ofertas/${offerId}/candidatos/${candidate.application_id}/feedback`
+    )
+    if (response.ok) {
+      const data = (await response.json()) as ApplicationFeedback
+      setFeedback(data)
     }
   }
 
@@ -650,7 +686,44 @@ export default function CandidateApplicationDetailClient({
             </Card>
           </div>
 
-          <div>
+          <div className="space-y-4">
+            {(feedback.employer || feedback.candidate) && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Feedback de experiencia</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  {feedback.employer && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Empleador</p>
+                      <StarRating value={feedback.employer.overall_rating} readonly label="Satisfacción general" size="sm" />
+                      {feedback.employer.match_accuracy_rating !== null && (
+                        <StarRating value={feedback.employer.match_accuracy_rating} readonly label="Precisión del matching IA" size="sm" />
+                      )}
+                      {feedback.employer.process_rating !== null && (
+                        <StarRating value={feedback.employer.process_rating} readonly label="Proceso de selección" size="sm" />
+                      )}
+                      {feedback.employer.comments && (
+                        <p className="text-sm text-muted-foreground italic">"{feedback.employer.comments}"</p>
+                      )}
+                    </div>
+                  )}
+                  {feedback.candidate && (
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Candidato</p>
+                      <StarRating value={feedback.candidate.overall_rating} readonly label="Experiencia general" size="sm" />
+                      {feedback.candidate.process_rating !== null && (
+                        <StarRating value={feedback.candidate.process_rating} readonly label="Transparencia del proceso" size="sm" />
+                      )}
+                      {feedback.candidate.comments && (
+                        <p className="text-sm text-muted-foreground italic">"{feedback.candidate.comments}"</p>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="h-fit">
               <CardHeader>
                 <CardTitle>Notas Internas del Equipo</CardTitle>
@@ -692,6 +765,14 @@ export default function CandidateApplicationDetailClient({
           </div>
         </div>
       </section>
+
+      <EmployerFeedbackModal
+        open={showFeedbackModal}
+        offerId={offerId}
+        applicationId={candidate.application_id}
+        candidateName={fullName}
+        onClose={handleFeedbackClose}
+      />
     </TooltipProvider>
   )
 }

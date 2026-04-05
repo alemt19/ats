@@ -19,7 +19,7 @@ import type { Request } from 'express';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { ApplicationsService } from './applications.service';
-import { ApplicationsQueryDto, CreateApplicationDto, UpdateApplicationDto } from './dto/applications.dto';
+import { ApplicationsQueryDto, CreateApplicationDto, UpdateApplicationDto, CreateApplicationFeedbackDto } from './dto/applications.dto';
 
 @Controller('applications')
 export class ApplicationsController {
@@ -174,6 +174,39 @@ export class ApplicationsController {
     }
 
     return this.applicationsService.updateStatusForAdmin(userId, id, status);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Post(':id/feedback')
+  createFeedback(
+    @CurrentUser() session: any,
+    @Req() request: Request,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateApplicationFeedbackDto,
+  ) {
+    const cookieHeader = request.headers.cookie ?? '';
+    const match = cookieHeader.match(/(?:^|;\s*)ats_scope=(admin|candidate)(?:;|$)/);
+    const scope = match?.[1] as 'admin' | 'candidate' | undefined;
+
+    if (scope !== 'admin' && scope !== 'candidate') {
+      throw new UnauthorizedException('Scope de sesión inválido');
+    }
+
+    const userId = this.getUserIdFromSession(session);
+    return this.applicationsService.createFeedback(userId, id, dto, scope);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Get('admin/feedback-stats')
+  getFeedbackStats(@CurrentUser() session: any, @Req() request: Request) {
+    this.assertAdminScope(request);
+    const userId = this.getUserIdFromSession(session);
+    return this.applicationsService.getFeedbackStats(userId);
+  }
+
+  @Get(':id/feedback')
+  getFeedback(@Param('id', ParseIntPipe) id: number) {
+    return this.applicationsService.getFeedback(id);
   }
 
   @Patch(':id')
