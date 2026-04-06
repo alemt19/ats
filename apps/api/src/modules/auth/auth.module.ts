@@ -11,6 +11,7 @@ import { StorageModule } from '../../common/storage/storage.module';
 import { AdminProfileController } from './admin-profile.controller';
 import { AdminAuthorizationService } from './admin-authorization.service';
 import { AdminProfileService } from './admin-profile.service';
+import { LoginSoftLockService } from './login-soft-lock.service';
 
 @Module({
 	imports: [
@@ -34,7 +35,13 @@ import { AdminProfileService } from './admin-profile.service';
 		}),
 	],
 	controllers: [AuthController, BetterAuthController, AdminProfileController],
-	providers: [BetterAuthProvider, BetterAuthGuard, AdminAuthorizationService, AdminProfileService],
+	providers: [
+		BetterAuthProvider,
+		BetterAuthGuard,
+		AdminAuthorizationService,
+		AdminProfileService,
+		LoginSoftLockService,
+	],
 	exports: [BetterAuthProvider, BetterAuthGuard, AdminAuthorizationService],
 })
 export class AuthModule {}

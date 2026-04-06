@@ -171,7 +171,7 @@ export default function LoginClientPage() {
 			})
 
 			if (response.error) {
-				setLoginError("Credenciales inválidas")
+				setLoginError(response.error.message ?? "Credenciales inválidas")
 				return
 			}
 

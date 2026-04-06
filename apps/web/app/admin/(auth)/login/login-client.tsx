@@ -102,7 +102,7 @@ export default function AdminLoginClientPage() {
 			})
 
 			if (response.error) {
-				setLoginError("Credenciales inválidas")
+				setLoginError(response.error.message ?? "Credenciales inválidas")
 				return
 			}
 
