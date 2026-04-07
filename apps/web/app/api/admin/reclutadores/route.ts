@@ -31,6 +31,7 @@ function parseRecruiterPayload(body: unknown): RecruiterPayload {
     lastname: typeof source.lastname === "string" ? source.lastname : "",
     email: typeof source.email === "string" ? source.email : "",
     password: typeof source.password === "string" ? source.password : "",
+    birth_date: typeof source.birth_date === "string" ? source.birth_date : "",
     dni: typeof source.dni === "string" ? source.dni : "",
     phone: typeof source.phone === "string" ? source.phone : "",
     phone_prefix: typeof source.phone_prefix === "string" ? source.phone_prefix : "",
@@ -56,6 +57,7 @@ function parseRecruiterMultipartPayload(formData: FormData): RecruiterPayload {
     lastname: typeof formData.get("lastname") === "string" ? (formData.get("lastname") as string) : "",
     email: typeof formData.get("email") === "string" ? (formData.get("email") as string) : "",
     password: typeof formData.get("password") === "string" ? (formData.get("password") as string) : "",
+    birth_date: typeof formData.get("birth_date") === "string" ? (formData.get("birth_date") as string) : "",
     dni: typeof formData.get("dni") === "string" ? (formData.get("dni") as string) : "",
     phone: typeof formData.get("phone") === "string" ? (formData.get("phone") as string) : "",
     phone_prefix:

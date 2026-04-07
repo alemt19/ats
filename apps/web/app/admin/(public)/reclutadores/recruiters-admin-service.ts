@@ -19,6 +19,7 @@ type RecruiterDummyRecord = {
   lastname?: unknown
   email?: unknown
   password?: unknown
+  birth_date?: unknown
   dni?: unknown
   phone?: unknown
   role?: unknown
@@ -103,6 +104,7 @@ function normalizeRecruiter(record: RecruiterDummyRecord, fallbackId: number, fa
   const email = typeof record.email === "string" ? record.email.trim() : ""
   const profilePicture = typeof record.profile_picture === "string" ? record.profile_picture.trim() : ""
   const password = typeof record.password === "string" ? record.password.trim() : ""
+  const birthDate = typeof record.birth_date === "string" ? record.birth_date.trim() : ""
   const dni = typeof record.dni === "string" ? record.dni.trim() : ""
   const phone = typeof record.phone === "string" ? record.phone.trim() : ""
   const role = typeof record.role === "string" ? record.role.trim() : "recruiter"
@@ -120,6 +122,7 @@ function normalizeRecruiter(record: RecruiterDummyRecord, fallbackId: number, fa
     lastname,
     email,
     password,
+    birth_date: birthDate,
     dni,
     phone,
     role,

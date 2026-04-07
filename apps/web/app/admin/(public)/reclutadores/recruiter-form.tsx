@@ -38,6 +38,7 @@ type RecruiterFormValues = {
   lastname: string
   email: string
   password: string
+  birth_date: string
   dni: string
   phone: string
   phone_prefix: string
@@ -56,6 +57,7 @@ const EMPTY_VALUES: RecruiterFormValues = {
   lastname: "",
   email: "",
   password: "",
+  birth_date: "",
   dni: "",
   phone: "",
   phone_prefix: "",
@@ -98,6 +100,7 @@ function valuesFromRecruiter(recruiter: Recruiter, phonePrefix: string): Recruit
     lastname: recruiter.lastname?.trim?.() ?? "",
     email: recruiter.email?.trim?.() ?? "",
     password: "",
+    birth_date: recruiter.birth_date?.trim?.() ?? "",
     dni: recruiter.dni?.trim?.() ?? "",
     phone: extractPhoneNumber(recruiter.phone, phonePrefix),
     phone_prefix: phonePrefix,
@@ -425,6 +428,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
     }
 
     payload.append("dni", values.dni)
+    payload.append("birth_date", values.birth_date)
     payload.append("phone", values.phone)
     payload.append("phone_prefix", values.phone_prefix)
     payload.append("role", values.role)
@@ -553,6 +557,16 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
               <div className="space-y-2">
                 <Label htmlFor="dni">Cedula</Label>
                 <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="birth_date">Fecha de nacimiento</Label>
+                <Input
+                  id="birth_date"
+                  type="date"
+                  value={values.birth_date}
+                  onChange={handleInputChange("birth_date")}
+                />
               </div>
 
               <div className="space-y-2">

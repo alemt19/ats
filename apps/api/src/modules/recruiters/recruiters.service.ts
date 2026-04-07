@@ -56,6 +56,7 @@ export class RecruitersService {
 			profile_picture: string | null;
 			name: string | null;
 			lastname: string | null;
+			birth_date: Date | null;
 			dni: string | null;
 			phone: string | null;
 			role: string | null;
@@ -73,6 +74,7 @@ export class RecruitersService {
 			lastname: recruiter.lastname ?? '',
 			email: recruiter.user?.email ? toPublicEmail(recruiter.user.email) : '',
 			password: '',
+			birth_date: this.formatBirthDateForInput(recruiter.birth_date),
 			dni: recruiter.dni ?? '',
 			phone: recruiter.phone ?? '',
 			role: recruiter.role ?? '',
@@ -96,6 +98,23 @@ export class RecruitersService {
 		}
 
 		return `${rawPrefix}${rawPhone}`;
+	}
+
+	private parseBirthDateInput(rawDate?: string): Date | null {
+		const normalized = (rawDate ?? '').trim();
+		if (!normalized) {
+			return null;
+		}
+
+		return new Date(`${normalized}T00:00:00.000Z`);
+	}
+
+	private formatBirthDateForInput(value: Date | null): string {
+		if (!value) {
+			return '';
+		}
+
+		return value.toISOString().slice(0, 10);
 	}
 
 	private async signUpRecruiterAccount(dto: CreateRecruiterDto) {
@@ -172,6 +191,7 @@ export class RecruitersService {
 					profile_picture: true,
 					name: true,
 					lastname: true,
+					birth_date: true,
 					dni: true,
 					phone: true,
 					role: true,
@@ -212,6 +232,7 @@ export class RecruitersService {
 				profile_picture: true,
 				name: true,
 				lastname: true,
+				birth_date: true,
 				dni: true,
 				phone: true,
 				role: true,
@@ -261,6 +282,7 @@ export class RecruitersService {
 				profile_picture: dto.profile_picture?.trim() || null,
 				name: dto.name,
 				lastname: dto.lastname,
+				birth_date: this.parseBirthDateInput(dto.birth_date),
 				dni: dto.dni || null,
 				phone: this.composePhone(dto.phone, dto.phone_prefix) || null,
 				role: dto.role,
@@ -275,6 +297,7 @@ export class RecruitersService {
 				profile_picture: dto.profile_picture?.trim() || null,
 				name: dto.name,
 				lastname: dto.lastname,
+				birth_date: this.parseBirthDateInput(dto.birth_date),
 				dni: dto.dni || null,
 				phone: this.composePhone(dto.phone, dto.phone_prefix) || null,
 				role: dto.role,
@@ -288,6 +311,7 @@ export class RecruitersService {
 				profile_picture: true,
 				name: true,
 				lastname: true,
+				birth_date: true,
 				dni: true,
 				phone: true,
 				role: true,
@@ -340,6 +364,7 @@ export class RecruitersService {
 						: undefined,
 				name: dto.name,
 				lastname: dto.lastname,
+				birth_date: this.parseBirthDateInput(dto.birth_date),
 				dni: dto.dni || null,
 				phone: this.composePhone(dto.phone, dto.phone_prefix) || null,
 				role: dto.role,
@@ -353,6 +378,7 @@ export class RecruitersService {
 				profile_picture: true,
 				name: true,
 				lastname: true,
+				birth_date: true,
 				dni: true,
 				phone: true,
 				role: true,

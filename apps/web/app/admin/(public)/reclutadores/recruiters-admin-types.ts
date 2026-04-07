@@ -22,6 +22,7 @@ export type Recruiter = {
   lastname: string
   email: string
   password: string
+  birth_date: string
   dni: string
   phone: string
   role: string
@@ -50,6 +51,7 @@ export type RecruiterPayload = {
   lastname: string
   email: string
   password?: string
+  birth_date?: string
   dni: string
   phone: string
   phone_prefix?: string

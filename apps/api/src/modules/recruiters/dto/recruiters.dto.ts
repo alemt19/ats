@@ -3,6 +3,12 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
+const BirthDateSchema = z
+	.string()
+	.trim()
+	.regex(/^\d{4}-\d{2}-\d{2}$/)
+	.or(z.literal(''));
+
 const RecruitersQuerySchema = z.object({
 	search: z.string().trim().optional(),
 	page: z.coerce.number().int().positive().default(1).optional(),
@@ -15,6 +21,7 @@ const CreateRecruiterSchema = z.object({
 	lastname: z.string().trim().min(1).max(100),
 	email: z.string().trim().email(),
 	password: z.string().min(8),
+	birth_date: BirthDateSchema.optional().default(''),
 	dni: z.string().trim().max(50).optional().default(''),
 	phone: z.string().trim().max(50).optional().default(''),
 	phone_prefix: z.string().trim().max(20).optional().default(''),
@@ -31,6 +38,7 @@ const UpdateRecruiterSchema = z.object({
 	lastname: z.string().trim().min(1).max(100),
 	email: z.string().trim().email().optional(),
 	password: z.string().min(8).optional(),
+	birth_date: BirthDateSchema.optional().default(''),
 	dni: z.string().trim().max(50).optional().default(''),
 	phone: z.string().trim().max(50).optional().default(''),
 	phone_prefix: z.string().trim().max(20).optional().default(''),
