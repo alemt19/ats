@@ -3,13 +3,19 @@ import { readFile } from "node:fs/promises"
 import Link from "next/link"
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
-import { ArrowLeft, BriefcaseBusiness, CalendarDays, MapPin, Wallet } from "lucide-react"
+import { ArrowLeft, BriefcaseBusiness, CalendarDays, Info, MapPin, Wallet } from "lucide-react"
 
 import { getSession, hasAuthAccess } from "../../../../auth"
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "react/components/ui/card"
 import { Separator } from "react/components/ui/separator"
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "react/components/ui/tooltip"
 import PostularseButton from "./postularse-button"
 
 type OfferParameterValue = {
@@ -710,6 +716,20 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 						<p className="flex items-center gap-2 text-sm font-semibold">
 								<Wallet aria-hidden="true" className="size-4 text-accent" />
 							<span>${offerDetail.salary} / mes</span>
+							<TooltipProvider>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<button
+											type="button"
+											className="text-muted-foreground transition-colors hover:text-foreground"
+											aria-label="Informacion del salario"
+										>
+											<Info className="size-3.5" />
+										</button>
+									</TooltipTrigger>
+									<TooltipContent side="top">Salario referencial calculado a la tasa del BCV.</TooltipContent>
+								</Tooltip>
+							</TooltipProvider>
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
 								<CalendarDays aria-hidden="true" className="size-4 text-primary" />

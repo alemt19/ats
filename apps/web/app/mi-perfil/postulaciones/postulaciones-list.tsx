@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BriefcaseBusiness, Loader2, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
+import { BriefcaseBusiness, Info, Loader2, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { toast } from "sonner"
@@ -19,6 +19,12 @@ import {
 } from "react/components/ui/select"
 import { StarRating } from "react/components/ui/star-rating"
 import { Textarea } from "react/components/ui/textarea"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "react/components/ui/tooltip"
 import { trackUxEvent } from "react/lib/analytics-events"
 import { usePostulacionesFilters } from "./postulaciones-shell"
 
@@ -516,6 +522,20 @@ export default function PostulacionesList({
                 <p className="flex items-center gap-2 text-sm font-semibold text-foreground">
                   <Wallet className="size-4" />
                   <span>${application.salary} / mes</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                          aria-label="Informacion del salario"
+                        >
+                          <Info className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Salario referencial calculado a la tasa del BCV.</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </p>
 
                 <div className="rounded-xl border border-border/60 bg-background/60 p-3">

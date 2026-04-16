@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
+  Info,
   Loader2,
   MapPin,
   SlidersHorizontal,
@@ -55,6 +56,12 @@ import {
   SheetTrigger,
 } from "react/components/ui/sheet"
 import { Skeleton } from "react/components/ui/skeleton"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "react/components/ui/tooltip"
 import { cn } from "react/lib/utils"
 
 import {
@@ -588,6 +595,20 @@ export default function OfertasClient({
                       <p className="flex items-center gap-2 text-sm font-semibold">
                         <Wallet aria-hidden="true" className="size-4 text-accent" />
                         <span>${offer.salary} / mes</span>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="text-muted-foreground transition-colors hover:text-foreground"
+                                aria-label="Informacion del salario"
+                              >
+                                <Info className="size-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Salario referencial calculado a la tasa del BCV.</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </p>
 
                       <Separator className="my-2" />

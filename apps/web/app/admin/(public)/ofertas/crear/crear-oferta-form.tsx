@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Sparkles, X } from "lucide-react"
+import { Info, Sparkles, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -13,6 +13,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "react/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "react/components/ui/select"
 import { Textarea } from "react/components/ui/textarea"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "react/components/ui/tooltip"
 import { cn } from "react/lib/utils"
 
 type MultiFieldName = "soft_skills" | "technical_skills"
@@ -765,7 +771,23 @@ export default function CrearOfertaForm({
                   }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Salario</FormLabel>
+                      <div className="flex items-center gap-1.5">
+                        <FormLabel>Salario</FormLabel>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button
+                                type="button"
+                                className="text-muted-foreground transition-colors hover:text-foreground"
+                                aria-label="Informacion del salario"
+                              >
+                                <Info className="size-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">Salario referencial calculado a la tasa del BCV.</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <FormControl>
                         <div className="relative">
                           <span className="text-muted-foreground absolute top-1/2 left-3 -translate-y-1/2">$</span>

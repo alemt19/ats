@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BriefcaseBusiness, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
+import { BriefcaseBusiness, Info, MapPin, Sparkles, Tag, Wallet } from "lucide-react"
 
 import { Badge } from "../../../react/components/ui/badge"
 import { Button } from "../../../react/components/ui/button"
@@ -9,6 +9,12 @@ import {
   CardHeader,
   CardTitle,
 } from "../../../react/components/ui/card"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "../../../react/components/ui/tooltip"
 
 type JobOffer = {
   id: number
@@ -103,6 +109,20 @@ export default async function LatestOffersSection() {
                 <p className="flex items-center gap-2 text-sm font-semibold">
                   <Wallet aria-hidden="true" className="size-4 text-accent" />
                   <span>${offer.salary} / mes</span>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-muted-foreground transition-colors hover:text-foreground"
+                          aria-label="Informacion del salario"
+                        >
+                          <Info className="size-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top">Salario referencial calculado a la tasa del BCV.</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 </p>
 
                 <Button asChild className="mt-4 w-full rounded-full shadow-soft">
