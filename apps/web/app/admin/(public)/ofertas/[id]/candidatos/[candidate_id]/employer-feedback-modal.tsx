@@ -62,13 +62,13 @@ export function EmployerFeedbackModal({
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null
-        throw new Error(payload?.message ?? "No se pudo guardar el feedback")
+        throw new Error(payload?.message ?? "No se pudo guardar la retroalimentación")
       }
 
-      toast.success("Feedback guardado")
+      toast.success("Retroalimentación guardada")
       onClose()
     } catch (error) {
-      const message = error instanceof Error ? error.message : "No se pudo guardar el feedback"
+      const message = error instanceof Error ? error.message : "No se pudo guardar la retroalimentación"
       toast.error(message)
     } finally {
       setIsSaving(false)
@@ -123,7 +123,7 @@ export function EmployerFeedbackModal({
           </Button>
           <Button onClick={handleSubmit} disabled={isSaving || overallRating === 0}>
             {isSaving && <Loader2 className="mr-2 size-4 animate-spin" />}
-            Enviar feedback
+            Enviar retroalimentación
           </Button>
         </DialogFooter>
       </DialogContent>

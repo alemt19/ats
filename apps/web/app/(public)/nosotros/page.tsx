@@ -119,7 +119,7 @@ export default async function NosotrosPage() {
       <div className="space-y-2">
         <h1 className="text-3xl font-semibold sm:text-4xl">Nosotros</h1>
         <p className="max-w-2xl text-sm text-muted-foreground sm:text-base">
-          Conoce mas sobre {company.name} y nuestra propuesta para conectar talento con oportunidades.
+          Conoce más sobre {company.name} y nuestra propuesta para conectar talento con oportunidades.
         </p>
       </div>
 
@@ -147,7 +147,7 @@ export default async function NosotrosPage() {
         <CardContent className="space-y-5">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div>
-              <p className="text-sm text-muted-foreground">Pais</p>
+              <p className="text-sm text-muted-foreground">País</p>
               <p className="font-medium">{company.country}</p>
             </div>
             <div>
@@ -161,19 +161,19 @@ export default async function NosotrosPage() {
           </div>
 
           <div>
-            <p className="text-sm text-muted-foreground">Direccion</p>
+            <p className="text-sm text-muted-foreground">Dirección</p>
             <p className="font-medium">{company.address}</p>
           </div>
 
           <Separator />
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Descripcion</p>
+            <p className="text-sm text-muted-foreground">Descripción</p>
             <p className="whitespace-pre-line text-sm leading-relaxed">{company.description}</p>
           </div>
 
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Mision</p>
+            <p className="text-sm text-muted-foreground">Misión</p>
             <p className="whitespace-pre-line text-sm leading-relaxed">{company.mision}</p>
           </div>
 

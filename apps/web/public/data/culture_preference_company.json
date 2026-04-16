@@ -1,7 +1,7 @@
 [
   {
     "technical_name": "dress_code",
-    "display_name": "Codigo de vestimenta",
+    "display_name": "Código de vestimenta",
     "values": [
       {
         "technical_name": "casual",
@@ -16,23 +16,23 @@
       {
         "technical_name": "formal",
         "display_name": "Formal",
-        "description": "Vestimenta tradicional, sobria y de alto protocolo. Requiere el uso de traje completo, corbata, trajes sastre, vestidos formales y zapatos de vestir. Proyecta maxima formalidad."
+        "description": "Vestimenta tradicional, sobria y de alto protocolo. Requiere el uso de traje completo, corbata, trajes sastre, vestidos formales y zapatos de vestir. Proyecta máxima formalidad."
       }
     ]
   },
   {
     "technical_name": "collaboration_style",
-    "display_name": "Estilo de colaboracion",
+    "display_name": "Estilo de colaboración",
     "values": [
       {
         "technical_name": "individual",
         "display_name": "Individual",
-        "description": "Cada persona trabaja en sus tareas de forma independiente. La colaboracion es puntual y acotada."
+        "description": "Cada persona trabaja en sus tareas de forma independiente. La colaboración es puntual y acotada."
       },
       {
         "technical_name": "mixed",
         "display_name": "Mixto",
-        "description": "Se combina tiempo de trabajo individual con instancias de colaboracion en equipo."
+        "description": "Se combina tiempo de trabajo individual con instancias de colaboración en equipo."
       },
       {
         "technical_name": "highly_collaborative",
@@ -53,18 +53,18 @@
       {
         "technical_name": "moderate",
         "display_name": "Moderado",
-        "description": "Ritmo equilibrado. Hay momentos de mayor carga y otros mas tranquilos. Los plazos son razonables y se gestionan con anticipacion. Ocasionalmente puede haber semanas intensas, pero no es la norma."
+        "description": "Ritmo equilibrado. Hay momentos de mayor carga y otros más tranquilos. Los plazos son razonables y se gestionan con anticipación. Ocasionalmente puede haber semanas intensas, pero no es la norma."
       },
       {
         "technical_name": "accelerated",
         "display_name": "Acelerado",
-        "description": "Dinamica rapida y exigente. Los proyectos se mueven con agilidad, hay entregas frecuentes y se valora la velocidad de ejecucion. Es comun gestionar multiples tareas simultaneas y adaptarse a cambios sobre la marcha."
+        "description": "Dinámica rápida y exigente. Los proyectos se mueven con agilidad, hay entregas frecuentes y se valora la velocidad de ejecución. Es común gestionar múltiples tareas simultáneas y adaptarse a cambios sobre la marcha."
       }
     ]
   },
   {
     "technical_name": "level_of_autonomy",
-    "display_name": "Nivel de autonomia",
+    "display_name": "Nivel de autonomía",
     "values": [
       {
         "technical_name": "high_control",

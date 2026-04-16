@@ -54,11 +54,11 @@ const requiredCompanyFields: Array<{ key: "country" | "state" | "city"; label: s
 ]
 
 const requiredPreferenceFields: Array<{ key: PreferenceFieldName; label: string }> = [
-	{ key: "dress_code", label: "Codigo de vestimenta" },
-	{ key: "colaboration_style", label: "Estilo de colaboracion" },
+	{ key: "dress_code", label: "Código de vestimenta" },
+	{ key: "colaboration_style", label: "Estilo de colaboración" },
 	{ key: "work_pace", label: "Ritmo de trabajo" },
-	{ key: "level_of_autonomy", label: "Nivel de autonomia" },
-	{ key: "dealing_with_management", label: "Relacion con la gerencia" },
+	{ key: "level_of_autonomy", label: "Nivel de autonomía" },
+	{ key: "dealing_with_management", label: "Relación con la gerencia" },
 	{ key: "level_of_monitoring", label: "Nivel de monitoreo" },
 ]
 
@@ -220,14 +220,14 @@ export default async function CrearOfertaPage() {
 		companyCity = companyConfigResult.value.initialData.city
 
 		if (missingCompanyItems.length > 0) {
-			blockers.push("Configuracion de empresa incompleta")
+			blockers.push("Configuración de empresa incompleta")
 		}
 	} else {
 		const reason = companyConfigResult.reason
 		if (reason instanceof Error) {
-			blockers.push(`No se pudo validar la configuracion de la empresa: ${reason.message}`)
+			blockers.push(`No se pudo validar la configuración de la empresa: ${reason.message}`)
 		} else {
-			blockers.push("No se pudo validar la configuracion de la empresa")
+			blockers.push("No se pudo validar la configuración de la empresa")
 		}
 	}
 
@@ -241,14 +241,14 @@ export default async function CrearOfertaPage() {
 			.sort((a, b) => a.name.localeCompare(b.name))
 
 		if (categoryOptions.length === 0) {
-			blockers.push("Debe existir al menos una categoria")
+			blockers.push("Debe existir al menos una categoría")
 		}
 	} else {
 		const reason = categoriesResult.reason
 		if (reason instanceof Error) {
-			blockers.push(`No se pudieron validar las categorias: ${reason.message}`)
+			blockers.push(`No se pudieron validar las categorías: ${reason.message}`)
 		} else {
-			blockers.push("No se pudieron validar las categorias")
+			blockers.push("No se pudieron validar las categorías")
 		}
 	}
 
@@ -267,9 +267,9 @@ export default async function CrearOfertaPage() {
 	} else {
 		const reason = offersCatalogsResult.reason
 		if (reason instanceof Error) {
-			blockers.push(`No se pudieron cargar los catalogos de oferta: ${reason.message}`)
+			blockers.push(`No se pudieron cargar los catálogos de oferta: ${reason.message}`)
 		} else {
-			blockers.push("No se pudieron cargar los catalogos de oferta")
+			blockers.push("No se pudieron cargar los catálogos de oferta")
 		}
 	}
 
@@ -279,21 +279,21 @@ export default async function CrearOfertaPage() {
 				<div>
 					<h1 className="text-2xl font-semibold">Crear oferta de trabajo</h1>
 					<p className="text-sm text-muted-foreground">
-						No se puede crear la oferta porque falta completar la configuracion requerida.
+						No se puede crear la oferta porque falta completar la configuración requerida.
 					</p>
 				</div>
 
 				<Card>
 					<CardHeader>
-						<CardTitle>Configuracion pendiente</CardTitle>
+						<CardTitle>Configuración pendiente</CardTitle>
 						<CardDescription>
-							Debes completar la configuracion de la empresa y categorias antes de crear ofertas.
+							Debes completar la configuración de la empresa y categorías antes de crear ofertas.
 						</CardDescription>
 					</CardHeader>
 					<CardContent className="space-y-4 text-sm">
 						{missingCompanyItems.length > 0 ? (
 							<div className="space-y-2">
-								<p className="font-medium">Faltan los siguientes parametros de la empresa:</p>
+								<p className="font-medium">Faltan los siguientes parámetros de la empresa:</p>
 								<ul className="list-disc space-y-1 pl-5 text-muted-foreground">
 									{missingCompanyItems.map((item) => (
 										<li key={item}>{item}</li>
@@ -302,17 +302,17 @@ export default async function CrearOfertaPage() {
 							</div>
 						) : null}
 
-						{blockers.includes("Debe existir al menos una categoria") ? (
+						{blockers.includes("Debe existir al menos una categoría") ? (
 							<p className="text-muted-foreground">
-								Debe existir minimo una categoria creada para poder publicar ofertas.
+								Debe existir mínimo una categoría creada para poder publicar ofertas.
 							</p>
 						) : null}
 
 						{blockers
 							.filter(
 								(blocker) =>
-									blocker !== "Configuracion de empresa incompleta" &&
-									blocker !== "Debe existir al menos una categoria"
+									blocker !== "Configuración de empresa incompleta" &&
+									blocker !== "Debe existir al menos una categoría"
 							)
 							.map((blocker) => (
 								<p key={blocker} className="text-destructive">
@@ -322,10 +322,10 @@ export default async function CrearOfertaPage() {
 
 						<div className="flex flex-wrap gap-2 pt-2">
 							<Button asChild variant="outline">
-								<Link href="/admin/configuracion">Ir a configuracion</Link>
+								<Link href="/admin/configuracion">Ir a configuración</Link>
 							</Button>
 							<Button asChild variant="outline">
-								<Link href="/admin/categorias">Ir a categorias</Link>
+								<Link href="/admin/categorias">Ir a categorías</Link>
 							</Button>
 						</div>
 					</CardContent>

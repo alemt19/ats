@@ -207,7 +207,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                     Panel de reclutamiento
                 </Badge>
                 <div>
-                    <h1 className="text-3xl font-semibold tracking-tight">Dashboard de Reclutamiento</h1>
+                    <h1 className="text-3xl font-semibold tracking-tight">Panel de control de reclutamiento</h1>
                     <p className="text-sm text-foreground/70">Resumen operativo y estado del funnel.</p>
                 </div>
             </div>

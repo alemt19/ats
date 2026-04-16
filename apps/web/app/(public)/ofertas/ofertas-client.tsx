@@ -601,7 +601,7 @@ export default function OfertasClient({
                               <button
                                 type="button"
                                 className="text-muted-foreground transition-colors hover:text-foreground"
-                                aria-label="Informacion del salario"
+                                  aria-label="Información del salario"
                               >
                                 <Info className="size-3.5" />
                               </button>
@@ -627,7 +627,7 @@ export default function OfertasClient({
                       {offer.hasApplied ? (
                         <div className="flex flex-wrap gap-2">
                           <Button asChild size="sm" className="rounded-full">
-                            <Link href="/mi-perfil/postulaciones">Ver mi postulacion</Link>
+                            <Link href="/mi-perfil/postulaciones">Ver mi postulación</Link>
                           </Button>
                           <Button asChild size="sm" variant="outline" className="rounded-full border-primary/35 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
                             <Link href={`/ofertas/${offer.id}`}>Ver detalles</Link>
@@ -635,7 +635,7 @@ export default function OfertasClient({
                         </div>
                       ) : (
                         <Button asChild size="sm" variant="outline" className="rounded-full border-primary/35 bg-card/80 hover:border-primary/45 hover:bg-muted/90">
-                          <Link href={`/ofertas/${offer.id}`}>Ver mas</Link>
+                          <Link href={`/ofertas/${offer.id}`}>Ver más</Link>
                         </Button>
                       )}
                     </CardFooter>

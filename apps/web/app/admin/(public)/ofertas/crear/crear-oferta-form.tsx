@@ -779,7 +779,7 @@ export default function CrearOfertaForm({
                               <button
                                 type="button"
                                 className="text-muted-foreground transition-colors hover:text-foreground"
-                                aria-label="Informacion del salario"
+                                aria-label="Información del salario"
                               >
                                 <Info className="size-3.5" />
                               </button>

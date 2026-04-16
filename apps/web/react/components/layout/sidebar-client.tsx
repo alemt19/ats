@@ -146,7 +146,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                         }}
                     >
                         <LogOut aria-hidden="true" className="mr-2 size-4" />
-                        Logout
+                        Cerrar sesión
                     </Button>
                 </SidebarFooter>
             </Sidebar>

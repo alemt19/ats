@@ -110,7 +110,7 @@ export default function Navbar({ companyName, logoSrc }: NavbarProps) {
               <NavigationMenuItem>
                 <Button asChild className="rounded-full px-5 shadow-elevated transition-transform duration-[240ms] hover:-translate-y-0.5 focus-visible:-translate-y-0.5">
                   <Link href="/ofertas">
-                    <span>Postulate ahora</span>
+                    <span>Postúlate ahora</span>
                   </Link>
                 </Button>
               </NavigationMenuItem>
@@ -238,7 +238,7 @@ export default function Navbar({ companyName, logoSrc }: NavbarProps) {
             </DropdownMenu>
           ) : (
             <Button asChild className="rounded-full px-5">
-              <Link href="/login">Iniciar sesion</Link>
+              <Link href="/login">Iniciar sesión</Link>
             </Button>
           )}
         </div>

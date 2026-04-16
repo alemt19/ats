@@ -3,8 +3,14 @@
 import { z } from 'zod';
 
 export const loginSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(8).max(72),
+	email: z
+		.string()
+		.min(1, 'El correo electrónico es obligatorio')
+		.email('Ingresa un correo válido'),
+	password: z
+		.string()
+		.min(8, 'La contraseña debe tener al menos 8 caracteres')
+		.max(72, 'La contraseña es demasiado larga'),
 });
 
 export type LoginData = z.infer<typeof loginSchema>;

@@ -57,7 +57,7 @@ import type { UserNotification } from "react/lib/notifications"
 
 const adminLinks = [
 	{
-		label: "Dashboard",
+		label: "Panel de control",
 		href: "/admin/dashboard",
 		icon: LayoutDashboard,
 		headOnly: true,
@@ -79,7 +79,7 @@ const adminLinks = [
 		icon: UserSearch,
 	},
 	{
-		label: "Categorias",
+		label: "Categorías",
 		href: "/admin/categorias",
 		icon: Tags,
 	},
@@ -92,7 +92,7 @@ const adminLinks = [
 
 function getAdminBreadcrumbLabel(pathname: string) {
 	if (pathname.startsWith("/admin/dashboard")) {
-		return "Dashboard"
+		return "Panel de control"
 	}
 
 	if (pathname.startsWith("/admin/ofertas")) {
@@ -108,7 +108,7 @@ function getAdminBreadcrumbLabel(pathname: string) {
 	}
 
 	if (pathname.startsWith("/admin/categorias")) {
-		return "Categorias"
+		return "Categorías"
 	}
 
 	if (pathname.startsWith("/admin/configuracion")) {
@@ -131,7 +131,7 @@ function getAdminBreadcrumbLabel(pathname: string) {
 		return "Notificaciones"
 	}
 
-	return "Dashboard"
+	return "Panel de control"
 }
 
 function getAdminBreadcrumbItems(pathname: string) {
@@ -173,7 +173,7 @@ function getAdminBreadcrumbItems(pathname: string) {
 
 	if (pathname.startsWith("/admin/categorias/crear")) {
 		return [
-			{ label: "Categorias", href: "/admin/categorias" },
+			{ label: "Categorías", href: "/admin/categorias" },
 			{ label: "Crear" },
 		]
 	}
@@ -200,7 +200,7 @@ function getAdminBreadcrumbItems(pathname: string) {
 
 	if (categoryDetailMatch && categoryDetailMatch[1]) {
 		return [
-			{ label: "Categorias", href: "/admin/categorias" },
+			{ label: "Categorías", href: "/admin/categorias" },
 			{ label: categoryDetailMatch[1] },
 		]
 	}
@@ -249,8 +249,8 @@ export default function AdminPublicLayoutClient({
 
 	const fullNameValue = user?.name ?? ""
 	const [firstNamePart, ...lastNameParts] = fullNameValue.trim().split(/\s+/).filter(Boolean)
-	const firstName = firstNamePart ?? "Admin"
-	const lastName = lastNameParts.join(" ") || "User"
+	const firstName = firstNamePart ?? "Administrador"
+	const lastName = lastNameParts.join(" ") || "Usuario"
 	const fullName = `${firstName} ${lastName}`.trim()
 	const adminEmail = user?.email ?? "admin@empresa.com"
 	const adminImage = user?.image ?? undefined
@@ -410,7 +410,7 @@ export default function AdminPublicLayoutClient({
 								}}
 							>
 								<LogOut aria-hidden="true" className="mr-2 size-4" />
-								Logout
+								Cerrar sesión
 							</Button>
 						</>
 					)}
@@ -424,7 +424,7 @@ export default function AdminPublicLayoutClient({
 						<Breadcrumb>
 							<BreadcrumbList>
 								<BreadcrumbItem>
-									<BreadcrumbLink href={defaultAdminRoute}>Admin</BreadcrumbLink>
+									<BreadcrumbLink href={defaultAdminRoute}>Administración</BreadcrumbLink>
 								</BreadcrumbItem>
 								{breadcrumbItems.map((item, index) => {
 									const isLast = index === breadcrumbItems.length - 1

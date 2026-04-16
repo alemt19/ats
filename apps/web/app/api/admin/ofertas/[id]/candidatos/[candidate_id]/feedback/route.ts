@@ -34,7 +34,7 @@ export async function POST(request: Request, context: RouteContext) {
 
   if (!response.ok) {
     const message =
-      (backendPayload as { message?: string } | null)?.message ?? "No se pudo guardar el feedback"
+      (backendPayload as { message?: string } | null)?.message ?? "No se pudo guardar la retroalimentación"
     return NextResponse.json({ message }, { status: response.status })
   }
 

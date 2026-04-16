@@ -131,7 +131,7 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       workplaceTypes: [
         { technical_name: "onsite", display_name: "Presencial" },
         { technical_name: "remote", display_name: "Remoto" },
-        { technical_name: "hybrid", display_name: "Hibrido" },
+        { technical_name: "hybrid", display_name: "Híbrido" },
       ],
       employmentTypes: [
         { technical_name: "full_time", display_name: "Tiempo completo" },

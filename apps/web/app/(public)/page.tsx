@@ -25,16 +25,16 @@ import LatestOffersSectionSkeleton from "./components/latest-offers-section-skel
 const processSteps = [
   {
     title: "Crea tu cuenta",
-    description: "Crea tu cuenta en minutos con tu correo electronico",
+    description: "Crea tu cuenta en minutos con tu correo electrónico",
     icon: UserPlus,
   },
   {
     title: "Completa tu perfil",
-    description: "Muestra habilidades tecnicas, blandas, valores y preferencia de entorno laboral.",
+    description: "Muestra habilidades técnicas, blandas, valores y preferencia de entorno laboral.",
     icon: BrainCircuit,
   },
   {
-    title: "Conectate con oportunidades",
+    title: "Conéctate con oportunidades",
     description: "Te presentamos nuestras oportunidades laborales para que apliques.",
     icon: Network,
   },
@@ -53,13 +53,13 @@ export default function PublicPage() {
                     <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
                         <div className="max-w-2xl space-y-4 text-white md:space-y-6">
                             <h1 className="text-3xl leading-tight font-bold sm:text-4xl md:text-5xl lg:text-6xl text-neutral-200">
-                                Tu Potencial es Nuestro Próximo Exito
+                              Tu Potencial es Nuestro Próximo Éxito
                             </h1>
                             <p className="text-sm leading-relaxed text-white/95 sm:text-base md:text-lg">
-                                Unete a un proceso de seleccion justo e innovador que valora tus habilidades reales
+                              Únete a un proceso de selección justo e innovador que valora tus habilidades reales
                             </p>
                             <Button asChild >
-                                <Link href="/ofertas">Postulate Ahora</Link>
+                              <Link href="/ofertas">Postúlate ahora</Link>
                             </Button>
                         </div>
                     </div>
@@ -125,7 +125,7 @@ export default function PublicPage() {
 
           <Card className="gradient-border animate-fade-in overflow-hidden rounded-3xl bg-card/95 shadow-elevated">
             <CardHeader className="space-y-4 pb-2">
-              <Badge className="w-fit rounded-full bg-accent text-accent-foreground">Command Center</Badge>
+              <Badge className="w-fit rounded-full bg-accent text-accent-foreground">Centro de control</Badge>
               <CardTitle className="text-3xl leading-tight sm:text-4xl">
                 Candidaturas con senal real, no solo palabras clave
               </CardTitle>
@@ -134,7 +134,7 @@ export default function PublicPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/80 p-3">
                   <Gauge aria-hidden="true" className="size-5 text-primary" />
-                  <p className="text-sm text-foreground/90">Scoring de perfil por compatibilidad y madurez profesional.</p>
+                  <p className="text-sm text-foreground/90">Puntaje de perfil por compatibilidad y madurez profesional.</p>
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/80 p-3">
                   <ShieldCheck aria-hidden="true" className="size-5 text-accent" />
@@ -142,7 +142,7 @@ export default function PublicPage() {
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/80 p-3">
                   <CheckCircle2 aria-hidden="true" className="size-5 text-primary" />
-                  <p className="text-sm text-foreground/90">Feedback util para mejorar tu proximo paso profesional.</p>
+                  <p className="text-sm text-foreground/90">Retroalimentación util para mejorar tu proximo paso profesional.</p>
                 </div>
               </div>
 
@@ -182,7 +182,7 @@ export default function PublicPage() {
             </Badge>
             <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Un flujo simple y medible</h2>
             <p className="mt-4 text-base sm:text-lg">
-              Nuestro proceso esta diseñado para ser simple, transparente, enfocado en tu talento
+              Nuestro proceso está diseñado para ser simple, transparente y enfocado en tu talento.
             </p>
           </div>
 
@@ -216,9 +216,9 @@ export default function PublicPage() {
             <Badge variant="outline" className="mb-4 rounded-full border-accent/35 bg-accent/12 text-accent">
               Valor diferencial
             </Badge>
-            <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Benificios para el candidato</h2>
+            <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Beneficios para el candidato</h2>
             <p className="mt-4 text-base sm:text-lg">
-              Creemos en un proceso de seleccion que te valora y te impulsa a crecer.
+              Creemos en un proceso de selección que te valora y te impulsa a crecer.
             </p>
           </div>
 
@@ -236,7 +236,7 @@ export default function PublicPage() {
               </AspectRatio>
               <h3 className="mt-4 text-2xl font-semibold">Enfocado en el valor</h3>
               <p className="mt-2 text-muted-foreground">
-                Valoramos no solo tus habilidades tecnicas, sino tambien tus habilidades blandas y ajuste cultural con nuestra organizacion.
+                Valoramos no solo tus habilidades técnicas, sino también tus habilidades blandas y ajuste cultural con nuestra organización.
               </p>
             </article>
 
@@ -253,7 +253,7 @@ export default function PublicPage() {
               </AspectRatio>
               <h3 className="mt-4 text-2xl font-semibold">Proceso justo y sin sesgos</h3>
               <p className="mt-2 text-muted-foreground">
-                Utilizamos tecnologia para garantizar igualdad de oportunidades para todos
+                Utilizamos tecnología para garantizar igualdad de oportunidades para todos.
               </p>
             </article>
 
@@ -262,7 +262,7 @@ export default function PublicPage() {
                 <div>
                   <h3 className="text-2xl font-semibold">Conexiones de calidad con empresas reales</h3>
                   <p className="mt-2 text-muted-foreground">
-                    Te conectamos con las mejores oportunidades laborales de venezuela
+                    Te conectamos con las mejores oportunidades laborales de Venezuela
                   </p>
                   <Button asChild variant="outline" className="mt-5 rounded-full border-primary/35 bg-primary/8">
                     <Link href="/ofertas" className="gap-2">

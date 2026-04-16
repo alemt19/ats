@@ -70,7 +70,7 @@ export default async function LatestOffersSection() {
           <Badge variant="outline" className="mb-4 rounded-full border-primary/35 bg-primary/10 text-primary">
             Vacantes activas
           </Badge>
-          <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Ultimas ofertas</h2>
+          <h2 className="text-3xl font-semibold tracking-tight sm:text-5xl">Últimas ofertas</h2>
           <p className="mt-4 text-base sm:text-lg">
             Encuentra oportunidades activas.
           </p>
@@ -115,7 +115,7 @@ export default async function LatestOffersSection() {
                         <button
                           type="button"
                           className="text-muted-foreground transition-colors hover:text-foreground"
-                          aria-label="Informacion del salario"
+                          aria-label="Información del salario"
                         >
                           <Info className="size-3.5" />
                         </button>

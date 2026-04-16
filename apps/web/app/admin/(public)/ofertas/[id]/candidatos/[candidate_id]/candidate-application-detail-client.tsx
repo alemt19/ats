@@ -690,7 +690,7 @@ export default function CandidateApplicationDetailClient({
             {(feedback.employer || feedback.candidate) && (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Feedback de experiencia</CardTitle>
+                  <CardTitle className="text-base">Retroalimentación de experiencia</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {feedback.employer && (

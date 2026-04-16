@@ -241,7 +241,7 @@ function buildEvaluationTimeline(status: ApplicationInfoResponse["evaluationStat
 			},
 			{
 				title: "Resultado disponible",
-				description: "Ya puedes revisar compatibilidad y feedback.",
+				description: "Ya puedes revisar compatibilidad y retroalimentación.",
 				state: "done",
 			},
 		]
@@ -281,7 +281,7 @@ function buildEvaluationTimeline(status: ApplicationInfoResponse["evaluationStat
 			},
 			{
 				title: "Evaluación con error",
-				description: "Tuvimos un problema temporal. Intenta revisar mas tarde.",
+				description: "Tuvimos un problema temporal. Intenta revisar más tarde.",
 				state: "error",
 			},
 		]
@@ -300,7 +300,7 @@ function buildEvaluationTimeline(status: ApplicationInfoResponse["evaluationStat
 		},
 		{
 			title: "Resultado disponible",
-			description: "Verás feedback y ofertas similares al finalizar.",
+			description: "Verás retroalimentación y ofertas similares al finalizar.",
 			state: "upcoming",
 		},
 	]
@@ -722,7 +722,7 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 										<button
 											type="button"
 											className="text-muted-foreground transition-colors hover:text-foreground"
-											aria-label="Informacion del salario"
+											aria-label="Información del salario"
 										>
 											<Info className="size-3.5" />
 										</button>
@@ -875,7 +875,7 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 									<div className="rounded-xl border border-border/70 bg-background/70 p-3">
 										<p className="text-sm font-semibold text-foreground">Cobertura de datos</p>
 										<p className="mt-1 text-xs text-muted-foreground">
-											{availableScoreCount}/4 dimensiones con puntaje y {aiFeedbackEntries.length} secciones de feedback.
+											{availableScoreCount}/4 dimensiones con puntaje y {aiFeedbackEntries.length} secciones de retroalimentación.
 										</p>
 									</div>
 								</div>
@@ -910,7 +910,7 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 											</div>
 										))
 									) : (
-										<p className="text-sm text-muted-foreground">No hay secciones de feedback disponibles para esta evaluación.</p>
+										<p className="text-sm text-muted-foreground">No hay secciones de retroalimentación disponibles para esta evaluación.</p>
 									)}
 								</div>
 

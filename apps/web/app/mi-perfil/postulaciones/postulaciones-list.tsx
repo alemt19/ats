@@ -142,7 +142,7 @@ function buildRecommendationReasons(application: JobApplication, similarJob: Sim
     typeof similarJob.match_technical_score === "number" &&
     similarJob.match_technical_score >= 0.7
   ) {
-    reasons.push("Buena afinidad tecnica")
+    reasons.push("Buena afinidad técnica")
   }
 
   if (
@@ -211,13 +211,13 @@ function CandidateFeedbackSection({ applicationId }: CandidateFeedbackSectionPro
 
       if (!response.ok) {
         const payload = (await response.json().catch(() => null)) as { message?: string } | null
-        throw new Error(payload?.message ?? "No se pudo guardar el feedback")
+        throw new Error(payload?.message ?? "No se pudo guardar la retroalimentación")
       }
 
       setSubmitted(true)
-      toast.success("¡Gracias por tu feedback!")
+      toast.success("¡Gracias por tu retroalimentación!")
     } catch (error) {
-      const message = error instanceof Error ? error.message : "No se pudo guardar el feedback"
+      const message = error instanceof Error ? error.message : "No se pudo guardar la retroalimentación"
       toast.error(message)
     } finally {
       setIsSaving(false)
@@ -262,7 +262,7 @@ function CandidateFeedbackSection({ applicationId }: CandidateFeedbackSectionPro
         disabled={isSaving || overallRating === 0}
       >
         {isSaving && <Loader2 className="mr-2 size-4 animate-spin" />}
-        Enviar feedback
+        Enviar retroalimentación
       </Button>
     </div>
   )
@@ -528,7 +528,7 @@ export default function PostulacionesList({
                         <button
                           type="button"
                           className="text-muted-foreground transition-colors hover:text-foreground"
-                          aria-label="Informacion del salario"
+                              aria-label="Información del salario"
                         >
                           <Info className="size-3.5" />
                         </button>

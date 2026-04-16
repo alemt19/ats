@@ -211,7 +211,7 @@ export class JobsService {
       case 'onsite':
         return 'Presencial';
       case 'hybrid':
-        return 'Hibrido';
+        return 'Híbrido';
       default:
         return value;
     }
@@ -226,7 +226,7 @@ export class JobsService {
       case 'contract':
         return 'Contrato';
       case 'internship':
-        return 'Pasantia';
+        return 'Pasantía';
       default:
         return value;
     }
