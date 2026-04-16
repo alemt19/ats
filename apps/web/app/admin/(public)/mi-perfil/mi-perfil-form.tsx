@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "react/components/ui/select"
 import { Textarea } from "react/components/ui/textarea"
+import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 import type {
   AdminProfile,
@@ -37,6 +38,7 @@ type MiPerfilFormValues = {
   lastname: string
   birth_date: string
   email: string
+  dni_prefix: DniPrefix
   dni: string
   phone: string
   phone_prefix: string
@@ -79,6 +81,8 @@ function roleLabel(technicalName: string, catalogs: AdminProfileCatalogsResponse
 export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
+  const parsedDni = splitDni(initialProfile.dni)
+
   const [avatarPreview, setAvatarPreview] = React.useState<string>(
     initialProfile.profile_picture || ""
   )
@@ -90,7 +94,8 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
     lastname: initialProfile.lastname,
     birth_date: initialProfile.birth_date,
     email: initialProfile.email,
-    dni: initialProfile.dni,
+    dni_prefix: parsedDni.prefix,
+    dni: parsedDni.number,
     phone: extractPhoneNumber(initialProfile.phone, catalogs.country_phone_prefix),
     phone_prefix: catalogs.country_phone_prefix,
     role: initialProfile.role,
@@ -120,6 +125,8 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       return (await response.json()) as AdminProfile
     },
     onSuccess: (updated) => {
+      const nextDni = splitDni(updated.dni)
+
       setAvatarPreview(updated.profile_picture || "")
       setValues((previous) => ({
         ...previous,
@@ -127,7 +134,8 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
         name: updated.name,
         lastname: updated.lastname,
         birth_date: updated.birth_date,
-        dni: updated.dni,
+        dni_prefix: nextDni.prefix,
+        dni: nextDni.number,
         phone: extractPhoneNumber(updated.phone, previous.phone_prefix),
         country: updated.country,
         state: updated.state,
@@ -188,10 +196,16 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
 
     const payload = new FormData()
 
+    const dniValidation = validateDni(values.dni_prefix, values.dni)
+    if (dniValidation) {
+      toast.error(dniValidation)
+      return
+    }
+
     payload.append("name", values.name)
     payload.append("lastname", values.lastname)
     payload.append("birth_date", values.birth_date)
-    payload.append("dni", values.dni)
+    payload.append("dni", buildDni(values.dni_prefix, values.dni))
     payload.append("phone", values.phone)
     payload.append("phone_prefix", values.phone_prefix)
     payload.append("state", values.state)
@@ -293,7 +307,37 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
 
               <div className="space-y-2">
                 <Label htmlFor="dni" className="text-sm font-medium text-foreground/85">Cédula</Label>
-                <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
+                <div className="flex gap-2">
+                  <Select
+                    value={values.dni_prefix}
+                    onValueChange={(value) => {
+                      setValues((previous) => ({
+                        ...previous,
+                        dni_prefix: value as DniPrefix,
+                      }))
+                    }}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue placeholder="Prefijo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="V">V</SelectItem>
+                      <SelectItem value="E">E</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="dni"
+                    value={values.dni}
+                    inputMode="numeric"
+                    onChange={(event) => {
+                      const digitsOnly = event.target.value.replace(/\D/g, "")
+                      setValues((previous) => ({
+                        ...previous,
+                        dni: digitsOnly,
+                      }))
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

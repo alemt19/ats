@@ -21,6 +21,7 @@ import {
 } from "react/components/ui/select"
 import { Skeleton } from "react/components/ui/skeleton"
 import { Textarea } from "react/components/ui/textarea"
+import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 import {
   type Recruiter,
@@ -39,6 +40,7 @@ type RecruiterFormValues = {
   email: string
   password: string
   birth_date: string
+  dni_prefix: DniPrefix
   dni: string
   phone: string
   phone_prefix: string
@@ -58,6 +60,7 @@ const EMPTY_VALUES: RecruiterFormValues = {
   email: "",
   password: "",
   birth_date: "",
+  dni_prefix: "V",
   dni: "",
   phone: "",
   phone_prefix: "",
@@ -94,6 +97,8 @@ function extractPhoneNumber(phone: string, prefix: string) {
 }
 
 function valuesFromRecruiter(recruiter: Recruiter, phonePrefix: string): RecruiterFormValues {
+  const parsedDni = splitDni(recruiter.dni)
+
   return {
     profile_picture: recruiter.profile_picture?.trim?.() ?? "",
     name: recruiter.name?.trim?.() ?? "",
@@ -101,7 +106,8 @@ function valuesFromRecruiter(recruiter: Recruiter, phonePrefix: string): Recruit
     email: recruiter.email?.trim?.() ?? "",
     password: "",
     birth_date: recruiter.birth_date?.trim?.() ?? "",
-    dni: recruiter.dni?.trim?.() ?? "",
+    dni_prefix: parsedDni.prefix,
+    dni: parsedDni.number,
     phone: extractPhoneNumber(recruiter.phone, phonePrefix),
     phone_prefix: phonePrefix,
     role: recruiter.role?.trim?.() ?? "",
@@ -419,6 +425,12 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
     const payload = new FormData()
 
+    const dniValidation = validateDni(values.dni_prefix, values.dni)
+    if (dniValidation) {
+      toast.error(dniValidation)
+      return
+    }
+
     payload.append("name", values.name)
     payload.append("lastname", values.lastname)
     payload.append("email", values.email)
@@ -427,7 +439,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       payload.append("password", values.password)
     }
 
-    payload.append("dni", values.dni)
+    payload.append("dni", buildDni(values.dni_prefix, values.dni))
     payload.append("birth_date", values.birth_date)
     payload.append("phone", values.phone)
     payload.append("phone_prefix", values.phone_prefix)
@@ -556,7 +568,37 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
               <div className="space-y-2">
                 <Label htmlFor="dni">Cedula</Label>
-                <Input id="dni" value={values.dni} onChange={handleInputChange("dni")} />
+                <div className="flex gap-2">
+                  <Select
+                    value={values.dni_prefix}
+                    onValueChange={(value) => {
+                      setValues((previous) => ({
+                        ...previous,
+                        dni_prefix: value as DniPrefix,
+                      }))
+                    }}
+                  >
+                    <SelectTrigger className="w-20">
+                      <SelectValue placeholder="Prefijo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="V">V</SelectItem>
+                      <SelectItem value="E">E</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    id="dni"
+                    value={values.dni}
+                    inputMode="numeric"
+                    onChange={(event) => {
+                      const digitsOnly = event.target.value.replace(/\D/g, "")
+                      setValues((previous) => ({
+                        ...previous,
+                        dni: digitsOnly,
+                      }))
+                    }}
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

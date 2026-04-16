@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "react/components/ui/table"
+import { formatDniDisplay } from "react/lib/dni"
 import { cn } from "react/lib/utils"
 
 import {
@@ -227,7 +228,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
                     >
                       <TableCell className="font-medium">{`${candidate.name} ${candidate.lastname}`}</TableCell>
                       <TableCell>{candidate.email}</TableCell>
-                      <TableCell>{candidate.dni || "-"}</TableCell>
+                      <TableCell>{formatDniDisplay(candidate.dni)}</TableCell>
                       <TableCell className="w-12 text-center">
                         <div className="flex items-center justify-center">
                           <Button variant="ghost" size="icon" asChild className="rounded-full">

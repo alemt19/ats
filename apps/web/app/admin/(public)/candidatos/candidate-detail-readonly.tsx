@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "react/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "react/components/ui/tabs"
+import { formatDniDisplay } from "react/lib/dni"
 import { cn } from "react/lib/utils"
 
 import type { Candidate, CandidateApplication } from "./candidates-admin-types"
@@ -231,7 +232,7 @@ export default function CandidateDetailReadonly({
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Cedula</p>
-                <p className="font-medium">{candidate.dni || "-"}</p>
+                <p className="font-medium">{formatDniDisplay(candidate.dni)}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Correo</p>

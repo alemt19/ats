@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
+import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 export type Country = {
   id: string
@@ -160,6 +161,7 @@ export default function MisDatosForm({
   const resolvedStateId = resolvedState?.id ?? ""
   const resolvedCity = findCityByStoredValue(initialProfile.city, resolvedStateId)
   const resolvedPhone = stripCountryCode(initialProfile.phone ?? "", resolvedCountry?.phonecode)
+  const initialDni = splitDni(initialProfile.dni)
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -167,6 +169,7 @@ export default function MisDatosForm({
     initialProfile.profile_picture ?? ""
   )
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
+  const [dniPrefix, setDniPrefix] = React.useState<DniPrefix>(initialDni.prefix)
 
   const form = useForm<ProfileFormValues>({
     defaultValues: {
@@ -180,7 +183,7 @@ export default function MisDatosForm({
       address: initialProfile.address ?? "",
       contact_page: initialProfile.contact_page ?? "",
       phone: resolvedPhone,
-      dni: initialProfile.dni ?? "",
+      dni: initialDni.number,
     },
   })
 
@@ -207,6 +210,12 @@ export default function MisDatosForm({
   const phonePrefix = selectedCountry?.phonecode ? `+${selectedCountry.phonecode}` : ""
 
   const onSubmit = async (values: ProfileFormValues) => {
+    const dniValidation = validateDni(dniPrefix, values.dni)
+    if (dniValidation) {
+      form.setError("dni", { type: "validate", message: dniValidation })
+      return
+    }
+
     let profilePicture = avatarPreview.startsWith("blob:")
       ? initialProfile.profile_picture ?? null
       : avatarPreview || null
@@ -256,7 +265,7 @@ export default function MisDatosForm({
       phone: normalizedLocalPhone
         ? (phonePrefix ? `${phonePrefix}${normalizedLocalPhone}` : normalizedLocalPhone)
         : null,
-      dni: values.dni || null,
+      dni: buildDni(dniPrefix, values.dni) || null,
     }
 
     try {
@@ -525,12 +534,33 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="dni"
+              rules={{
+                validate: (value) => validateDni(dniPrefix, value) ?? true,
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Cédula</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Documento de identidad" {...field} />
-                  </FormControl>
+                  <div className="flex gap-2">
+                    <Select value={dniPrefix} onValueChange={(value) => setDniPrefix(value as DniPrefix)}>
+                      <FormControl>
+                        <SelectTrigger className="w-20">
+                          <SelectValue placeholder="Prefijo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="V">V</SelectItem>
+                        <SelectItem value="E">E</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormControl>
+                      <Input
+                        placeholder="Documento de identidad"
+                        inputMode="numeric"
+                        value={field.value}
+                        onChange={(event) => field.onChange(event.target.value.replace(/\D/g, ""))}
+                      />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

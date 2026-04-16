@@ -25,6 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "react/components/ui/table"
+import { formatDniDisplay } from "react/lib/dni"
 import { cn } from "react/lib/utils"
 
 import {
@@ -224,7 +225,7 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
                     >
                       <TableCell className="font-medium">{`${recruiter.name} ${recruiter.lastname}`}</TableCell>
                       <TableCell>{recruiter.email}</TableCell>
-                      <TableCell>{recruiter.dni || "-"}</TableCell>
+                      <TableCell>{formatDniDisplay(recruiter.dni)}</TableCell>
                       <TableCell>
                         <Badge variant={recruiter.role === "head_of_recruiters" ? "default" : "secondary"}>
                           {getRoleLabel(recruiter.role)}
