@@ -567,7 +567,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dni">Cedula</Label>
+                <Label htmlFor="dni">Cédula</Label>
                 <div className="flex gap-2">
                   <Select
                     value={values.dni_prefix}

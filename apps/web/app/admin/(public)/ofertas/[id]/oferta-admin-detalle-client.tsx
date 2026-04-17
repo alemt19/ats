@@ -657,7 +657,7 @@ export default function OfertaAdminDetalleClient({
             <Card className="gradient-border sticky top-6 hidden h-fit rounded-2xl border border-border/70 bg-card/90 shadow-soft lg:block">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-base">Filtros avanzados</CardTitle>
-                <p className="text-muted-foreground text-xs">Ajusta rangos y status de candidatos.</p>
+                <p className="text-muted-foreground text-xs">Ajusta rangos y estado de candidatos.</p>
               </CardHeader>
               <CardContent>
                 <ScoreFilterPanel
@@ -721,7 +721,7 @@ export default function OfertaAdminDetalleClient({
                       <SheetContent side="left" className="w-full max-w-xs border-border/70 bg-card/95">
                         <SheetHeader>
                           <SheetTitle>Filtros avanzados</SheetTitle>
-                          <SheetDescription>Ajusta rangos y status de candidatos.</SheetDescription>
+                          <SheetDescription>Ajusta rangos y estado de candidatos.</SheetDescription>
                         </SheetHeader>
                         <div className="p-4">
                           <ScoreFilterPanel

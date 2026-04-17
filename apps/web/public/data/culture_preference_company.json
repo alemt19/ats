@@ -69,17 +69,17 @@
       {
         "technical_name": "high_control",
         "display_name": "Alto control",
-        "description": "Los metodos, procesos y pasos a seguir estan predefinidos por la jefatura o la organizacion. La persona debe ajustarse a procedimientos establecidos sin margen para modificar la forma de trabajar."
+        "description": "Los métodos, procesos y pasos a seguir están predefinidos por la jefatura o la organización. La persona debe ajustarse a procedimientos establecidos sin margen para modificar la forma de trabajar."
       },
       {
         "technical_name": "balanced",
         "display_name": "Equilibrado",
-        "description": "Hay libertad para proponer y elegir metodos, siempre dentro de ciertos lineamientos o buenas practicas definidas. La persona puede organizar su trabajo mientras cumpla los objetivos."
+        "description": "Hay libertad para proponer y elegir métodos, siempre dentro de ciertos lineamientos o buenas prácticas definidas. La persona puede organizar su trabajo mientras cumpla los objetivos."
       },
       {
         "technical_name": "total_freedom",
         "display_name": "Total libertad",
-        "description": "La persona decide completamente como abordar su trabajo: que metodos usar, que herramientas emplear y como organizar sus tareas. Solo importa que el valor prometido sea entregado."
+        "description": "La persona decide completamente como abordar su trabajo: que métodos usar, que herramientas emplear y como organizar sus tareas. Solo importa que el valor prometido sea entregado."
       }
     ]
   },
@@ -90,28 +90,28 @@
       {
         "technical_name": "strictly_professional",
         "display_name": "Estrictamente profesional",
-        "description": "La relacion es estrictamente profesional. Solo se habla de trabajo. Trato formal, con distancia. No hay espacio para temas personales ni confianza mas alla de lo laboral."
+        "description": "La relación es estrictamente profesional. Solo se habla de trabajo. Trato formal, con distancia. No hay espacio para temas personales ni confianza más allá de lo laboral."
       },
       {
         "technical_name": "friendly_and_approachable",
         "display_name": "Cordial y accesible",
-        "description": "Hay confianza para hablar de temas personales, bromear. Se valora a la persona, no solo al empleado. La jerarquia existe pero no impide la cercania."
+        "description": "Hay confianza para hablar de temas personales, bromear. Se valora a la persona, no solo al empleado. La jerarquía existe pero no impide la cercanía."
       },
       {
         "technical_name": "nearby",
         "display_name": "Cercano",
-        "description": "Los jefes son uno mas del equipo. Hay amistad genuina, se juntan fuera del horario laboral, y existe un vinculo afectivo real."
+        "description": "Los jefes son uno más del equipo. Hay amistad genuina, se juntan fuera del horario laboral, y existe un vínculo afectivo real."
       }
     ]
   },
   {
     "technical_name": "level_of_monitoring",
-    "display_name": "Nivel de supervision",
+    "display_name": "Nivel de supervisión",
     "values": [
       {
         "technical_name": "daily_monitoring",
         "display_name": "Seguimiento diario",
-        "description": "Revision de tareas cada dia. Reuniones matutinas o reportes de cierre y supervision constante de cada actividad."
+        "description": "Revisión de tareas cada día. Reuniones matutinas o reportes de cierre y supervisión constante de cada actividad."
       },
       {
         "technical_name": "frequent_monitoring",
@@ -121,17 +121,17 @@
       {
         "technical_name": "weekly_goals",
         "display_name": "Objetivos semanales",
-        "description": "Se planifica la semana. Reunion inicial para definir metas y una reunion de cierre para evaluar."
+        "description": "Se planifica la semana. Reunión inicial para definir metas y una reunión de cierre para evaluar."
       },
       {
         "technical_name": "biweekly_goals",
         "display_name": "Objetivos quincenales",
-        "description": "Se requieren reportes cada 15 dias. Se definen objetivos a mediano plazo y se revisan en conjunto."
+        "description": "Se requieren reportes cada 15 días. Se definen objetivos a mediano plazo y se revisan en conjunto."
       },
       {
         "technical_name": "total_trust",
         "display_name": "Total confianza",
-        "description": "Sin seguimiento programado. Se evalua por resultados. Libertad absoluta para organizar el trabajo."
+        "description": "Sin seguimiento programado. Se evalúa por resultados. Libertad absoluta para organizar el trabajo."
       }
     ]
   }

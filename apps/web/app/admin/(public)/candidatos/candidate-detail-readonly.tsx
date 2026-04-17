@@ -231,7 +231,7 @@ export default function CandidateDetailReadonly({
                 <p className="font-medium">{candidate.phone || "-"}</p>
               </div>
               <div>
-                <p className="text-muted-foreground text-sm">Cedula</p>
+                <p className="text-muted-foreground text-sm">Cédula</p>
                 <p className="font-medium">{formatDniDisplay(candidate.dni)}</p>
               </div>
               <div>

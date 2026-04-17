@@ -81,7 +81,7 @@ export class NotificationsService implements OnModuleInit {
           return null;
         }
 
-        const title = 'Tu postulacion sigue sin cambios';
+        const title = 'Tu postulación sigue sin cambios';
         const jobTitle = application.jobs?.title?.trim() || 'la oferta seleccionada';
 
         return {
@@ -90,7 +90,7 @@ export class NotificationsService implements OnModuleInit {
           entity_type: 'application',
           entity_id: application.id,
           title,
-          message: `Tu postulacion a ${jobTitle} sigue en estado Postulado desde hace ${staleDays} dias. Actualiza tu perfil para mejorar tus oportunidades.`,
+          message: `Tu postulación a ${jobTitle} sigue en estado Postulado desde hace ${staleDays} días. Actualiza tu perfil para mejorar tus oportunidades.`,
           metadata: {
             stale_days: staleDays,
             job_id: application.jobs?.id ?? null,
@@ -163,7 +163,7 @@ export class NotificationsService implements OnModuleInit {
             entity_type: 'job',
             entity_id: job.id,
             title,
-            message: `La oferta ${offerTitle} lleva al menos ${staleDays} dias publicada y aun no tiene postulaciones.`,
+            message: `La oferta ${offerTitle} lleva al menos ${staleDays} días publicada y aún no tiene postulaciones.`,
             metadata: {
               stale_days: staleDays,
               job_title: job.title,

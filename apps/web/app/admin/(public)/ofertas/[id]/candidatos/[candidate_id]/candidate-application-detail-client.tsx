@@ -502,7 +502,7 @@ export default function CandidateApplicationDetailClient({
             <Card>
               <CardHeader className="gap-1">
                 <CardTitle className="text-base">Estado de postulación</CardTitle>
-                <CardDescription>Cambia el status de la aplicación</CardDescription>
+                <CardDescription>Cambia el estado de la aplicación</CardDescription>
               </CardHeader>
               <CardContent>
                 <Select

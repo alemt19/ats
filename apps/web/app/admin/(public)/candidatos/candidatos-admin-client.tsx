@@ -198,7 +198,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="normal">Candidatos normales</SelectItem>
-                <SelectItem value="hired">Solo contratados</SelectItem>
+                <SelectItem value="hired">Sólo contratados</SelectItem>
               </SelectContent>
             </Select>
           </div>

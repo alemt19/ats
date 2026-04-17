@@ -1069,7 +1069,7 @@ export default function CrearOfertaForm({
 
               {isRestrictedEditMode ? (
                 <p className="text-sm text-muted-foreground">
-                  En ofertas que no estan en borrador no se pueden modificar habilidades ni pesos.
+                  {/* En ofertas que no estan en borrador no se pueden modificar habilidades ni pesos. */}
                 </p>
               ) : null}
 
