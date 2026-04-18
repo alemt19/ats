@@ -681,7 +681,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Título</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Backend Engineer" disabled={isRestrictedEditMode} {...field} />
+                        <Input placeholder="Ej. Ingeniero de backend" disabled={isRestrictedEditMode} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -696,7 +696,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Puesto</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Senior" disabled={isRestrictedEditMode} {...field} />
+                        <Input placeholder="Ej. Nivel avanzado" disabled={isRestrictedEditMode} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
