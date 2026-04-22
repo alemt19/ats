@@ -139,6 +139,23 @@ function parseSalaryOrNull(value: string) {
   return parsed > 0 ? parsed : null
 }
 
+function sanitizeDecimalInput(value: string) {
+  const normalized = value.replace(/,/g, ".").replace(/[^0-9.]/g, "")
+  const [integerPart, ...decimalParts] = normalized.split(".")
+
+  if (decimalParts.length === 0) {
+    return integerPart
+  }
+
+  return `${integerPart}.${decimalParts.join("")}`
+}
+
+function handleDecimalKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+  if (["-", "+", "e", "E", ","].includes(event.key)) {
+    event.preventDefault()
+  }
+}
+
 function getDisplayName(options: JobParameterOption[], technicalName: string) {
   return options.find((option) => option.technical_name === technicalName)?.display_name ?? technicalName
 }
@@ -972,11 +989,17 @@ export default function CrearOfertaForm({
                       <FormLabel>Peso de habilidades técnicas</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           step="0.01"
                           placeholder="0.00"
                           disabled={isRestrictedEditMode}
-                          {...field}
+                          value={field.value}
+                          onKeyDown={handleDecimalKeyDown}
+                          onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -996,11 +1019,17 @@ export default function CrearOfertaForm({
                       <FormLabel>Peso de habilidades Blandas</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           step="0.01"
                           placeholder="0.00"
                           disabled={isRestrictedEditMode}
-                          {...field}
+                          value={field.value}
+                          onKeyDown={handleDecimalKeyDown}
+                          onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1020,11 +1049,17 @@ export default function CrearOfertaForm({
                       <FormLabel>Peso de alineación cultural</FormLabel>
                       <FormControl>
                         <Input
-                          type="number"
+                          type="text"
+                          inputMode="decimal"
                           step="0.01"
                           placeholder="0.00"
                           disabled={isRestrictedEditMode}
-                          {...field}
+                          value={field.value}
+                          onKeyDown={handleDecimalKeyDown}
+                          onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          ref={field.ref}
                         />
                       </FormControl>
                       <FormMessage />
@@ -1080,38 +1115,66 @@ export default function CrearOfertaForm({
                     : "pointer-events-none space-y-6 opacity-60"
                 }
               >
-                <MultiDatalistField
-                  fieldName="technical_skills"
-                  label="Habilidades técnicas"
-                  placeholder="Selecciona o escribe una habilidad técnica"
-                  options={catalogs.technicalSkillOptions}
-                  selectedValues={technicalSkills}
-                  mandatoryValues={mandatoryTechnicalSkills}
-                  onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
-                  onToggleMandatory={(value) => toggleMandatoryValue("technical_skills", value)}
-                  suggestionItems={suggestions?.technical_skills ?? []}
-                  onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
-                  onAddAllSuggestions={() =>
-                    addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
-                  }
-                  disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
+                <FormField
+                  control={form.control}
+                  name="technical_skills"
+                  rules={{
+                    validate: (value) =>
+                      (Array.isArray(value) && value.length > 0) ||
+                      "Debes agregar al menos una habilidad técnica.",
+                  }}
+                  render={() => (
+                    <FormItem>
+                      <MultiDatalistField
+                        fieldName="technical_skills"
+                        label="Habilidades técnicas"
+                        placeholder="Selecciona o escribe una habilidad técnica"
+                        options={catalogs.technicalSkillOptions}
+                        selectedValues={technicalSkills}
+                        mandatoryValues={mandatoryTechnicalSkills}
+                        onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
+                        onToggleMandatory={(value) => toggleMandatoryValue("technical_skills", value)}
+                        suggestionItems={suggestions?.technical_skills ?? []}
+                        onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
+                        onAddAllSuggestions={() =>
+                          addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
+                        }
+                        disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
 
-                <MultiDatalistField
-                  fieldName="soft_skills"
-                  label="Habilidades blandas"
-                  placeholder="Selecciona o escribe una habilidad blanda"
-                  options={catalogs.softSkillOptions}
-                  selectedValues={softSkills}
-                  mandatoryValues={mandatorySoftSkills}
-                  onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
-                  onToggleMandatory={(value) => toggleMandatoryValue("soft_skills", value)}
-                  suggestionItems={suggestions?.soft_skills ?? []}
-                  onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
-                  onAddAllSuggestions={() =>
-                    addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
-                  }
-                  disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
+                <FormField
+                  control={form.control}
+                  name="soft_skills"
+                  rules={{
+                    validate: (value) =>
+                      (Array.isArray(value) && value.length > 0) ||
+                      "Debes agregar al menos una habilidad blanda.",
+                  }}
+                  render={() => (
+                    <FormItem>
+                      <MultiDatalistField
+                        fieldName="soft_skills"
+                        label="Habilidades blandas"
+                        placeholder="Selecciona o escribe una habilidad blanda"
+                        options={catalogs.softSkillOptions}
+                        selectedValues={softSkills}
+                        mandatoryValues={mandatorySoftSkills}
+                        onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
+                        onToggleMandatory={(value) => toggleMandatoryValue("soft_skills", value)}
+                        suggestionItems={suggestions?.soft_skills ?? []}
+                        onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
+                        onAddAllSuggestions={() =>
+                          addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
+                        }
+                        disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
             </CardContent>

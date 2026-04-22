@@ -54,6 +54,9 @@ function isInvalidPayload(payload: AdminProfilePayload) {
   return (
     payload.name.trim().length === 0 ||
     payload.lastname.trim().length === 0 ||
+    (payload.birth_date ?? "").trim().length === 0 ||
+    payload.dni.trim().length === 0 ||
+    payload.phone.trim().length === 0 ||
     payload.state.trim().length === 0 ||
     payload.city.trim().length === 0 ||
     payload.address.trim().length === 0

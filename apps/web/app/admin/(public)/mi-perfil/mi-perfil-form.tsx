@@ -49,6 +49,41 @@ type MiPerfilFormValues = {
   address: string
 }
 
+type MiPerfilField =
+  | "name"
+  | "lastname"
+  | "birth_date"
+  | "dni"
+  | "phone"
+  | "state"
+  | "city"
+  | "address"
+
+type MiPerfilFieldErrors = Partial<Record<MiPerfilField, string>>
+
+const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/
+
+function sanitizeNameInput(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]/g, "")
+}
+
+function getTodayIso() {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, "0")
+  const day = String(today.getDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
+}
+
+function isFutureDate(dateValue: string) {
+  if (!dateValue) {
+    return false
+  }
+
+  return dateValue > getTodayIso()
+}
+
 function extractPhoneNumber(phone: string, prefix: string) {
   const cleanPhone = phone.trim()
   const cleanPrefix = prefix.trim()
@@ -87,6 +122,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
     initialProfile.profile_picture || ""
   )
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
+  const [fieldErrors, setFieldErrors] = React.useState<MiPerfilFieldErrors>({})
 
   const [values, setValues] = React.useState<MiPerfilFormValues>({
     profile_picture: initialProfile.profile_picture,
@@ -128,6 +164,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       const nextDni = splitDni(updated.dni)
 
       setAvatarPreview(updated.profile_picture || "")
+      setFieldErrors({})
       setValues((previous) => ({
         ...previous,
         profile_picture: updated.profile_picture,
@@ -156,6 +193,13 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
         ...previous,
         [field]: event.target.value,
       }))
+
+      if (field in fieldErrors) {
+        setFieldErrors((previous) => ({
+          ...previous,
+          [field]: undefined,
+        }))
+      }
     }
 
   const handleStateChange = (state: string) => {
@@ -167,6 +211,12 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       state,
       city: previous.state === state ? previous.city : firstCity,
     }))
+
+    setFieldErrors((previous) => ({
+      ...previous,
+      state: undefined,
+      city: undefined,
+    }))
   }
 
   const handleCityChange = (city: string) => {
@@ -174,33 +224,80 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       ...previous,
       city,
     }))
+
+    setFieldErrors((previous) => ({
+      ...previous,
+      city: undefined,
+    }))
   }
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    const requiredFields: Array<keyof MiPerfilFormValues> = [
-      "name",
-      "lastname",
-      "state",
-      "city",
-      "address",
-    ]
+    const nextErrors: MiPerfilFieldErrors = {}
 
-    const hasMissingRequiredField = requiredFields.some((field) => values[field].trim().length === 0)
-
-    if (hasMissingRequiredField) {
-      toast.error("Completa los campos requeridos")
-      return
+    if (!values.name.trim()) {
+      nextErrors.name = "El nombre es obligatorio"
     }
 
-    const payload = new FormData()
+    if (!values.lastname.trim()) {
+      nextErrors.lastname = "El apellido es obligatorio"
+    }
+
+    if (!values.birth_date.trim()) {
+      nextErrors.birth_date = "La fecha de nacimiento es obligatoria"
+    }
+
+    if (!values.dni.trim()) {
+      nextErrors.dni = "La cédula es obligatoria"
+    }
+
+    if (!values.phone.trim()) {
+      nextErrors.phone = "El teléfono es obligatorio"
+    }
+
+    if (!values.state.trim()) {
+      nextErrors.state = "El estado es obligatorio"
+    }
+
+    if (!values.city.trim()) {
+      nextErrors.city = "La ciudad es obligatoria"
+    }
+
+    if (!values.address.trim()) {
+      nextErrors.address = "La dirección es obligatoria"
+    }
+
+    if (!nextErrors.name && !NAME_REGEX.test(values.name.trim())) {
+      nextErrors.name = "El nombre solo puede contener letras"
+    }
+
+    if (!nextErrors.lastname && !NAME_REGEX.test(values.lastname.trim())) {
+      nextErrors.lastname = "El apellido solo puede contener letras"
+    }
+
+    if (!nextErrors.birth_date && isFutureDate(values.birth_date.trim())) {
+      nextErrors.birth_date = "La fecha de nacimiento no puede ser futura"
+    }
 
     const dniValidation = validateDni(values.dni_prefix, values.dni)
-    if (dniValidation) {
-      toast.error(dniValidation)
+    if (!nextErrors.dni && dniValidation) {
+      nextErrors.dni = dniValidation
+    }
+
+    if (!nextErrors.phone && !/^\d{11}$/.test(values.phone.trim())) {
+      nextErrors.phone = "El teléfono debe tener exactamente 11 dígitos"
+    }
+
+    if (Object.values(nextErrors).some(Boolean)) {
+      setFieldErrors(nextErrors)
+      toast.error("Corrige los campos marcados")
       return
     }
+
+    setFieldErrors({})
+
+    const payload = new FormData()
 
     payload.append("name", values.name)
     payload.append("lastname", values.lastname)
@@ -282,12 +379,42 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-sm font-medium text-foreground/85">Nombre *</Label>
-                <Input id="name" value={values.name} onChange={handleInputChange("name")} />
+                <Input
+                  id="name"
+                  value={values.name}
+                  required
+                  onChange={(event) => {
+                    setValues((previous) => ({
+                      ...previous,
+                      name: sanitizeNameInput(event.target.value),
+                    }))
+
+                    if (fieldErrors.name) {
+                      setFieldErrors((previous) => ({ ...previous, name: undefined }))
+                    }
+                  }}
+                />
+                {fieldErrors.name ? <p className="text-sm text-destructive">{fieldErrors.name}</p> : null}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="lastname" className="text-sm font-medium text-foreground/85">Apellido *</Label>
-                <Input id="lastname" value={values.lastname} onChange={handleInputChange("lastname")} />
+                <Input
+                  id="lastname"
+                  value={values.lastname}
+                  required
+                  onChange={(event) => {
+                    setValues((previous) => ({
+                      ...previous,
+                      lastname: sanitizeNameInput(event.target.value),
+                    }))
+
+                    if (fieldErrors.lastname) {
+                      setFieldErrors((previous) => ({ ...previous, lastname: undefined }))
+                    }
+                  }}
+                />
+                {fieldErrors.lastname ? <p className="text-sm text-destructive">{fieldErrors.lastname}</p> : null}
               </div>
 
               <div className="space-y-2">
@@ -296,17 +423,20 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="birth_date" className="text-sm font-medium text-foreground/85">Fecha de nacimiento</Label>
+                <Label htmlFor="birth_date" className="text-sm font-medium text-foreground/85">Fecha de nacimiento *</Label>
                 <Input
                   id="birth_date"
                   type="date"
                   value={values.birth_date}
+                  max={getTodayIso()}
+                  required
                   onChange={handleInputChange("birth_date")}
                 />
+                {fieldErrors.birth_date ? <p className="text-sm text-destructive">{fieldErrors.birth_date}</p> : null}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dni" className="text-sm font-medium text-foreground/85">Cédula</Label>
+                <Label htmlFor="dni" className="text-sm font-medium text-foreground/85">Cédula *</Label>
                 <div className="flex gap-2">
                   <Select
                     value={values.dni_prefix}
@@ -329,35 +459,49 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     id="dni"
                     value={values.dni}
                     inputMode="numeric"
+                    required
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
                         ...previous,
                         dni: digitsOnly,
                       }))
+
+                      if (fieldErrors.dni) {
+                        setFieldErrors((previous) => ({ ...previous, dni: undefined }))
+                      }
                     }}
                   />
                 </div>
+                {fieldErrors.dni ? <p className="text-sm text-destructive">{fieldErrors.dni}</p> : null}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone" className="text-sm font-medium text-foreground/85">Teléfono</Label>
+                <Label htmlFor="phone" className="text-sm font-medium text-foreground/85">Teléfono *</Label>
                 <div className="flex gap-2">
                   <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24 bg-muted/40 text-muted-foreground/80" placeholder="+000" />
                   <Input
                     id="phone"
                     value={values.phone}
                     inputMode="numeric"
+                    minLength={11}
+                    maxLength={11}
+                    required
                     placeholder="Número"
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
                         ...previous,
-                        phone: digitsOnly,
+                        phone: digitsOnly.slice(0, 11),
                       }))
+
+                      if (fieldErrors.phone) {
+                        setFieldErrors((previous) => ({ ...previous, phone: undefined }))
+                      }
                     }}
                   />
                 </div>
+                {fieldErrors.phone ? <p className="text-sm text-destructive">{fieldErrors.phone}</p> : null}
               </div>
 
               <div className="space-y-2">
@@ -379,6 +523,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     ))}
                   </SelectContent>
                 </Select>
+                {fieldErrors.state ? <p className="text-sm text-destructive">{fieldErrors.state}</p> : null}
               </div>
 
               <div className="space-y-2">
@@ -401,12 +546,14 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     )}
                   </SelectContent>
                 </Select>
+                {fieldErrors.city ? <p className="text-sm text-destructive">{fieldErrors.city}</p> : null}
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="address" className="text-sm font-medium text-foreground/85">Dirección *</Label>
-              <Textarea id="address" value={values.address} onChange={handleInputChange("address")} rows={3} />
+              <Textarea id="address" value={values.address} required onChange={handleInputChange("address")} rows={3} />
+              {fieldErrors.address ? <p className="text-sm text-destructive">{fieldErrors.address}</p> : null}
             </div>
 
             <div className="flex justify-end">

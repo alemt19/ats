@@ -76,11 +76,70 @@ function backendHeaders(cookie?: string): HeadersInit {
   return { cookie }
 }
 
+function extractBackendErrorMessage(errorBody: unknown): string | null {
+  if (!errorBody || typeof errorBody !== "object") {
+    return null
+  }
+
+  const source = errorBody as Record<string, unknown>
+
+  if (typeof source.message === "string" && source.message.trim().length > 0) {
+    return source.message
+  }
+
+  if (Array.isArray(source.message)) {
+    const firstMessage = source.message.find(
+      (value) => typeof value === "string" && value.trim().length > 0
+    )
+
+    if (typeof firstMessage === "string") {
+      return firstMessage
+    }
+  }
+
+  if (source.error && typeof source.error === "object") {
+    const nestedError = source.error as Record<string, unknown>
+
+    if (typeof nestedError.message === "string" && nestedError.message.trim().length > 0) {
+      return nestedError.message
+    }
+
+    if (Array.isArray(nestedError.message)) {
+      const firstNestedMessage = nestedError.message.find(
+        (value) => typeof value === "string" && value.trim().length > 0
+      )
+
+      if (typeof firstNestedMessage === "string") {
+        return firstNestedMessage
+      }
+    }
+  }
+
+  return null
+}
+
 async function parseBackendResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const fallbackMessage = "No se pudo completar la operación de reclutadores"
-    const errorBody = (await response.json().catch(() => null)) as { message?: string } | null
-    throw new BackendRequestError(errorBody?.message ?? fallbackMessage, response.status)
+    const errorBody = (await response.json().catch(() => null)) as unknown
+    const backendMessage = extractBackendErrorMessage(errorBody)
+
+    if (response.status === 409) {
+      const normalizedMessage = (backendMessage ?? "").toLowerCase()
+      const duplicateEmailHint =
+        normalizedMessage.includes("correo") ||
+        normalizedMessage.includes("email") ||
+        normalizedMessage.includes("exists")
+
+      throw new BackendRequestError(
+        duplicateEmailHint
+          ? "No se puede crear el reclutador porque ese correo ya está en uso"
+          : backendMessage ?? fallbackMessage,
+        response.status
+      )
+    }
+
+    throw new BackendRequestError(backendMessage ?? fallbackMessage, response.status)
   }
 
   const payload = (await response.json()) as BackendEnvelope<T> | T

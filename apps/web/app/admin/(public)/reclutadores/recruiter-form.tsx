@@ -71,6 +71,22 @@ const EMPTY_VALUES: RecruiterFormValues = {
   address: "",
 }
 
+const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/
+
+function sanitizeNameInput(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]/g, "")
+}
+
+function isFutureDate(dateValue: string) {
+  if (!dateValue) {
+    return false
+  }
+
+  const today = new Date()
+  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
+  return dateValue > todayIso
+}
+
 function toInitials(name: string) {
   return name
     .split(" ")
@@ -348,7 +364,11 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       return recruiter
     },
     onSuccess: (data) => {
-      toast.success(mode === "create" ? "Reclutador creado correctamente" : "Reclutador actualizado")
+      toast.success(
+        mode === "create"
+          ? "Correo de verificación enviado. El reclutador se activará al verificar su email."
+          : "Reclutador actualizado"
+      )
 
       if (mode === "create") {
         router.push(`/admin/reclutadores/crear/email-verification?email=${encodeURIComponent(data.email)}`)
@@ -406,7 +426,11 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       "name",
       "lastname",
       "email",
+      "birth_date",
+      "dni",
+      "phone",
       "role",
+      "country",
       "state",
       "city",
       "address",
@@ -420,6 +444,26 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
 
     if (hasMissingRequiredField) {
       toast.error("Completa los campos requeridos")
+      return
+    }
+
+    if (!NAME_REGEX.test(values.name.trim())) {
+      toast.error("El nombre solo puede contener letras")
+      return
+    }
+
+    if (!NAME_REGEX.test(values.lastname.trim())) {
+      toast.error("El apellido solo puede contener letras")
+      return
+    }
+
+    if (isFutureDate(values.birth_date.trim())) {
+      toast.error("La fecha de nacimiento no puede ser futura")
+      return
+    }
+
+    if (!/^\d{11}$/.test(values.phone.trim())) {
+      toast.error("El teléfono debe tener exactamente 11 dígitos")
       return
     }
 
@@ -536,12 +580,32 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre *</Label>
-                <Input id="name" value={values.name} onChange={handleInputChange("name")} />
+                <Input
+                  id="name"
+                  value={values.name}
+                  onChange={(event) => {
+                    setValues((previous) => ({
+                      ...previous,
+                      name: sanitizeNameInput(event.target.value),
+                    }))
+                  }}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="lastname">Apellido *</Label>
-                <Input id="lastname" value={values.lastname} onChange={handleInputChange("lastname")} />
+                <Input
+                  id="lastname"
+                  value={values.lastname}
+                  onChange={(event) => {
+                    setValues((previous) => ({
+                      ...previous,
+                      lastname: sanitizeNameInput(event.target.value),
+                    }))
+                  }}
+                  required
+                />
               </div>
 
               <div className="space-y-2">
@@ -552,6 +616,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
                   value={values.email}
                   onChange={handleInputChange("email")}
                   disabled={mode === "edit"}
+                  required
                 />
               </div>
 
@@ -563,11 +628,12 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
                   value={values.password}
                   onChange={handleInputChange("password")}
                   placeholder={mode === "edit" ? "Dejar vacío para mantener la actual" : undefined}
+                  required={mode === "create"}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dni">Cédula</Label>
+                <Label htmlFor="dni">Cédula *</Label>
                 <div className="flex gap-2">
                   <Select
                     value={values.dni_prefix}
@@ -590,6 +656,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
                     id="dni"
                     value={values.dni}
                     inputMode="numeric"
+                    required
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
@@ -602,17 +669,19 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="birth_date">Fecha de nacimiento</Label>
+                <Label htmlFor="birth_date">Fecha de nacimiento *</Label>
                 <Input
                   id="birth_date"
                   type="date"
                   value={values.birth_date}
                   onChange={handleInputChange("birth_date")}
+                  max={new Date().toISOString().slice(0, 10)}
+                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phone">Teléfono</Label>
+                <Label htmlFor="phone">Teléfono *</Label>
                 <div className="flex gap-2">
                   <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24" placeholder="+000" />
                   <Input
@@ -620,11 +689,14 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
                     value={values.phone}
                     inputMode="numeric"
                     placeholder="Número"
+                    minLength={11}
+                    maxLength={11}
+                    required
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
                         ...previous,
-                        phone: digitsOnly,
+                        phone: digitsOnly.slice(0, 11),
                       }))
                     }}
                   />

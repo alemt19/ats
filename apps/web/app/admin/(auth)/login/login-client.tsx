@@ -38,6 +38,14 @@ function getLoginErrorMessage(errorMessage?: string | null): string {
 		return "Correo o contraseña incorrectos"
 	}
 
+	if (
+		errorMessage === "Email not verified" ||
+		errorMessage === "email not verified" ||
+		errorMessage?.toLowerCase().includes("not verified")
+	) {
+		return "Tu correo no está verificado. Revisa tu bandeja de entrada y confirma el enlace de verificación."
+	}
+
 	return errorMessage ?? "Credenciales inválidas"
 }
 

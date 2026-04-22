@@ -189,6 +189,9 @@ export default function PreferenciasCulturalesForm({
 										key={category.technical_name}
 										control={form.control}
 										name={fieldName}
+										rules={{
+											required: `Debes seleccionar una opción para ${category.display_name}.`,
+										}}
 										render={({ field }) => (
 											<Card className="rounded-2xl border border-border/70 bg-background/70 shadow-soft">
 												<CardHeader className="space-y-1">

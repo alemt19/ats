@@ -47,10 +47,11 @@ type PreferenceFieldName =
 
 type CompanyConfigData = Awaited<ReturnType<typeof getCompanyConfigServer>>
 
-const requiredCompanyFields: Array<{ key: "country" | "state" | "city"; label: string }> = [
-	{ key: "country", label: "Pais" },
+const requiredCompanyFields: Array<{ key: "country" | "state" | "city" | "address"; label: string }> = [
+	{ key: "country", label: "País" },
 	{ key: "state", label: "Estado" },
 	{ key: "city", label: "Ciudad" },
+	{ key: "address", label: "Dirección" },
 ]
 
 const requiredPreferenceFields: Array<{ key: PreferenceFieldName; label: string }> = [
@@ -130,12 +131,9 @@ async function fetchCreateOfferCatalogsServer(input: {
 			? cities.filter((city) => city.state_id === fixedStateId).map((city) => city.name.trim())
 			: []
 
-		const fallbackCity = input.cityCatalogOptions.find((city) => city.trim().length > 0)?.trim() ?? ""
-		const resolvedCity = normalizedCity || fallbackCity
-
 		const cityOptions = Array.from(
 			new Set(
-				[...citiesByState, ...input.cityCatalogOptions, resolvedCity]
+				citiesByState
 					.map((cityName) => cityName.trim())
 					.filter((cityName) => cityName.length > 0)
 			)
@@ -182,10 +180,10 @@ async function fetchCreateOfferCatalogsServer(input: {
 			],
 			categories: input.categories.length > 0 ? input.categories : [{ id: 1, name: "Tecnología" }],
 			fixedLocation: {
-				state: normalizedState || fallbackState || "Distrito Capital",
+				state: normalizedState || fallbackState,
 			},
 			cityOptions: Array.from(
-				new Set([normalizedCity, fallbackCity, "Caracas"].filter((city) => city.trim().length > 0))
+				new Set([normalizedCity, fallbackCity].filter((city) => city.trim().length > 0))
 			),
 			technicalSkillOptions:
 				input.technicalSkillOptions.length > 0

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 
 import {
+  BackendRequestError,
   createRecruiterServer,
   getRecruitersServer,
 } from "../../../admin/(public)/reclutadores/recruiters-admin-service"
@@ -15,7 +16,11 @@ function isInvalidPayload(payload: RecruiterPayload) {
     payload.lastname.trim().length === 0 ||
     payload.email.trim().length === 0 ||
     (payload.password ?? "").trim().length === 0 ||
+    (payload.birth_date ?? "").trim().length === 0 ||
+    payload.dni.trim().length === 0 ||
+    payload.phone.trim().length === 0 ||
     payload.role.trim().length === 0 ||
+    (payload.country ?? "").trim().length === 0 ||
     payload.state.trim().length === 0 ||
     payload.city.trim().length === 0 ||
     payload.address.trim().length === 0
@@ -95,8 +100,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
     }
 
-    const created = await createRecruiterServer(formData, cookie)
-    return NextResponse.json(created, { status: 201 })
+    try {
+      const created = await createRecruiterServer(formData, cookie)
+      return NextResponse.json(created, { status: 201 })
+    } catch (error) {
+      if (error instanceof BackendRequestError) {
+        return NextResponse.json({ message: error.message }, { status: error.status })
+      }
+
+      return NextResponse.json({ message: "No se pudo crear el reclutador" }, { status: 500 })
+    }
   }
 
   const payload = parseRecruiterPayload((await request.json().catch(() => null)) as unknown)
@@ -105,6 +118,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
   }
 
-  const created = await createRecruiterServer(payload, cookie)
-  return NextResponse.json(created, { status: 201 })
+  try {
+    const created = await createRecruiterServer(payload, cookie)
+    return NextResponse.json(created, { status: 201 })
+  } catch (error) {
+    if (error instanceof BackendRequestError) {
+      return NextResponse.json({ message: error.message }, { status: error.status })
+    }
+
+    return NextResponse.json({ message: "No se pudo crear el reclutador" }, { status: 500 })
+  }
 }

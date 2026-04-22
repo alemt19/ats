@@ -5,9 +5,8 @@ import { headers } from "next/headers"
 import { CheckCircle2, CircleX, Send, Star, UserRoundPlus } from "lucide-react"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
-import { Button } from "react/components/ui/button"
-import { Input } from "react/components/ui/input"
 import { Progress } from "react/components/ui/progress"
+import DashboardDateFilters from "./dashboard-date-filters"
 import TopOffersChart from "react/components/admin/top-offers-chart"
 
 type FeedbackStats = {
@@ -84,8 +83,16 @@ async function getFeedbackStats(cookie: string): Promise<FeedbackStats> {
             | FeedbackStats
             | { data?: FeedbackStats }
             | null
-        const stats = payload && typeof payload === "object" && "data" in payload ? payload.data : payload
-        return stats ?? { employer: null, candidate: null }
+
+        if (payload && typeof payload === "object" && "data" in payload) {
+            return payload.data ?? { employer: null, candidate: null }
+        }
+
+        if (payload && typeof payload === "object" && "employer" in payload && "candidate" in payload) {
+            return payload as FeedbackStats
+        }
+
+        return { employer: null, candidate: null }
     } catch {
         return { employer: null, candidate: null }
     }
@@ -212,29 +219,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                 </div>
             </div>
 
-            <form
-                className="w-full max-w-2xl grid grid-cols-1 items-end gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 shadow-soft sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]"
-                method="GET"
-            >
-                <div className="space-y-1">
-                    <label htmlFor="from" className="text-xs font-medium text-foreground/70">Fecha inicial</label>
-                    <Input id="from" name="from" type="date" defaultValue={from} />
-                </div>
-                <div className="space-y-1">
-                    <label htmlFor="to" className="text-xs font-medium text-foreground/70">Fecha final</label>
-                    <Input id="to" name="to" type="date" defaultValue={to} />
-                </div>
-                <div className="flex gap-2">
-                    <Button type="submit" className="rounded-full">Aplicar</Button>
-                    <Button
-                        variant="outline"
-                        asChild
-                        className="rounded-full border-border/70 bg-background/70 text-foreground/80 hover:border-primary/40"
-                    >
-                        <Link href="/admin/dashboard">Limpiar</Link>
-                    </Button>
-                </div>
-            </form>
+            <DashboardDateFilters initialFrom={from} initialTo={to} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

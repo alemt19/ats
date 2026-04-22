@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import { Camera, Sparkles, X } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { useForm } from "react-hook-form"
+import { type FieldValues, type Path, type Resolver, useForm } from "react-hook-form"
 import { toast } from "sonner"
+import { z } from "zod"
 
 import type { AdminCompanyConfigInitialData } from "../company-config-bootstrap"
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
@@ -45,6 +45,67 @@ type InformacionValoresFormProps = {
 	cityOptions: string[]
 	companyValueOptions: string[]
 	canEdit: boolean
+}
+
+const informacionValoresSchema = z.object({
+	name: z.string().trim().min(1, "El nombre de la empresa es obligatorio."),
+	logo: z.string().trim().min(1, "Debes asignar un logo para la empresa."),
+	contact_email: z
+		.string()
+		.trim()
+		.min(1, "El email de contacto es obligatorio.")
+		.email("Ingresa un email de contacto válido."),
+	country: z.string().trim().min(1, "El país es obligatorio."),
+	state: z.string().trim().min(1, "El estado es obligatorio."),
+	city: z.string().trim().min(1, "Selecciona una ciudad."),
+	address: z.string().trim().min(1, "La dirección de la empresa es obligatoria."),
+	description: z.string().trim().min(1, "La descripción de la empresa es obligatoria."),
+	mision: z.string().trim().min(1, "La misión de la empresa es obligatoria."),
+	values: z
+		.array(z.string().trim().min(1, "Cada valor debe tener contenido."))
+		.min(1, "Agrega al menos un valor para la empresa."),
+})
+
+function createSafeZodResolver<TFieldValues extends FieldValues>(
+	schema: z.ZodType<TFieldValues>
+): Resolver<TFieldValues> {
+	return async (values) => {
+		const result = schema.safeParse(values)
+
+		if (result.success) {
+			return {
+				values: result.data,
+				errors: {},
+			}
+		}
+
+		const errors = result.error.issues.reduce<Record<string, { type: string; message: string }>>(
+			(accumulator, issue) => {
+				const key = issue.path.join(".")
+				if (!key || accumulator[key]) {
+					return accumulator
+				}
+
+				accumulator[key] = {
+					type: issue.code,
+					message: issue.message,
+				}
+				return accumulator
+			},
+			{}
+		)
+
+		return {
+			values: {} as TFieldValues,
+			errors: Object.entries(errors).reduce<Record<Path<TFieldValues>, { type: string; message: string }>>(
+				(accumulator, [key, value]) => {
+					accumulator[key as Path<TFieldValues>] = value
+					return accumulator
+				},
+				{} as Record<Path<TFieldValues>, { type: string; message: string }>
+			),
+		}
+	}
 }
 
 function normalizeValue(value: string) {
@@ -240,7 +301,6 @@ export default function InformacionValoresForm({
 	companyValueOptions,
 	canEdit,
 }: InformacionValoresFormProps) {
-	const router = useRouter()
 	const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 	const [logoPreview, setLogoPreview] = React.useState<string>(initialData.logo || "")
 	const [logoFile, setLogoFile] = React.useState<File | null>(null)
@@ -266,6 +326,9 @@ export default function InformacionValoresForm({
 
 	const form = useForm<InformacionValoresFormValues>({
 		defaultValues,
+		resolver: createSafeZodResolver(informacionValoresSchema),
+		mode: "onChange",
+		reValidateMode: "onChange",
 	})
 
 	React.useEffect(() => {
@@ -297,7 +360,10 @@ export default function InformacionValoresForm({
 				return
 			}
 
-			form.setValue("values", [...currentValues, value], { shouldDirty: true })
+			form.setValue("values", [...currentValues, value], {
+				shouldDirty: true,
+				shouldValidate: true,
+			})
 		},
 		[form]
 	)
@@ -361,7 +427,8 @@ export default function InformacionValoresForm({
 			}
 
 			toast.success("Información de empresa actualizada")
-			router.refresh()
+			form.reset(values)
+			setLogoFile(null)
 		} catch (error) {
 			toast.error(error instanceof Error ? error.message : "No se pudo guardar la configuración")
 		} finally {
@@ -388,7 +455,7 @@ export default function InformacionValoresForm({
 						</p>
 					) : null}
 
-					<fieldset disabled={isFormDisabled} className="space-y-6">
+					<fieldset disabled={isReadOnly} className="space-y-6">
 					<Card className="gradient-border rounded-3xl bg-card/90 shadow-soft">
 						<CardHeader className="space-y-1">
 							<CardTitle>Información de la empresa</CardTitle>
@@ -406,7 +473,7 @@ export default function InformacionValoresForm({
 
 								<div className="space-y-2">
 									<p className="font-medium">Logo de la empresa</p>
-									<Button type="button" variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80" size="sm" onClick={() => fileInputRef.current?.click()}>
+									<Button type="button" variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80" size="sm" onClick={() => fileInputRef.current?.click()} disabled={isFormDisabled}>
 										<Camera className="mr-2 size-4" />
 										Cambiar logo
 									</Button>
@@ -425,7 +492,7 @@ export default function InformacionValoresForm({
 											const localUrl = URL.createObjectURL(file)
 											setLogoPreview(localUrl)
 											setLogoFile(file)
-											form.setValue("logo", file.name, { shouldDirty: true })
+											form.setValue("logo", file.name, { shouldDirty: true, shouldValidate: true })
 										}}
 									/>
 								</div>
@@ -439,7 +506,7 @@ export default function InformacionValoresForm({
 										<FormItem>
 											<FormLabel>Nombre</FormLabel>
 											<FormControl>
-												<Input placeholder="Nombre de la empresa" {...field} />
+												<Input placeholder="Nombre de la empresa" {...field} disabled={isFormDisabled} />
 											</FormControl>
 											<FormMessage />
 										</FormItem>
@@ -455,7 +522,7 @@ export default function InformacionValoresForm({
 									<FormItem>
 										<FormLabel>Email de contacto</FormLabel>
 										<FormControl>
-											<Input type="email" placeholder="contacto@empresa.com" {...field} />
+											<Input type="email" placeholder="contacto@empresa.com" {...field} disabled={isFormDisabled} />
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -524,7 +591,7 @@ export default function InformacionValoresForm({
 									<FormItem>
 										<FormLabel>Dirección</FormLabel>
 										<FormControl>
-											<Input placeholder="Dirección de la empresa" {...field} />
+											<Input placeholder="Dirección de la empresa" {...field} disabled={isFormDisabled} />
 										</FormControl>
 										<FormMessage />
 									</FormItem>
@@ -542,6 +609,7 @@ export default function InformacionValoresForm({
 												<Textarea
 													placeholder="Describe brevemente la empresa"
 													className="min-h-28"
+													disabled={isFormDisabled}
 													{...field}
 												/>
 											</FormControl>
@@ -560,6 +628,7 @@ export default function InformacionValoresForm({
 												<Textarea
 													placeholder="Define la misión de la empresa"
 													className="min-h-28"
+													disabled={isFormDisabled}
 													{...field}
 												/>
 											</FormControl>
@@ -600,24 +669,31 @@ export default function InformacionValoresForm({
 								</p>
 							) : null}
 
-							<div className="space-y-4">
-								<MultiDatalistField
-									label="Valores"
-									placeholder="Selecciona o escribe un valor"
-									options={companyValueOptions}
-									selectedValues={companyValues}
-									onChangeValues={(values) => form.setValue("values", dedupe(values), { shouldDirty: true })}
-									suggestionItems={valueSuggestions}
-									onAddSuggestion={addSuggestionToValues}
-									disabled={isFormDisabled}
-								/>
-							</div>
+							<FormField
+								control={form.control}
+								name="values"
+								render={({ field }) => (
+									<FormItem>
+										<MultiDatalistField
+											label="Valores"
+											placeholder="Selecciona o escribe un valor"
+											options={companyValueOptions}
+											selectedValues={field.value ?? []}
+											onChangeValues={(values) => field.onChange(dedupe(values))}
+											suggestionItems={valueSuggestions}
+											onAddSuggestion={addSuggestionToValues}
+											disabled={isFormDisabled}
+										/>
+										<FormMessage />
+									</FormItem>
+								)}
+							/>
 						</CardContent>
 					</Card>
 
 					<CardFooter className="justify-end px-0">
 						{canEdit ? (
-							<Button type="submit" disabled={isSaving} className="rounded-full px-5">
+							<Button type="submit" disabled={isSaving || isReadOnly} className="rounded-full px-5">
 								{isSaving ? "Guardando..." : "Guardar cambios"}
 							</Button>
 						) : null}
