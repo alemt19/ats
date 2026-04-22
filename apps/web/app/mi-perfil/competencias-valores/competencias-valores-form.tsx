@@ -279,7 +279,7 @@ export default function CompetenciasValoresForm({
   behavioralQuestion2,
 }: CompetenciasValoresFormProps) {
   const MAX_CV_FILE_SIZE_BYTES = 5 * 1024 * 1024
-  const MAX_CV_PAGES = 5
+  const MAX_CV_PAGES = 10
 
   const initialCvUrl = initialData.cv_url ?? ""
   const initialCvFileName = initialCvUrl.split("/").pop() || "Sin archivo"
@@ -854,59 +854,59 @@ export default function CompetenciasValoresForm({
               ) : null}
 
               <div className={isSkillsSectionUnlocked ? "space-y-6" : "pointer-events-none space-y-6 opacity-60"}>
-              <MultiDatalistField
-                fieldName="technical_skills"
-                label="Habilidades técnicas"
-                placeholder="Selecciona o escribe una habilidad técnica"
-                options={technicalSkillOptions}
-                selectedValues={technicalSkills}
-                onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
-                suggestionItems={suggestions?.technical_skills ?? []}
-                onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
-                onAddAllSuggestions={() =>
-                  addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
-                }
-                disabled={!isSkillsSectionUnlocked}
-              />
-              {form.formState.errors.technical_skills?.message ? (
-                <p className="text-sm text-destructive">{form.formState.errors.technical_skills.message}</p>
-              ) : null}
+                <MultiDatalistField
+                  fieldName="technical_skills"
+                  label="Habilidades técnicas"
+                  placeholder="Selecciona o escribe una habilidad técnica"
+                  options={technicalSkillOptions}
+                  selectedValues={technicalSkills}
+                  onChangeValues={(values) => setMultiFieldValue("technical_skills", values)}
+                  suggestionItems={suggestions?.technical_skills ?? []}
+                  onAddSuggestion={(value) => addSuggestionToField("technical_skills", value)}
+                  onAddAllSuggestions={() =>
+                    addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
+                  }
+                  disabled={!isSkillsSectionUnlocked}
+                />
+                {form.formState.errors.technical_skills?.message ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.technical_skills.message}</p>
+                ) : null}
 
-              <MultiDatalistField
-                fieldName="soft_skills"
-                label="Habilidades blandas"
-                placeholder="Selecciona o escribe una habilidad blanda"
-                options={softSkillOptions}
-                selectedValues={softSkills}
-                onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
-                suggestionItems={suggestions?.soft_skills ?? []}
-                onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
-                onAddAllSuggestions={() =>
-                  addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
-                }
-                disabled={!isSkillsSectionUnlocked}
-              />
-              {form.formState.errors.soft_skills?.message ? (
-                <p className="text-sm text-destructive">{form.formState.errors.soft_skills.message}</p>
-              ) : null}
+                <MultiDatalistField
+                  fieldName="soft_skills"
+                  label="Habilidades blandas"
+                  placeholder="Selecciona o escribe una habilidad blanda"
+                  options={softSkillOptions}
+                  selectedValues={softSkills}
+                  onChangeValues={(values) => setMultiFieldValue("soft_skills", values)}
+                  suggestionItems={suggestions?.soft_skills ?? []}
+                  onAddSuggestion={(value) => addSuggestionToField("soft_skills", value)}
+                  onAddAllSuggestions={() =>
+                    addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
+                  }
+                  disabled={!isSkillsSectionUnlocked}
+                />
+                {form.formState.errors.soft_skills?.message ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.soft_skills.message}</p>
+                ) : null}
 
-              <MultiDatalistField
-                fieldName="values"
-                label="Valores"
-                placeholder="Selecciona o escribe un valor"
-                options={valueOptions}
-                selectedValues={candidateValues}
-                onChangeValues={(values) => setMultiFieldValue("values", values)}
-                suggestionItems={suggestions?.values ?? []}
-                onAddSuggestion={(value) => addSuggestionToField("values", value)}
-                onAddAllSuggestions={() =>
-                  addAllSuggestionsToField("values", suggestions?.values ?? [])
-                }
-                disabled={!isSkillsSectionUnlocked}
-              />
-              {form.formState.errors.values?.message ? (
-                <p className="text-sm text-destructive">{form.formState.errors.values.message}</p>
-              ) : null}
+                <MultiDatalistField
+                  fieldName="values"
+                  label="Valores"
+                  placeholder="Selecciona o escribe un valor"
+                  options={valueOptions}
+                  selectedValues={candidateValues}
+                  onChangeValues={(values) => setMultiFieldValue("values", values)}
+                  suggestionItems={suggestions?.values ?? []}
+                  onAddSuggestion={(value) => addSuggestionToField("values", value)}
+                  onAddAllSuggestions={() =>
+                    addAllSuggestionsToField("values", suggestions?.values ?? [])
+                  }
+                  disabled={!isSkillsSectionUnlocked}
+                />
+                {form.formState.errors.values?.message ? (
+                  <p className="text-sm text-destructive">{form.formState.errors.values.message}</p>
+                ) : null}
               </div>
             </CardContent>
           </Card>
