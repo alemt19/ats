@@ -74,6 +74,65 @@ export default function MisDatosForm({
   cities,
 }: MisDatosFormProps) {
   const onlyDigits = (value: string) => value.replace(/\D/g, "")
+  const digitsPattern = /\d/
+  const V_DNI_MIN = 100_000
+  const V_DNI_MAX = 99_999_999
+  const E_DNI_MIN = 80_000_000
+
+  const getLocalTodayIso = () => {
+    const now = new Date()
+    const year = String(now.getFullYear())
+    const month = String(now.getMonth() + 1).padStart(2, "0")
+    const day = String(now.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const todayIso = React.useMemo(() => getLocalTodayIso(), [])
+
+  const isValidWebUrl = (value: string) => {
+    const normalized = value.trim()
+    if (!normalized) {
+      return true
+    }
+
+    try {
+      const parsed = new URL(normalized)
+      return parsed.protocol === "http:" || parsed.protocol === "https:"
+    } catch {
+      return false
+    }
+  }
+
+  const validateDniByPrefix = (prefix: DniPrefix, numberValue: string): string | null => {
+    const baseValidation = validateDni(prefix, numberValue)
+    if (baseValidation) {
+      return baseValidation
+    }
+
+    const digits = onlyDigits(numberValue)
+    if (!digits) {
+      return null
+    }
+
+    const numericValue = Number.parseInt(digits, 10)
+    if (!Number.isFinite(numericValue) || numericValue <= 0) {
+      return "Ingresa una cédula válida"
+    }
+
+    if (prefix === "V") {
+      if (numericValue < V_DNI_MIN || numericValue > V_DNI_MAX) {
+        return "Para cédulas V, el número debe estar entre 100.000 y 99.999.999"
+      }
+
+      return null
+    }
+
+    if (numericValue < E_DNI_MIN) {
+      return "Para cédulas E, el número debe ser igual o mayor a 80.000.000"
+    }
+
+    return null
+  }
 
   const toDateInputValue = (value?: string) => {
     if (!value) {
@@ -210,7 +269,106 @@ export default function MisDatosForm({
   const phonePrefix = selectedCountry?.phonecode ? `+${selectedCountry.phonecode}` : ""
 
   const onSubmit = async (values: ProfileFormValues) => {
-    const dniValidation = validateDni(dniPrefix, values.dni)
+    form.clearErrors()
+
+    const trimmedName = values.name.trim()
+    const trimmedLastname = values.lastname.trim()
+    const trimmedBirthDate = values.birth_date.trim()
+    const trimmedCountry = values.country.trim()
+    const trimmedState = values.state.trim()
+    const trimmedCity = values.city.trim()
+    const trimmedAddress = values.address.trim()
+    const trimmedPhone = values.phone.trim()
+    const trimmedDni = values.dni.trim()
+    const trimmedContactPage = values.contact_page.trim()
+
+    let hasFormError = false
+
+    if (!trimmedName) {
+      form.setError("name", { type: "required", message: "El nombre es obligatorio" })
+      hasFormError = true
+    } else if (digitsPattern.test(trimmedName)) {
+      form.setError("name", {
+        type: "validate",
+        message: "El nombre no puede contener números",
+      })
+      hasFormError = true
+    }
+
+    if (!trimmedLastname) {
+      form.setError("lastname", { type: "required", message: "El apellido es obligatorio" })
+      hasFormError = true
+    } else if (digitsPattern.test(trimmedLastname)) {
+      form.setError("lastname", {
+        type: "validate",
+        message: "El apellido no puede contener números",
+      })
+      hasFormError = true
+    }
+
+    if (!trimmedBirthDate) {
+      form.setError("birth_date", {
+        type: "required",
+        message: "La fecha de nacimiento es obligatoria",
+      })
+      hasFormError = true
+    } else if (trimmedBirthDate > todayIso) {
+      form.setError("birth_date", {
+        type: "validate",
+        message: "La fecha de nacimiento no puede ser futura",
+      })
+      hasFormError = true
+    }
+
+    if (!trimmedCountry) {
+      form.setError("country", { type: "required", message: "El país es obligatorio" })
+      hasFormError = true
+    }
+
+    if (!trimmedState) {
+      form.setError("state", { type: "required", message: "El estado es obligatorio" })
+      hasFormError = true
+    }
+
+    if (!trimmedCity) {
+      form.setError("city", { type: "required", message: "La ciudad es obligatoria" })
+      hasFormError = true
+    }
+
+    if (!trimmedAddress) {
+      form.setError("address", { type: "required", message: "La dirección es obligatoria" })
+      hasFormError = true
+    }
+
+    if (!trimmedPhone) {
+      form.setError("phone", { type: "required", message: "El teléfono es obligatorio" })
+      hasFormError = true
+    } else if (onlyDigits(trimmedPhone).length !== 11) {
+      form.setError("phone", {
+        type: "validate",
+        message: "El teléfono debe tener exactamente 11 números (sin prefijo)",
+      })
+      hasFormError = true
+    }
+
+    if (!trimmedDni) {
+      form.setError("dni", { type: "required", message: "La cédula es obligatoria" })
+      hasFormError = true
+    }
+
+    if (trimmedContactPage && !isValidWebUrl(trimmedContactPage)) {
+      form.setError("contact_page", {
+        type: "validate",
+        message: "La página de contacto debe ser una URL válida (http:// o https://)",
+      })
+      hasFormError = true
+    }
+
+    if (hasFormError) {
+      return
+    }
+
+    const dniValidation = validateDniByPrefix(dniPrefix, values.dni)
     if (dniValidation) {
       form.setError("dni", { type: "validate", message: dniValidation })
       return
@@ -254,14 +412,14 @@ export default function MisDatosForm({
 
     const payload = {
       profile_picture: profilePicture,
-      name: values.name || null,
-      lastname: values.lastname || null,
-      birth_date: values.birth_date || null,
+      name: trimmedName || null,
+      lastname: trimmedLastname || null,
+      birth_date: trimmedBirthDate || null,
       country: selectedCountry?.name || null,
       state: selectedState?.name || null,
       city: selectedCity?.name || null,
-      address: values.address || null,
-      contact_page: values.contact_page || null,
+      address: trimmedAddress || null,
+      contact_page: trimmedContactPage || null,
       phone: normalizedLocalPhone
         ? (phonePrefix ? `${phonePrefix}${normalizedLocalPhone}` : normalizedLocalPhone)
         : null,
@@ -345,11 +503,22 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="name"
+              rules={{
+                required: "El nombre es obligatorio",
+                validate: (value) =>
+                  !digitsPattern.test(value) || "El nombre no puede contener números",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Nombre</FormLabel>
                   <FormControl>
-                    <Input placeholder="Tu nombre" {...field} />
+                    <Input
+                      placeholder="Tu nombre"
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(event.target.value.replace(/\d/g, ""))
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -358,11 +527,22 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="lastname"
+              rules={{
+                required: "El apellido es obligatorio",
+                validate: (value) =>
+                  !digitsPattern.test(value) || "El apellido no puede contener números",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Apellido</FormLabel>
                   <FormControl>
-                    <Input placeholder="Tu apellido" {...field} />
+                    <Input
+                      placeholder="Tu apellido"
+                      {...field}
+                      onChange={(event) => {
+                        field.onChange(event.target.value.replace(/\d/g, ""))
+                      }}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -372,11 +552,16 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="birth_date"
+              rules={{
+                required: "La fecha de nacimiento es obligatoria",
+                validate: (value) =>
+                  value <= todayIso || "La fecha de nacimiento no puede ser futura",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Fecha de nacimiento</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <Input type="date" max={todayIso} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -386,6 +571,9 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="country"
+              rules={{
+                required: "El país es obligatorio",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">País</FormLabel>
@@ -415,6 +603,9 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="state"
+              rules={{
+                required: "El estado es obligatorio",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Estado</FormLabel>
@@ -447,6 +638,9 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="city"
+              rules={{
+                required: "La ciudad es obligatoria",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Ciudad</FormLabel>
@@ -476,6 +670,9 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="address"
+              rules={{
+                required: "La dirección es obligatoria",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Dirección</FormLabel>
@@ -490,6 +687,12 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="contact_page"
+              rules={{
+                validate: (value) =>
+                  !value.trim() ||
+                  isValidWebUrl(value) ||
+                  "La página de contacto debe ser una URL válida (http:// o https://)",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Página de contacto</FormLabel>
@@ -504,6 +707,12 @@ export default function MisDatosForm({
             <FormField
               control={form.control}
               name="phone"
+              rules={{
+                required: "El teléfono es obligatorio",
+                validate: (value) =>
+                  onlyDigits(value).length === 11 ||
+                  "El teléfono debe tener exactamente 11 números (sin prefijo)",
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Teléfono</FormLabel>
@@ -518,10 +727,11 @@ export default function MisDatosForm({
                       <Input
                         placeholder="Número"
                         inputMode="numeric"
+                        maxLength={11}
                         value={field.value}
                         onChange={(event) => {
                           const digitsOnly = event.target.value.replace(/\D/g, "")
-                          field.onChange(digitsOnly)
+                          field.onChange(digitsOnly.slice(0, 11))
                         }}
                       />
                     </FormControl>
@@ -535,7 +745,8 @@ export default function MisDatosForm({
               control={form.control}
               name="dni"
               rules={{
-                validate: (value) => validateDni(dniPrefix, value) ?? true,
+                required: "La cédula es obligatoria",
+                validate: (value) => validateDniByPrefix(dniPrefix, value) ?? true,
               }}
               render={({ field }) => (
                 <FormItem>

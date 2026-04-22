@@ -15,6 +15,7 @@ import {
 	ResetPasswordDto,
 } from './dto/auth.dto';
 import { LoginSoftLockService } from './login-soft-lock.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * Proxies all better-auth requests to the toNodeHandler.
@@ -28,6 +29,7 @@ export class BetterAuthController {
 		@Inject('BETTER_AUTH')
 		private readonly betterAuth: { auth: any; handler: (req: any, res: any) => any },
 		private readonly loginSoftLockService: LoginSoftLockService,
+		private readonly prisma: PrismaService,
 	) {}
 
 	private extractEmailFromRequest(req: Request): string | null {
@@ -85,6 +87,22 @@ export class BetterAuthController {
 	@ApiResponse({ status: 200, description: 'User registered successfully' })
 	@ApiResponse({ status: 422, description: 'Validation error' })
 	async signUpEmail(@Req() req: Request, @Res() res: Response) {
+		const signUpEmail = this.extractEmailFromRequest(req);
+
+		if (signUpEmail) {
+			const existingUser = await this.prisma.user.findUnique({
+				where: { email: signUpEmail },
+				select: { id: true },
+			});
+
+			if (existingUser) {
+				return res.status(422).json({
+					code: 'USER_ALREADY_EXISTS',
+					message: 'User already exists. Use another email.',
+				});
+			}
+		}
+
 		return this.betterAuth.handler(req, res);
 	}
 

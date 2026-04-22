@@ -46,6 +46,31 @@ const registerSchema = z
 type RegisterInput = z.infer<typeof registerSchema>
 type LoginInput = z.infer<typeof loginSchema>
 
+function getLoginErrorMessage(errorMessage?: string | null): string {
+	if (errorMessage === "Invalid email or password") {
+		return "Correo o contraseña incorrectos"
+	}
+
+	return errorMessage ?? "Credenciales inválidas"
+}
+
+function getRegisterErrorMessage(error?: { code?: string; message?: string } | null): string {
+	const code = error?.code?.toUpperCase()
+	const message = error?.message?.toLowerCase() ?? ""
+
+	if (
+		code === "USER_ALREADY_EXISTS" ||
+		code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL" ||
+		message.includes("user already exists") ||
+		message.includes("use another email") ||
+		message.includes("already registered")
+	) {
+		return "Ese correo ya está registrado. Inicia sesión o usa otro correo."
+	}
+
+	return "No se pudo crear la cuenta. Verifica los datos o intenta con otro correo."
+}
+
 function createSafeZodResolver<TFieldValues extends FieldValues>(
 	schema: z.ZodType<TFieldValues>
 ): Resolver<TFieldValues> {
@@ -171,7 +196,7 @@ export default function LoginClientPage() {
 			})
 
 			if (response.error) {
-				setLoginError(response.error.message ?? "Credenciales inválidas")
+				setLoginError(getLoginErrorMessage(response.error.message))
 				return
 			}
 
@@ -195,9 +220,7 @@ export default function LoginClientPage() {
 			})
 
 			if (response.error) {
-				setRegisterMessage(
-					"No se pudo crear la cuenta. Verifica los datos o intenta con otro correo."
-				)
+				setRegisterMessage(getRegisterErrorMessage(response.error))
 				return
 			}
 
@@ -271,7 +294,7 @@ export default function LoginClientPage() {
 											name="email"
 											render={({ field }) => (
 												<FormItem>
-													<FormLabel>Correo electrónico corporativo</FormLabel>
+													<FormLabel>Correo electrónico</FormLabel>
 													<FormControl>
 														<Input
 															type="email"
@@ -339,7 +362,7 @@ export default function LoginClientPage() {
 											name="email"
 											render={({ field }) => (
 												<FormItem>
-													<FormLabel>Correo electrónico corporativo</FormLabel>
+													<FormLabel>Correo electrónico</FormLabel>
 													<FormControl>
 														<Input
 															type="email"

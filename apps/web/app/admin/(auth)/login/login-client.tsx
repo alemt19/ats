@@ -33,6 +33,14 @@ import { Input } from "react/components/ui/input"
 type LoginInput = z.infer<typeof loginSchema>
 const apiBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 
+function getLoginErrorMessage(errorMessage?: string | null): string {
+	if (errorMessage === "Invalid email or password") {
+		return "Correo o contraseña incorrectos"
+	}
+
+	return errorMessage ?? "Credenciales inválidas"
+}
+
 function createSafeZodResolver<TFieldValues extends FieldValues>(
 	schema: z.ZodType<TFieldValues>
 ): Resolver<TFieldValues> {
@@ -102,7 +110,7 @@ export default function AdminLoginClientPage() {
 			})
 
 			if (response.error) {
-				setLoginError(response.error.message ?? "Credenciales inválidas")
+				setLoginError(getLoginErrorMessage(response.error.message))
 				return
 			}
 

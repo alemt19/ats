@@ -47,7 +47,7 @@ export class EvaluationQueueProducer implements OnModuleDestroy {
 		);
 
 		await this.queue.add('evaluate', data, {
-			attempts: 3,
+			attempts: Number.MAX_SAFE_INTEGER,
 			backoff: {
 				type: 'exponential',
 				delay: 10_000,

@@ -258,6 +258,9 @@ async def main() -> None:
         {
             "connection": redis_url,
             "concurrency": max(concurrency, collector.max_batch_size),
+            "lockDuration": 300_000,
+            "stalledInterval": 60_000,
+            "maxStalledCount": 2_147_483_647,
         },
     )
 

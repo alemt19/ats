@@ -1027,7 +1027,13 @@ async def main() -> None:
     worker = Worker(
         QUEUE_NAME,
         worker_instance.handler,
-        {"connection": redis_url, "concurrency": 5},
+        {
+            "connection": redis_url,
+            "concurrency": 5,
+            "lockDuration": 300_000,
+            "stalledInterval": 60_000,
+            "maxStalledCount": 2_147_483_647,
+        },
     )
 
     logger.info("Evaluation worker active")

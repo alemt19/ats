@@ -278,6 +278,9 @@ export default function CompetenciasValoresForm({
   behavioralQuestion1,
   behavioralQuestion2,
 }: CompetenciasValoresFormProps) {
+  const MAX_CV_FILE_SIZE_BYTES = 5 * 1024 * 1024
+  const MAX_CV_PAGES = 5
+
   const initialCvUrl = initialData.cv_url ?? ""
   const initialCvFileName = initialCvUrl.split("/").pop() || "Sin archivo"
 
@@ -370,6 +373,24 @@ export default function CompetenciasValoresForm({
     }
   }, [cvFile, cvPreviewType, cvPreviewUrl])
 
+  React.useEffect(() => {
+    if (technicalSkills.length > 0 && form.formState.errors.technical_skills) {
+      form.clearErrors("technical_skills")
+    }
+  }, [form, technicalSkills, form.formState.errors.technical_skills])
+
+  React.useEffect(() => {
+    if (softSkills.length > 0 && form.formState.errors.soft_skills) {
+      form.clearErrors("soft_skills")
+    }
+  }, [form, softSkills, form.formState.errors.soft_skills])
+
+  React.useEffect(() => {
+    if (candidateValues.length > 0 && form.formState.errors.values) {
+      form.clearErrors("values")
+    }
+  }, [candidateValues, form, form.formState.errors.values])
+
   const setMultiFieldValue = React.useCallback(
     (fieldName: MultiFieldName, values: string[]) => {
       form.setValue(fieldName, dedupe(values), { shouldDirty: true })
@@ -402,7 +423,80 @@ export default function CompetenciasValoresForm({
     [form]
   )
 
-  const handleCvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const extractDocxPageCount = (document: unknown): number | null => {
+    const candidate = document as {
+      appProps?: { pages?: unknown }
+    }
+
+    const pagesFromProps = candidate?.appProps?.pages
+    if (typeof pagesFromProps === "number" && Number.isFinite(pagesFromProps) && pagesFromProps > 0) {
+      return pagesFromProps
+    }
+
+    let breakCount = 0
+    const visited = new WeakSet<object>()
+
+    const walk = (node: unknown) => {
+      if (!node || typeof node !== "object") {
+        return
+      }
+
+      if (visited.has(node)) {
+        return
+      }
+
+      visited.add(node)
+
+      if (Array.isArray(node)) {
+        node.forEach(walk)
+        return
+      }
+
+      const record = node as Record<string, unknown>
+
+      if (
+        record.break === "page" ||
+        record.break === "lastRenderedPageBreak" ||
+        record.pageBreak === true
+      ) {
+        breakCount += 1
+      }
+
+      Object.values(record).forEach(walk)
+    }
+
+    walk(document)
+
+    if (breakCount > 0) {
+      return breakCount + 1
+    }
+
+    return null
+  }
+
+  const getPdfPageCount = async (file: File): Promise<number | null> => {
+    const buffer = await file.arrayBuffer()
+    const content = new TextDecoder("latin1").decode(new Uint8Array(buffer))
+    const matches = content.match(/\/Type\s*\/Page\b/g)
+
+    if (!matches?.length) {
+      return null
+    }
+
+    return matches.length
+  }
+
+  const getCvPageCount = async (file: File, fileType: "pdf" | "docx"): Promise<number | null> => {
+    if (fileType === "pdf") {
+      return getPdfPageCount(file)
+    }
+
+    const { parseAsync } = await import("docx-preview")
+    const parsedDoc = await parseAsync(file)
+    return extractDocxPageCount(parsedDoc)
+  }
+
+  const handleCvUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
 
     if (!file) {
@@ -413,6 +507,28 @@ export default function CompetenciasValoresForm({
 
     if (!fileType) {
       setCvError("Solo se permiten archivos PDF o DOCX.")
+      return
+    }
+
+    if (file.size > MAX_CV_FILE_SIZE_BYTES) {
+      setCvError("El CV no puede superar 5MB.")
+      return
+    }
+
+    try {
+      const pageCount = await getCvPageCount(file, fileType)
+
+      if (pageCount === null) {
+        setCvError("No se pudo validar el número de páginas del archivo.")
+        return
+      }
+
+      if (pageCount > MAX_CV_PAGES) {
+        setCvError("El CV debe tener máximo 5 páginas.")
+        return
+      }
+    } catch {
+      setCvError("No se pudo validar el archivo de CV.")
       return
     }
 
@@ -480,6 +596,64 @@ export default function CompetenciasValoresForm({
   }
 
   const onSubmit = async (values: CompetenciasValoresInitialData) => {
+    form.clearErrors()
+    setCvError("")
+
+    const trimmedBehavioralAns1 = values.behavioral_ans_1.trim()
+    const trimmedBehavioralAns2 = values.behavioral_ans_2.trim()
+    const hasExistingCv = Boolean(cvFile || initialCvUrl || cvPreviewUrl)
+
+    let hasErrors = false
+
+    if (!hasExistingCv) {
+      setCvError("El archivo de CV es obligatorio.")
+      hasErrors = true
+    }
+
+    if (!trimmedBehavioralAns1) {
+      form.setError("behavioral_ans_1", {
+        type: "required",
+        message: "Este campo es obligatorio",
+      })
+      hasErrors = true
+    }
+
+    if (!trimmedBehavioralAns2) {
+      form.setError("behavioral_ans_2", {
+        type: "required",
+        message: "Este campo es obligatorio",
+      })
+      hasErrors = true
+    }
+
+    if (!values.technical_skills.length) {
+      form.setError("technical_skills", {
+        type: "required",
+        message: "Debes agregar al menos una habilidad técnica",
+      })
+      hasErrors = true
+    }
+
+    if (!values.soft_skills.length) {
+      form.setError("soft_skills", {
+        type: "required",
+        message: "Debes agregar al menos una habilidad blanda",
+      })
+      hasErrors = true
+    }
+
+    if (!values.values.length) {
+      form.setError("values", {
+        type: "required",
+        message: "Debes agregar al menos un valor",
+      })
+      hasErrors = true
+    }
+
+    if (hasErrors) {
+      return
+    }
+
     const skillsOrValuesChanged =
       !areListsEqual(values.technical_skills, savedListsRef.current.technical_skills) ||
       !areListsEqual(values.soft_skills, savedListsRef.current.soft_skills) ||
@@ -487,8 +661,8 @@ export default function CompetenciasValoresForm({
 
     const formData = new FormData()
 
-    formData.append("behavioral_ans_1", values.behavioral_ans_1)
-    formData.append("behavioral_ans_2", values.behavioral_ans_2)
+    formData.append("behavioral_ans_1", trimmedBehavioralAns1)
+    formData.append("behavioral_ans_2", trimmedBehavioralAns2)
     formData.append("technical_skills", JSON.stringify(values.technical_skills))
     formData.append("soft_skills", JSON.stringify(values.soft_skills))
     formData.append("values", JSON.stringify(values.values))
@@ -614,6 +788,7 @@ export default function CompetenciasValoresForm({
               <FormField
                 control={form.control}
                 name="behavioral_ans_1"
+                rules={{ required: "Este campo es obligatorio" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-foreground/85">{behavioralQuestion1}</FormLabel>
@@ -632,6 +807,7 @@ export default function CompetenciasValoresForm({
               <FormField
                 control={form.control}
                 name="behavioral_ans_2"
+                rules={{ required: "Este campo es obligatorio" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-sm font-medium text-foreground/85">{behavioralQuestion2}</FormLabel>
@@ -692,6 +868,9 @@ export default function CompetenciasValoresForm({
                 }
                 disabled={!isSkillsSectionUnlocked}
               />
+              {form.formState.errors.technical_skills?.message ? (
+                <p className="text-sm text-destructive">{form.formState.errors.technical_skills.message}</p>
+              ) : null}
 
               <MultiDatalistField
                 fieldName="soft_skills"
@@ -707,6 +886,9 @@ export default function CompetenciasValoresForm({
                 }
                 disabled={!isSkillsSectionUnlocked}
               />
+              {form.formState.errors.soft_skills?.message ? (
+                <p className="text-sm text-destructive">{form.formState.errors.soft_skills.message}</p>
+              ) : null}
 
               <MultiDatalistField
                 fieldName="values"
@@ -722,6 +904,9 @@ export default function CompetenciasValoresForm({
                 }
                 disabled={!isSkillsSectionUnlocked}
               />
+              {form.formState.errors.values?.message ? (
+                <p className="text-sm text-destructive">{form.formState.errors.values.message}</p>
+              ) : null}
               </div>
             </CardContent>
           </Card>

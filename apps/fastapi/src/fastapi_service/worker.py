@@ -54,7 +54,16 @@ async def main() -> None:
     signal.signal(signal.SIGTERM, signal_handler)
     signal.signal(signal.SIGINT, signal_handler)
 
-    worker = Worker(QUEUE_NAME, process, {"connection": worker_config.redis_url})
+    worker = Worker(
+        QUEUE_NAME,
+        process,
+        {
+            "connection": worker_config.redis_url,
+            "lockDuration": 300_000,
+            "stalledInterval": 60_000,
+            "maxStalledCount": 2_147_483_647,
+        },
+    )
 
     await shutdown_event.wait()
     await worker.close()
