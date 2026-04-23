@@ -12,6 +12,7 @@
         "prisma:push": "prisma db push",
         "prisma:studio": "prisma studio",
         "prisma:seed": "prisma db seed",
+        "prisma:seed2": "ts-node prisma/seed2.ts",
         "trigger:evaluations": "ts-node scripts/trigger-evaluations.ts"
     },
     "prisma": {

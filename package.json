@@ -9,6 +9,7 @@
     "check-types": "turbo run check-types",
     "typecheck": "turbo run check-types",
     "seed": "pnpm --filter api prisma:seed",
+    "seed2": "pnpm --filter api prisma:seed2",
     "seed:embeddings": "pnpm --filter fastapi seed:embeddings",
     "seed:trigger": "pnpm --filter api trigger:evaluations"
   },
