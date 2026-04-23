@@ -1,0 +1,38 @@
+[
+    {
+        "id": 1,
+        "name": "Tecnología"
+    },
+    {
+        "id": 2,
+        "name": "Ingeniería Civil"
+    },
+    {
+        "id": 3,
+        "name": "Telecomunicaciones"
+    },
+    {
+        "id": 4,
+        "name": "Diseño Grafico"
+    },
+    {
+        "id": 5,
+        "name": "Arquitectura"
+    },
+    {
+        "id": 6,
+        "name": "Electrónica"
+    },
+    {
+        "id": 7,
+        "name": "Ingeniería Industrial"
+    },
+    {
+        "id": 8,
+        "name": "Recursos Humanos"
+    },
+    {
+        "id": 9,
+        "name": "Contaduría"
+    }
+]

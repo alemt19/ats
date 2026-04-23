@@ -1,0 +1,30 @@
+[
+    {
+        "email": "alejandrojalvarezg.2005@gmail.com",
+        "password": "admin123#",
+        "name": "Alejandro",
+        "lastname": "Alvarez",
+        "role": "head_of_recruiters",
+        "phone": "+5804144052510",
+        "company_id": 1,
+        "city": "Valencia",
+        "state": "Carabobo",
+        "country": "Venezuela",
+        "birth_date": "2005-07-08",
+        "dni": "V31629822"
+    },
+    {
+        "email": "alalvarez22@ujap.edu.ve",
+        "password": "admin123#",
+        "name": "Alejandro",
+        "lastname": "Alvarez",
+        "role": "recruiter",
+        "phone": "+5804144052510",
+        "company_id": 1,
+        "city": "Valencia",
+        "state": "Carabobo",
+        "country": "Venezuela",
+        "birth_date": "2005-07-08",
+        "dni": "V31629822"
+    }
+]

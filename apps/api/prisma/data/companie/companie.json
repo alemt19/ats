@@ -1,0 +1,20 @@
+{
+    "id": 1,
+    "logo_file": "/apps/api/prisma/data/companie/logo.jpg",
+    "name": "InnovateTech C.A.",
+    "contact_email": "talento@innovatetech.com",
+    "country": "Venezuela",
+    "state": "Carabobo",
+    "city": "Valencia",
+    "address": "Santa Rosa, calle 80 las marias",
+    "description": "Empresa venezolana de tecnología especializada en desarrollo de software a medida, consultoría IT y transformación digital para empresas de todos los sectores. Con más de 8 años en el mercado, contamos con un equipo de +50 profesionales apasionados por la innovación.",
+    "mision": "Transformar la industria tecnológica venezolana con soluciones innovadoras que impulsen el crecimiento de nuestros clientes y generen un impacto positivo en la sociedad.",
+    "vision": "Ser la empresa líder en transformación digital en Venezuela y Latinoamérica, reconocida por nuestra excelencia técnica, calidad humana y compromiso con la innovación.",
+    "values": "Colaboración, Integridad, Innovación, Excelencia, Responsabilidad",
+    "dress_code": "semi_formal",
+    "collaboration_style": "mixed",
+    "work_pace": "moderate",
+    "level_of_autonomy": "high_control",
+    "dealing_with_management": "nearby",
+    "level_of_monitoring": "weekly_goals"
+}
