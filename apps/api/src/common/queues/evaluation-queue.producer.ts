@@ -50,7 +50,7 @@ export class EvaluationQueueProducer implements OnModuleDestroy {
 			attempts: Number.MAX_SAFE_INTEGER,
 			backoff: {
 				type: 'exponential',
-				delay: 10_000,
+				delay: 60000,
 			},
 			removeOnComplete: true,
 			removeOnFail: false,

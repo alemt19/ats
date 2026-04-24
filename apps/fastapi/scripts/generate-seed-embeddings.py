@@ -61,7 +61,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
 OUTPUT_DIMENSIONALITY = int(os.getenv("EMBEDDING_OUTPUT_DIMENSIONALITY", "1536"))
-BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "50"))
+BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "100"))
 
 if not DATABASE_URL:
     logger.error("DATABASE_URL no está definida")
@@ -176,7 +176,7 @@ def generate_attribute_embeddings() -> int:
 
             # Rate limiting suave entre batches
             if len(rows) > BATCH_SIZE:
-                time.sleep(1.0)
+                time.sleep(60.0)
 
         except Exception as e:
             logger.exception("Error en batch de atributos: %s", e)

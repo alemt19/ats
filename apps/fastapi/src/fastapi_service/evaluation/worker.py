@@ -1016,6 +1016,10 @@ class EvaluationWorker:
                 self._set_evaluation_status, application_id, "failed"
             )
             raise
+        finally:
+            # 2. Forzar al worker a esperar antes de quedar "libre"
+            logger.info("Tarea terminada. Esperando 30s antes de permitir la siguiente...")
+            await asyncio.sleep(30)
 
 
 async def main() -> None:
