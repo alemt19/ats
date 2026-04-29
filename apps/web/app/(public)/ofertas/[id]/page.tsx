@@ -692,7 +692,7 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 				</CardHeader>
 
 				<CardContent className="space-y-6">
-					<p className="text-sm leading-relaxed text-muted-foreground whitespace-pre-line">
+					<p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
 						{offerDetail.description}
 					</p>
 
