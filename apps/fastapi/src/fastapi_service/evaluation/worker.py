@@ -35,6 +35,10 @@ logging.basicConfig(
     format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
 )
 
+
+class EmbeddingsNotReadyError(RuntimeError):
+    pass
+
 load_environment()
 
 QUEUE_NAME = "evaluation"
@@ -239,11 +243,73 @@ class EvaluationWorker:
                     groups[attr_type].embeddings.append(embedding)
                     groups[attr_type].mandatory_flags.append(bool(is_mandatory))
 
+        if entity_type == "job":
+            with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "SELECT summary_embedding IS NOT NULL FROM jobs WHERE id = %s",
+                        (entity_id,),
+                    )
+                    summary_row = cur.fetchone()
+                    if not summary_row:
+                        raise ValueError(f"Job {entity_id} not found")
+                    if not summary_row[0]:
+                        raise EmbeddingsNotReadyError(
+                            f"Job {entity_id} summary embedding is not ready yet"
+                        )
+
+                    cur.execute(
+                        """
+                        SELECT COUNT(*)
+                        FROM job_attributes ja
+                        JOIN global_attributes ga ON ga.id = ja.attribute_id
+                        WHERE ja.job_id = %s AND ga.embedding IS NULL
+                        """,
+                        (entity_id,),
+                    )
+                    missing_embeddings = int(cur.fetchone()[0] or 0)
+
+            if missing_embeddings > 0:
+                raise EmbeddingsNotReadyError(
+                    f"Job {entity_id} has {missing_embeddings} attribute embeddings pending"
+                )
+
         # For jobs: fall back to company values when no job-specific values are defined
         if entity_type == "job" and not groups["value"].names:
             self._fill_company_values_fallback(entity_id, groups)
 
         return groups
+
+    def _assert_job_embeddings_ready(self, job_id: int) -> None:
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT summary_embedding IS NOT NULL FROM jobs WHERE id = %s",
+                    (job_id,),
+                )
+                summary_row = cur.fetchone()
+                if not summary_row:
+                    raise ValueError(f"Job {job_id} not found")
+                if not summary_row[0]:
+                    raise EmbeddingsNotReadyError(
+                        f"Job {job_id} summary embedding is not ready yet"
+                    )
+
+                cur.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM job_attributes ja
+                    JOIN global_attributes ga ON ga.id = ja.attribute_id
+                    WHERE ja.job_id = %s AND ga.embedding IS NULL
+                    """,
+                    (job_id,),
+                )
+                missing_embeddings = int(cur.fetchone()[0] or 0)
+
+        if missing_embeddings > 0:
+            raise EmbeddingsNotReadyError(
+                f"Job {job_id} has {missing_embeddings} attribute embeddings pending"
+            )
 
     def _fill_company_values_fallback(self, job_id: int, groups: dict[str, AttributeGroup]) -> None:
         """Use company-level value attributes as culture reference when a job has none."""
@@ -908,6 +974,7 @@ class EvaluationWorker:
         )
 
         try:
+            await asyncio.to_thread(self._assert_job_embeddings_ready, job_id)
             await asyncio.to_thread(
                 self._set_evaluation_status, application_id, "processing"
             )
@@ -1007,6 +1074,17 @@ class EvaluationWorker:
             )
             logger.info("Evaluation completed for application %s", application_id)
             return True
+
+        except EmbeddingsNotReadyError:
+            logger.warning(
+                "Evaluation deferred for application %s because job %s embeddings are not ready yet",
+                application_id,
+                job_id,
+            )
+            await asyncio.to_thread(
+                self._set_evaluation_status, application_id, "pending"
+            )
+            raise
 
         except Exception:
             logger.exception(

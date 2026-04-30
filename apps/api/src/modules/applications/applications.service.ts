@@ -249,6 +249,11 @@ export class ApplicationsService {
       throw new NotFoundException('No existe una postulación para esta oferta');
     }
 
+    const currentStatus = this.normalizeApplicationStatus(application.status);
+    if (currentStatus === 'hired') {
+      throw new ConflictException('No puedes refrescar una postulación contratada');
+    }
+
     await this.prisma.$transaction([
       this.prisma.application_similar_jobs.deleteMany({
         where: { application_id: application.id },
@@ -366,20 +371,28 @@ export class ApplicationsService {
 
     const jobTitle = application.jobs?.title?.trim() || 'la oferta';
 
-    await this.prisma.notifications.create({
-      data: {
-        user_id: candidateUserId,
-        type: 'application_hired',
-        entity_type: 'application',
-        entity_id: applicationId,
-        title: '¡Felicitaciones! Fuiste contratado',
-        message: `Tu postulacion a ${jobTitle} ha sido aceptada. ¡Bienvenido al equipo!`,
-        metadata: {
-          job_id: application.jobs?.id ?? null,
-          job_title: application.jobs?.title ?? null,
+    try {
+      await this.prisma.notifications.create({
+        data: {
+          user_id: candidateUserId,
+          type: 'application_hired',
+          entity_type: 'application',
+          entity_id: applicationId,
+          title: '¡Felicitaciones! Fuiste contratado',
+          message: `Tu postulacion a ${jobTitle} ha sido aceptada. ¡Bienvenido al equipo!`,
+          metadata: {
+            job_id: application.jobs?.id ?? null,
+            job_title: application.jobs?.title ?? null,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') {
+        return;
+      }
+
+      throw error;
+    }
   }
 
   async findNotesForAdmin(userId: string, applicationId: number) {
