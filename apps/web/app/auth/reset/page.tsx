@@ -33,7 +33,7 @@ const resetSchema = z
 
 const authBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const token = searchParams.get("token")
@@ -153,15 +153,26 @@ export default function ResetPasswordPage() {
 						{error ? <p className="text-sm text-destructive">{error}</p> : null}
 
 						<Button type="submit" className="w-full" disabled={isSubmitting}>
-							{isSubmitting ? "Actualizando..." : "Actualizar contraseña"}
+							{isSubmitting ? "Restableciendo..." : "Restablecer contraseña"}
 						</Button>
 
-						<Button type="button" variant="outline" className="w-full" asChild>
-							<Link href="/login">Volver a iniciar sesión</Link>
-						</Button>
+						<div className="text-center text-sm text-muted-foreground">
+							¿Recordaste tu contraseña?{" "}
+							<Link href="/login" className="font-medium text-primary hover:underline">
+								Inicia sesión
+							</Link>
+						</div>
 					</form>
 				</CardContent>
 			</Card>
 		</main>
+	)
+}
+
+export default function ResetPasswordPage() {
+	return (
+		<React.Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
+			<ResetPasswordForm />
+		</React.Suspense>
 	)
 }

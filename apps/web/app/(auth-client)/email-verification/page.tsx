@@ -36,7 +36,7 @@ function maskEmail(email: string) {
 	return `${start}${"*".repeat(Math.max(localPart.length - 2, 3))}@${domain}`
 }
 
-export default function EmailVerificationPage() {
+function EmailVerificationForm() {
 	const searchParams = useSearchParams()
 	const { company } = useCompany()
 	const [otpCode, setOtpCode] = React.useState("")
@@ -95,16 +95,17 @@ export default function EmailVerificationPage() {
 						<Button type="submit" className="w-full rounded-full shadow-soft" disabled={!isOtpComplete || isSubmitting}>
 							{isSubmitting ? "Verificando..." : "Verificar cuenta"}
 						</Button>
-
-						{/* <div className="text-center text-sm text-muted-foreground">
-							¿No recibiste el código?{" "}
-							<Link href="#" className="font-medium text-primary hover:underline">
-								Reenviar código
-							</Link>
-						</div> */}
 					</form>
 				</CardContent>
 			</Card>
 		</main>
+	)
+}
+
+export default function EmailVerificationPage() {
+	return (
+		<React.Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
+			<EmailVerificationForm />
+		</React.Suspense>
 	)
 }

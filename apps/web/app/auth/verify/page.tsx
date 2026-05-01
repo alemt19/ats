@@ -17,7 +17,7 @@ type VerificationStatus = "loading" | "success" | "error"
 
 const authBaseUrl = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 
-export default function VerifyEmailPage() {
+function VerifyEmailForm() {
 	const searchParams = useSearchParams()
 	const token = searchParams.get("token")
 
@@ -95,5 +95,13 @@ export default function VerifyEmailPage() {
 				</CardContent>
 			</Card>
 		</main>
+	)
+}
+
+export default function VerifyEmailPage() {
+	return (
+		<React.Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
+			<VerifyEmailForm />
+		</React.Suspense>
 	)
 }

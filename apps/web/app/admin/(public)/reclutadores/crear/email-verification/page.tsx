@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
+import * as React from "react"
 
 import { Button } from "react/components/ui/button"
 import {
@@ -27,7 +28,7 @@ function maskEmail(email: string) {
 	return `${start}${"*".repeat(Math.max(localPart.length - 2, 3))}@${domain}`
 }
 
-export default function ReclutadorEmailVerificationPage() {
+function ReclutadorEmailVerificationForm() {
 	const searchParams = useSearchParams()
 
 	const email = searchParams.get("email") ?? ""
@@ -57,5 +58,13 @@ export default function ReclutadorEmailVerificationPage() {
 				</CardContent>
 			</Card>
 		</main>
+	)
+}
+
+export default function ReclutadorEmailVerificationPage() {
+	return (
+		<React.Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
+			<ReclutadorEmailVerificationForm />
+		</React.Suspense>
 	)
 }

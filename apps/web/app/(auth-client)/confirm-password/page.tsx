@@ -50,7 +50,7 @@ function maskEmail(email: string) {
 	return `${localPart.slice(0, 2)}${"*".repeat(Math.max(localPart.length - 2, 3))}@${domain}`
 }
 
-export default function ConfirmPasswordPage() {
+function ConfirmPasswordForm() {
 	const router = useRouter()
 	const searchParams = useSearchParams()
 	const { company } = useCompany()
@@ -190,21 +190,22 @@ export default function ConfirmPasswordPage() {
 							</div>
 						</div>
 
-						{error ? <p className="text-sm text-destructive">{error}</p> : null}
+						{error && <p className="text-sm text-destructive">{error}</p>}
 
 						<Button type="submit" className="w-full rounded-full shadow-soft" disabled={isSubmitting}>
 							{isSubmitting ? "Actualizando..." : "Actualizar contraseña"}
 						</Button>
-
-						{/* <div className="text-center text-sm text-muted-foreground">
-							¿No tienes código?{" "}
-							<Link href="/recover-password" className="font-medium text-primary hover:underline">
-								Solicitar otro
-							</Link>
-						</div> */}
 					</form>
 				</CardContent>
 			</Card>
 		</main>
+	)
+}
+
+export default function ConfirmPasswordPage() {
+	return (
+		<React.Suspense fallback={<div className="flex h-screen items-center justify-center">Cargando...</div>}>
+			<ConfirmPasswordForm />
+		</React.Suspense>
 	)
 }
