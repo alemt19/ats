@@ -46,6 +46,7 @@ export class AdminProfileService {
 		dni: string | null;
 		phone: string | null;
 		role: string | null;
+		font_size: string | null;
 		country: string | null;
 		state: string | null;
 		city: string | null;
@@ -62,6 +63,7 @@ export class AdminProfileService {
 			dni: record.dni ?? '',
 			phone: record.phone ?? '',
 			role: record.role ?? '',
+			font_size: record.font_size ?? 'medium',
 			country: record.country ?? '',
 			state: record.state ?? '',
 			city: record.city ?? '',
@@ -81,6 +83,7 @@ export class AdminProfileService {
 				dni: true,
 				phone: true,
 				role: true,
+				font_size: true,
 				country: true,
 				state: true,
 				city: true,
@@ -119,6 +122,7 @@ export class AdminProfileService {
 				lastname: dto.lastname.trim(),
 				dni: dto.dni.trim() || null,
 				phone: this.composePhone(dto.phone, dto.phone_prefix) || null,
+				font_size: dto.font_size,
 				state: dto.state.trim(),
 				city: dto.city.trim(),
 				address: dto.address.trim(),
@@ -132,6 +136,7 @@ export class AdminProfileService {
 				dni: true,
 				phone: true,
 				role: true,
+				font_size: true,
 				country: true,
 				state: true,
 				city: true,

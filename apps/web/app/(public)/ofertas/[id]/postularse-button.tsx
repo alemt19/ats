@@ -159,6 +159,7 @@ export default function PostularseButton({
   const [showProfileChecklistDialog, setShowProfileChecklistDialog] = React.useState(false)
   const [missingFields, setMissingFields] = React.useState<string[]>([])
   const [isRefreshing, setIsRefreshing] = React.useState(false)
+  const isHired = statusTechnicalName === "hired"
 
   const redirectToLogin = React.useCallback(() => {
     const redirect = pathname ? `?redirect=${encodeURIComponent(pathname)}` : ""
@@ -284,6 +285,11 @@ export default function PostularseButton({
       return
     }
 
+    if (isHired) {
+      toast.info("Ya estás contratado en esta oferta, no puedes refrescar la postulación")
+      return
+    }
+
     setIsRefreshing(true)
 
     try {
@@ -335,9 +341,9 @@ export default function PostularseButton({
               type="button"
               variant="outline"
               onClick={() => void handleRefreshApplication()}
-              disabled={isRefreshing}
+              disabled={isRefreshing || isHired}
             >
-              {isRefreshing ? "Refrescando..." : "Refrescar postulación"}
+              {isRefreshing ? "Refrescando..." : isHired ? "Ya contratado" : "Refrescar postulación"}
             </Button>
             {statusDisplayName ? (
               <Badge variant={statusTechnicalName === "rejected" ? "destructive" : statusTechnicalName === "contacted" ? "success" : "outline"}>

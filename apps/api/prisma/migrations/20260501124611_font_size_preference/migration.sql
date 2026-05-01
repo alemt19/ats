@@ -1,0 +1,3 @@
+-- No-op migration.
+-- These indexes are already managed by
+-- 20260304112000_replace_vector_btree_indexes_with_ivfflat.

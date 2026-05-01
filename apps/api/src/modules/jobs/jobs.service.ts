@@ -7,10 +7,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.producer';
+import { EvaluationQueueProducer } from '../../common/queues/evaluation-queue.producer';
 import { JobSummaryQueueProducer } from '../../common/queues/job-summary-queue.producer';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AdminOfferCandidatesQueryDto, AdminOffersQueryDto, CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
-import type { Prisma } from '../../generated/prisma/client';
+import { Prisma } from '../../generated/prisma/client';
 import type { job_status_enum } from '../../generated/prisma/enums';
 
 type JobAttributeType = 'hard_skill' | 'soft_skill';
@@ -53,6 +54,7 @@ export class JobsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly embeddingsQueueProducer: EmbeddingsQueueProducer,
+    private readonly evaluationQueueProducer: EvaluationQueueProducer,
     private readonly jobSummaryQueueProducer: JobSummaryQueueProducer,
   ) {}
 
@@ -187,6 +189,104 @@ export class JobsService {
 
       return item.name === other.name && item.is_mandatory === other.is_mandatory;
     });
+  }
+
+  private hasAnalysisRelevantOfferChanges(
+    existingOffer: Pick<
+      AdminOfferRecord,
+      'title' | 'position' | 'weight_technical' | 'weight_soft' | 'weight_culture' | 'job_attributes'
+    >,
+    dto: CreateAdminOfferDto,
+  ) {
+    const currentTechnicalSkills = this.normalizeAdminSkillItems(
+      existingOffer.job_attributes
+        .filter(
+          (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'hard_skill' } } =>
+            Boolean(link.global_attributes?.name && link.global_attributes.type === 'hard_skill'),
+        )
+        .map((link) => ({
+          name: link.global_attributes.name,
+          is_mandatory: Boolean(link.is_mandatory),
+        })),
+      undefined,
+    );
+
+    const currentSoftSkills = this.normalizeAdminSkillItems(
+      existingOffer.job_attributes
+        .filter(
+          (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'soft_skill' } } =>
+            Boolean(link.global_attributes?.name && link.global_attributes.type === 'soft_skill'),
+        )
+        .map((link) => ({
+          name: link.global_attributes.name,
+          is_mandatory: Boolean(link.is_mandatory),
+        })),
+      undefined,
+    );
+
+    const incomingTechnicalSkills = this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills);
+    const incomingSoftSkills = this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills);
+
+    return (
+      dto.title.trim() !== existingOffer.title.trim() ||
+      String(dto.position ?? '').trim() !== (existingOffer.position ?? '').trim() ||
+      dto.weight_technical !== (existingOffer.weight_technical ?? 0) ||
+      dto.weight_soft !== (existingOffer.weight_soft ?? 0) ||
+      dto.weight_culture !== (existingOffer.weight_culture ?? 0) ||
+      !this.areNormalizedSkillItemsEqual(incomingTechnicalSkills, currentTechnicalSkills) ||
+      !this.areNormalizedSkillItemsEqual(incomingSoftSkills, currentSoftSkills)
+    );
+  }
+
+  private async refreshApplicationsForOffer(offerId: number) {
+    const applications = await this.prisma.applications.findMany({
+      where: {
+        job_id: offerId,
+        status: { not: 'hired' },
+      },
+      select: {
+        id: true,
+        candidate_id: true,
+        job_id: true,
+      },
+    });
+
+    if (applications.length === 0) {
+      return;
+    }
+
+    const applicationIds = applications.map((application) => application.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.application_similar_jobs.deleteMany({
+        where: { application_id: { in: applicationIds } },
+      });
+
+      await tx.applications.updateMany({
+        where: { id: { in: applicationIds } },
+        data: {
+          match_technical_score: null,
+          match_soft_score: null,
+          match_culture_score: null,
+          overall_score: null,
+          ai_feedback: Prisma.JsonNull,
+          evaluation_status: 'pending',
+          updated_at: new Date(),
+        },
+      });
+    });
+
+    await Promise.all(
+      applications
+        .filter((application) => application.candidate_id !== null && application.job_id !== null)
+        .map((application) =>
+          this.evaluationQueueProducer.enqueueEvaluation({
+            applicationId: application.id,
+            candidateId: application.candidate_id as number,
+            jobId: application.job_id as number,
+          }),
+        ),
+    );
   }
 
   private getStatusDisplayName(status: string) {
@@ -749,51 +849,7 @@ export class JobsService {
       throw new BadRequestException('No se puede volver una oferta a estado borrador');
     }
 
-    if (currentStatus !== 'draft') {
-      const currentTechnicalSkills = this.normalizeAdminSkillItems(
-        existingOffer.job_attributes
-          .filter(
-            (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'hard_skill' } } =>
-              Boolean(link.global_attributes?.name && link.global_attributes.type === 'hard_skill'),
-          )
-          .map((link) => ({
-            name: link.global_attributes.name,
-            is_mandatory: Boolean(link.is_mandatory),
-          })),
-        undefined,
-      );
-
-      const currentSoftSkills = this.normalizeAdminSkillItems(
-        existingOffer.job_attributes
-          .filter(
-            (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'soft_skill' } } =>
-              Boolean(link.global_attributes?.name && link.global_attributes.type === 'soft_skill'),
-          )
-          .map((link) => ({
-            name: link.global_attributes.name,
-            is_mandatory: Boolean(link.is_mandatory),
-          })),
-        undefined,
-      );
-
-      const incomingTechnicalSkills = this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills);
-      const incomingSoftSkills = this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills);
-
-      const hasBlockedChanges =
-        dto.title.trim() !== existingOffer.title.trim() ||
-        String(dto.position ?? '').trim() !== (existingOffer.position ?? '').trim() ||
-        dto.weight_technical !== (existingOffer.weight_technical ?? 0) ||
-        dto.weight_soft !== (existingOffer.weight_soft ?? 0) ||
-        dto.weight_culture !== (existingOffer.weight_culture ?? 0) ||
-        !this.areNormalizedSkillItemsEqual(incomingTechnicalSkills, currentTechnicalSkills) ||
-        !this.areNormalizedSkillItemsEqual(incomingSoftSkills, currentSoftSkills);
-
-      if (hasBlockedChanges) {
-        throw new BadRequestException(
-          'En ofertas no borrador solo se puede editar descripcion, estado (sin volver a borrador), salario, ciudad, direccion, modalidad, tipo de empleo y categoria',
-        );
-      }
-    }
+    const hasAnalysisRelevantChanges = this.hasAnalysisRelevantOfferChanges(existingOffer, dto);
 
     const admin = await this.getCurrentAdmin(userId);
     const company = await this.prisma.companies.findUnique({
@@ -913,6 +969,10 @@ export class JobsService {
     await this.jobSummaryQueueProducer.enqueueJobSummaryEmbedding({
       jobId: offerId,
     });
+
+    if (hasAnalysisRelevantChanges) {
+      await this.refreshApplicationsForOffer(offerId);
+    }
 
     return this.getAdminOfferDetail(userId, offerId);
   }

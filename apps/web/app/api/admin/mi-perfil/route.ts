@@ -21,6 +21,7 @@ function parsePayload(body: unknown): AdminProfilePayload {
     dni: typeof source.dni === "string" ? source.dni : "",
     phone: typeof source.phone === "string" ? source.phone : "",
     phone_prefix: typeof source.phone_prefix === "string" ? source.phone_prefix : "",
+    font_size: typeof source.font_size === "string" ? source.font_size : undefined,
     state: typeof source.state === "string" ? source.state : "",
     city: typeof source.city === "string" ? source.city : "",
     address: typeof source.address === "string" ? source.address : "",
@@ -44,6 +45,8 @@ function parseMultipartPayload(formData: FormData): AdminProfilePayload {
     phone: typeof formData.get("phone") === "string" ? (formData.get("phone") as string) : "",
     phone_prefix:
       typeof formData.get("phone_prefix") === "string" ? (formData.get("phone_prefix") as string) : "",
+    font_size:
+      typeof formData.get("font_size") === "string" ? (formData.get("font_size") as string) : undefined,
     state: typeof formData.get("state") === "string" ? (formData.get("state") as string) : "",
     city: typeof formData.get("city") === "string" ? (formData.get("city") as string) : "",
     address: typeof formData.get("address") === "string" ? (formData.get("address") as string) : "",

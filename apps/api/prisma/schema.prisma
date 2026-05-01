@@ -96,6 +96,7 @@ model candidates {
   level_of_monitoring     level_of_monitoring_enum?
   behavioral_ans_1        String?
   behavioral_ans_2        String?
+  font_size               font_size_enum                @default(medium)
   contact_page            String?                       @db.VarChar(255)
   birth_date              DateTime?                     @db.Date
   created_at              DateTime?                     @default(now()) @db.Timestamp(6)
@@ -224,6 +225,7 @@ model user_admin {
   state           String?    @db.VarChar(100)
   city            String?    @db.VarChar(100)
   address         String?
+  font_size       font_size_enum @default(medium)
   birth_date      DateTime?  @db.Date
   created_at      DateTime?  @default(now()) @db.Timestamp(6)
   updated_at      DateTime?  @default(now()) @db.Timestamp(6)
@@ -235,6 +237,12 @@ model user_admin {
 enum user_role_enum {
   candidate
   admin
+}
+
+enum font_size_enum {
+  small
+  medium
+  large
 }
 
 model User {

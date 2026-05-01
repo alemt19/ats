@@ -443,7 +443,6 @@ export default function CrearOfertaForm({
     technicalWeightValue !== null && softWeightValue !== null && cultureWeightValue !== null
 
   const persistedStatus = initialValues?.status ?? defaultValues.status
-  const isRestrictedEditMode = mode === "edit" && persistedStatus !== "draft"
 
   const weightSum = hasAllWeights
     ? technicalWeightValue + softWeightValue + cultureWeightValue
@@ -465,13 +464,7 @@ export default function CrearOfertaForm({
     category.trim().length > 0 &&
     isWeightSumValid
 
-  const selectableStatuses = React.useMemo(() => {
-    if (!isRestrictedEditMode) {
-      return statuses
-    }
-
-    return statuses.filter((option) => option.technical_name !== "draft")
-  }, [isRestrictedEditMode, statuses])
+  const selectableStatuses = statuses
 
   const setMultiFieldValue = React.useCallback(
     (fieldName: MultiFieldName, values: string[]) => {
@@ -592,7 +585,7 @@ export default function CrearOfertaForm({
     const payload = {
       title: values.title.trim(),
       description: values.description.trim(),
-      status: "draft",
+      status: values.status,
       city: values.city.trim(),
       address: values.address.trim(),
       state: values.state.trim(),
@@ -698,7 +691,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Título</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Ingeniero de backend" disabled={isRestrictedEditMode} {...field} />
+                        <Input placeholder="Ej. Ingeniero de backend" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -713,7 +706,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Puesto</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Nivel avanzado" disabled={isRestrictedEditMode} {...field} />
+                        <Input placeholder="Ej. Nivel avanzado" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -993,7 +986,6 @@ export default function CrearOfertaForm({
                           inputMode="decimal"
                           step="0.01"
                           placeholder="0.00"
-                          disabled={isRestrictedEditMode}
                           value={field.value}
                           onKeyDown={handleDecimalKeyDown}
                           onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
@@ -1023,7 +1015,6 @@ export default function CrearOfertaForm({
                           inputMode="decimal"
                           step="0.01"
                           placeholder="0.00"
-                          disabled={isRestrictedEditMode}
                           value={field.value}
                           onKeyDown={handleDecimalKeyDown}
                           onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
@@ -1053,7 +1044,6 @@ export default function CrearOfertaForm({
                           inputMode="decimal"
                           step="0.01"
                           placeholder="0.00"
-                          disabled={isRestrictedEditMode}
                           value={field.value}
                           onKeyDown={handleDecimalKeyDown}
                           onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
@@ -1088,7 +1078,7 @@ export default function CrearOfertaForm({
                 <Button
                   type="button"
                   variant="outline"
-                  disabled={!isSkillsSectionUnlocked || isGeneratingSuggestions || isRestrictedEditMode}
+                  disabled={!isSkillsSectionUnlocked || isGeneratingSuggestions}
                   onClick={handleSuggestSkills}
                 >
                   <Sparkles className="size-4" />
@@ -1096,24 +1086,14 @@ export default function CrearOfertaForm({
                 </Button>
               </div>
 
-              {!isSkillsSectionUnlocked && !isRestrictedEditMode ? (
+              {!isSkillsSectionUnlocked ? (
                 <p className="text-sm text-muted-foreground">
                   Completa todos los campos anteriores y asegúrate de que la suma de pesos sea 1 para habilitar esta sección.
                 </p>
               ) : null}
 
-              {isRestrictedEditMode ? (
-                <p className="text-sm text-muted-foreground">
-                  {/* En ofertas que no estan en borrador no se pueden modificar habilidades ni pesos. */}
-                </p>
-              ) : null}
-
               <div
-                className={
-                  isSkillsSectionUnlocked && !isRestrictedEditMode
-                    ? "space-y-6"
-                    : "pointer-events-none space-y-6 opacity-60"
-                }
+                className={isSkillsSectionUnlocked ? "space-y-6" : "pointer-events-none space-y-6 opacity-60"}
               >
                 <FormField
                   control={form.control}
@@ -1139,7 +1119,7 @@ export default function CrearOfertaForm({
                         onAddAllSuggestions={() =>
                           addAllSuggestionsToField("technical_skills", suggestions?.technical_skills ?? [])
                         }
-                        disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
+                        disabled={!isSkillsSectionUnlocked}
                       />
                       <FormMessage />
                     </FormItem>
@@ -1170,7 +1150,7 @@ export default function CrearOfertaForm({
                         onAddAllSuggestions={() =>
                           addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
                         }
-                        disabled={!isSkillsSectionUnlocked || isRestrictedEditMode}
+                        disabled={!isSkillsSectionUnlocked}
                       />
                       <FormMessage />
                     </FormItem>

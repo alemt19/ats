@@ -364,6 +364,7 @@ export class CandidatesService {
 
     const data = {
       ...dto,
+      font_size: dto.font_size ?? current.font_size,
       birth_date: parsedBirthDate,
     };
 

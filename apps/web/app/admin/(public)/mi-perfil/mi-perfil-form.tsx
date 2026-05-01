@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
+import { useFontSize } from "react/contexts/font-size-context"
 import { Textarea } from "react/components/ui/textarea"
 import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
@@ -115,6 +116,7 @@ function roleLabel(technicalName: string, catalogs: AdminProfileCatalogsResponse
 
 export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const { fontSize, changeFontSize } = useFontSize()
 
   const parsedDni = splitDni(initialProfile.dni)
 
@@ -373,6 +375,32 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     }))
                   }}
                 />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground/85">Tamaño de letra</p>
+                <p className="text-xs text-foreground/60">Se aplica en toda la aplicación.</p>
+              </div>
+              <div className="mt-3 max-w-xs">
+                <Select
+                  value={fontSize}
+                  onValueChange={(value) => {
+                    void changeFontSize(value as typeof fontSize).catch(() => {
+                      toast.error("No se pudo guardar el tamaño de letra")
+                    })
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecciona un tamaño" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">Pequeño</SelectItem>
+                    <SelectItem value="medium">Mediano</SelectItem>
+                    <SelectItem value="large">Grande</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 

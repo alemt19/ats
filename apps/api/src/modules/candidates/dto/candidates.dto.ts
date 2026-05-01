@@ -6,6 +6,7 @@ import {
 	CreateCandidateSchema,
 	DealingWithManagementSchema,
 	DressCodeSchema,
+	FontSizeSchema,
 	LevelOfAutonomySchema,
 	LevelOfMonitoringSchema,
 	PaginationSchema,
@@ -40,6 +41,7 @@ const UpdateMyCandidateSchema = z.object({
 	level_of_autonomy: LevelOfAutonomySchema.nullable().optional(),
 	dealing_with_management: DealingWithManagementSchema.nullable().optional(),
 	level_of_monitoring: LevelOfMonitoringSchema.nullable().optional(),
+	font_size: FontSizeSchema.optional(),
 });
 
 export class UpdateMyCandidateDto extends createZodDto(UpdateMyCandidateSchema) {}
