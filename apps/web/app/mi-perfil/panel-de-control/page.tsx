@@ -157,8 +157,9 @@ export default async function PanelDeControlPage() {
     if (Number.isNaN(parsed.getTime())) continue
     const year = String(parsed.getFullYear())
     const monthIndex = parsed.getMonth() // 0..11
-    if (!yearlyCounts[year]) yearlyCounts[year] = Array.from({ length: 12 }, () => 0)
-    yearlyCounts[year][monthIndex]++
+    const yearCounts = yearlyCounts[year] ?? Array.from({ length: 12 }, () => 0)
+    yearCounts[monthIndex] = (yearCounts[monthIndex] ?? 0) + 1
+    yearlyCounts[year] = yearCounts
   }
 
   const currentYear = new Date().getFullYear()
