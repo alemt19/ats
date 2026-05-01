@@ -52,7 +52,7 @@ export default function LayoutClient({ children, notifications, unreadCount }: L
     return (
         <SidebarClient>
             <div className="content-space flex min-h-dvh flex-col gap-3">
-                <header className="flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft">
+                <header className="sticky top-[calc(0.5rem+var(--space-content))] z-30 flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft backdrop-blur-md">
                     <SidebarTrigger />
                     <Breadcrumb>
                         <BreadcrumbList>
