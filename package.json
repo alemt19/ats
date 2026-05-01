@@ -4,6 +4,7 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev worker:embeddings worker:summary worker:evaluation",
+    "start": "turbo run start --parallel --filter=api --filter=web --filter=fastapi",
     "lint": "turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types",
