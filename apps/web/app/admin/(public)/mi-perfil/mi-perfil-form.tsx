@@ -287,8 +287,12 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       nextErrors.dni = dniValidation
     }
 
-    if (!nextErrors.phone && !/^\d{11}$/.test(values.phone.trim())) {
-      nextErrors.phone = "El teléfono debe tener exactamente 11 dígitos"
+    if (!nextErrors.phone && !/^\d{10}$/.test(values.phone.trim())) {
+      nextErrors.phone = "El teléfono debe tener exactamente 10 dígitos"
+    }
+
+    if (!nextErrors.phone && values.phone.startsWith('0')) {
+      nextErrors.phone = "El teléfono no puede empezar con 0"
     }
 
     if (Object.values(nextErrors).some(Boolean)) {
@@ -512,15 +516,15 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     id="phone"
                     value={values.phone}
                     inputMode="numeric"
-                    minLength={11}
-                    maxLength={11}
+                    minLength={10}
+                    maxLength={10}
                     required
                     placeholder="Número"
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
                         ...previous,
-                        phone: digitsOnly.slice(0, 11),
+                        phone: digitsOnly.slice(0, 10),
                       }))
 
                       if (fieldErrors.phone) {

@@ -345,10 +345,16 @@ export default function MisDatosForm({
     if (!trimmedPhone) {
       form.setError("phone", { type: "required", message: "El teléfono es obligatorio" })
       hasFormError = true
-    } else if (onlyDigits(trimmedPhone).length !== 11) {
+    } else if (onlyDigits(trimmedPhone).length !== 10) {
       form.setError("phone", {
         type: "validate",
-        message: "El teléfono debe tener exactamente 11 números (sin prefijo)",
+        message: "El teléfono debe tener exactamente 10 números (sin prefijo)",
+      })
+      hasFormError = true
+    } else if (onlyDigits(trimmedPhone)[0] === '0') {
+      form.setError("phone", {
+        type: "validate",
+        message: "El teléfono no puede empezar con 0",
       })
       hasFormError = true
     }
@@ -755,11 +761,11 @@ export default function MisDatosForm({
                       <Input
                         placeholder="Número"
                         inputMode="numeric"
-                        maxLength={11}
+                        maxLength={10}
                         value={field.value}
                         onChange={(event) => {
                           const digitsOnly = event.target.value.replace(/\D/g, "")
-                          field.onChange(digitsOnly.slice(0, 11))
+                          field.onChange(digitsOnly.slice(0, 10))
                         }}
                       />
                     </FormControl>

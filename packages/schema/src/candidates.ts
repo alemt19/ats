@@ -18,7 +18,7 @@ export const CandidateSchema = z.object({
 	email: z.string().email().max(255),
 	password: z.string().max(255).nullable(),
 	dni: z.string().max(50).nullable(),
-	phone: z.string().max(50).nullable(),
+	phone: z.string().max(10).nullable(),
 	country: z.string().max(100).nullable(),
 	state: z.string().max(100).nullable(),
 	city: z.string().max(100).nullable(),

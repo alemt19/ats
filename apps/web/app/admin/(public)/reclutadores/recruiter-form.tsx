@@ -462,8 +462,13 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       return
     }
 
-    if (!/^\d{11}$/.test(values.phone.trim())) {
-      toast.error("El teléfono debe tener exactamente 11 dígitos")
+    if (!/^\d{10}$/.test(values.phone.trim())) {
+      toast.error("El teléfono debe tener exactamente 10 dígitos")
+      return
+    }
+
+    if (values.phone.startsWith('0')) {
+      toast.error("El teléfono no puede empezar con 0")
       return
     }
 
@@ -689,14 +694,14 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
                     value={values.phone}
                     inputMode="numeric"
                     placeholder="Número"
-                    minLength={11}
-                    maxLength={11}
+                    minLength={10}
+                    maxLength={10}
                     required
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
                         ...previous,
-                        phone: digitsOnly.slice(0, 11),
+                        phone: digitsOnly.slice(0, 10),
                       }))
                     }}
                   />
