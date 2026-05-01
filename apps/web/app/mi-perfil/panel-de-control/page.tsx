@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import StatusBarsChart from "./status-bars-chart"
+import StatusMonthlyChart from "./status-monthly-chart"
 
 type JobApplication = {
   id: number
@@ -148,6 +149,24 @@ export default async function PanelDeControlPage() {
     }))
     .concat(unknownStatusRows)
 
+  // Build year -> [12 months] counts map from application dates
+  const yearlyCounts: Record<string, number[]> = {}
+  for (const app of applications) {
+    if (!app.applied_at) continue
+    const parsed = new Date(app.applied_at)
+    if (Number.isNaN(parsed.getTime())) continue
+    const year = String(parsed.getFullYear())
+    const monthIndex = parsed.getMonth() // 0..11
+    if (!yearlyCounts[year]) yearlyCounts[year] = Array.from({ length: 12 }, () => 0)
+    yearlyCounts[year][monthIndex]++
+  }
+
+  const currentYear = new Date().getFullYear()
+  const dataYearsSet = new Set(Object.keys(yearlyCounts).map((y) => Number(y)))
+  // Ensure current year is selectable (even if no data)
+  dataYearsSet.add(currentYear)
+  const years = Array.from(dataYearsSet).sort((a, b) => b - a)
+
   const overallAverage = averagePercentage(applications.map((item) => item.overall_score))
   const technicalAverage = averagePercentage(applications.map((item) => item.match_technical_score))
   const softAverage = averagePercentage(applications.map((item) => item.match_soft_score))
@@ -248,6 +267,18 @@ export default async function PanelDeControlPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="rounded-2xl border-border/70 bg-card/90">
+        <CardHeader>
+          <CardTitle>Postulaciones por mes</CardTitle>
+          <CardDescription>
+            Selecciona año para ver la cantidad de postulaciones por mes.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <StatusMonthlyChart yearlyData={yearlyCounts} years={years} initialYear={currentYear} />
+        </CardContent>
+      </Card>
 
       <Card className="rounded-2xl border-border/70 bg-card/90">
         <CardHeader>
