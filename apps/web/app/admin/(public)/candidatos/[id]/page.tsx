@@ -17,6 +17,7 @@ type CulturePreferenceValue = {
 type CulturePreferenceCategory = {
 	technical_name: string
 	display_name: string
+	description: string
 	values: CulturePreferenceValue[]
 }
 

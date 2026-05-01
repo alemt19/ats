@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { Info } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
@@ -14,6 +15,12 @@ import {
   SelectValue,
 } from "react/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "react/components/ui/tabs"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "react/components/ui/tooltip"
 import { formatDniDisplay } from "react/lib/dni"
 import { cn } from "react/lib/utils"
 
@@ -28,6 +35,7 @@ type CulturePreferenceValue = {
 type CulturePreferenceCategory = {
   technical_name: string
   display_name: string
+  description: string
   values: CulturePreferenceValue[]
 }
 
@@ -347,13 +355,32 @@ export default function CandidateDetailReadonly({
               </CardContent>
             </Card>
           ) : (
-            culturalPreferenceCatalog.map((category) => {
+            <TooltipProvider>
+            {culturalPreferenceCatalog.map((category) => {
               const selectedTechnicalName = candidate.cultural_preferences[category.technical_name]
 
               return (
                 <Card key={category.technical_name} className="rounded-2xl bg-card/90 shadow-soft">
                   <CardHeader>
-                    <CardTitle>{category.display_name}</CardTitle>
+                    <CardTitle className="flex items-center gap-1.5">
+                      {category.display_name}
+                      {category.description ? (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              aria-label={`¿Qué es ${category.display_name}?`}
+                              className="text-muted-foreground hover:text-foreground transition-colors"
+                            >
+                              <Info className="size-4" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent side="right" className="max-w-xs text-sm">
+                            {category.description}
+                          </TooltipContent>
+                        </Tooltip>
+                      ) : null}
+                    </CardTitle>
                     <CardDescription>Preferencia cultural registrada (solo lectura)</CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -396,7 +423,8 @@ export default function CandidateDetailReadonly({
                   </CardContent>
                 </Card>
               )
-            })
+            })}
+            </TooltipProvider>
           )}
         </TabsContent>
 

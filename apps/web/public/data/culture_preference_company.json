@@ -2,6 +2,7 @@
   {
     "technical_name": "dress_code",
     "display_name": "Código de vestimenta",
+    "description": "Se refiere al tipo de vestimenta que se espera en el entorno laboral del día a día.",
     "values": [
       {
         "technical_name": "casual",
@@ -23,6 +24,7 @@
   {
     "technical_name": "collaboration_style",
     "display_name": "Estilo de colaboración",
+    "description": "Describe cómo se organiza el trabajo entre las personas: de forma individual, en conjunto o una combinación de ambas.",
     "values": [
       {
         "technical_name": "individual",
@@ -44,6 +46,7 @@
   {
     "technical_name": "work_pace",
     "display_name": "Ritmo de trabajo",
+    "description": "Indica la velocidad y exigencia con que se gestiona la carga de trabajo y los plazos de entrega.",
     "values": [
       {
         "technical_name": "slow",
@@ -65,6 +68,7 @@
   {
     "technical_name": "level_of_autonomy",
     "display_name": "Nivel de autonomía",
+    "description": "Refleja cuánta libertad tiene cada persona para decidir cómo abordar y organizar su propio trabajo.",
     "values": [
       {
         "technical_name": "high_control",
@@ -86,6 +90,7 @@
   {
     "technical_name": "dealing_with_management",
     "display_name": "Trato con la Jefatura",
+    "description": "Describe el tipo de relación que se mantiene con los superiores: desde distante y formal hasta cercana e informal.",
     "values": [
       {
         "technical_name": "strictly_professional",
@@ -107,6 +112,7 @@
   {
     "technical_name": "level_of_monitoring",
     "display_name": "Nivel de supervisión",
+    "description": "Indica con qué frecuencia la jefatura revisa el avance y progreso de las tareas asignadas.",
     "values": [
       {
         "technical_name": "daily_monitoring",

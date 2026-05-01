@@ -10,10 +10,17 @@ import type {
 	CulturePreferenceCategory,
 	PreferenceFieldName,
 } from "../company-config-bootstrap"
+import { Info } from "lucide-react"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "react/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "react/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "react/components/ui/radio-group"
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipProvider,
+	TooltipTrigger,
+} from "react/components/ui/tooltip"
 import { cn } from "react/lib/utils"
 
 type PreferenciasCulturalesFormValues = {
@@ -156,6 +163,7 @@ export default function PreferenciasCulturalesForm({
 	}
 
 	return (
+		<TooltipProvider>
 		<section className="mx-auto w-full max-w-5xl space-y-8">
 			<div>
 				<h1 className="text-2xl font-semibold">Preferencias Culturales</h1>
@@ -195,7 +203,23 @@ export default function PreferenciasCulturalesForm({
 										render={({ field }) => (
 											<Card className="rounded-2xl border border-border/70 bg-background/70 shadow-soft">
 												<CardHeader className="space-y-1">
-													<CardTitle>{category.display_name}</CardTitle>
+													<CardTitle className="flex items-center gap-1.5">
+														{category.display_name}
+														<Tooltip>
+															<TooltipTrigger asChild>
+																<button
+																	type="button"
+																	aria-label={`¿Qué es ${category.display_name}?`}
+																	className="text-muted-foreground hover:text-foreground transition-colors"
+																>
+																	<Info className="size-4" />
+																</button>
+															</TooltipTrigger>
+															<TooltipContent side="right" className="max-w-xs text-sm">
+																{category.description}
+															</TooltipContent>
+														</Tooltip>
+													</CardTitle>
 													<CardDescription>
 														Elige la opción que mejor se alinee con la cultura de la empresa.
 													</CardDescription>
@@ -260,5 +284,6 @@ export default function PreferenciasCulturalesForm({
 				</form>
 			</Form>
 		</section>
+		</TooltipProvider>
 	)
 }
