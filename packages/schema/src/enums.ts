@@ -43,6 +43,8 @@ export const JobStatusSchema = z.enum([
 	'archived',
 ]);
 
+export const FontSizeSchema = z.enum(['small', 'medium', 'large']);
+
 export const LevelOfAutonomySchema = z.enum(['high_control', 'balanced', 'total_freedom', 'indifferent']);
 
 export const LevelOfMonitoringSchema = z.enum([
@@ -64,6 +66,7 @@ export type DealingWithManagement = z.infer<typeof DealingWithManagementSchema>;
 export type DressCode = z.infer<typeof DressCodeSchema>;
 export type EmploymentType = z.infer<typeof EmploymentSchema>;
 export type JobStatus = z.infer<typeof JobStatusSchema>;
+export type FontSize = z.infer<typeof FontSizeSchema>;
 export type LevelOfAutonomy = z.infer<typeof LevelOfAutonomySchema>;
 export type LevelOfMonitoring = z.infer<typeof LevelOfMonitoringSchema>;
 export type WorkPace = z.infer<typeof WorkPaceSchema>;

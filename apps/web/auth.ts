@@ -1,5 +1,7 @@
 import { headers } from "next/headers"
 
+import { type FontSize } from "@repo/schema"
+
 type AppSession = {
   user?: {
     id?: string
@@ -20,6 +22,7 @@ type AdminAccessProfile = {
   email: string | null
   profile_picture: string | null
   role: string | null
+  font_size?: FontSize | null
 }
 
 export type AdminAccess = {
@@ -27,6 +30,10 @@ export type AdminAccess = {
   userId: string
   adminRole: string | null
   adminProfile: AdminAccessProfile
+}
+
+type FontSizeAccessProfile = {
+  font_size?: string | null
 }
 
 const betterAuthBaseURL =
@@ -118,4 +125,51 @@ export async function getAdminAccess(): Promise<AdminAccess | null> {
   }
 
   return (await response.json()) as AdminAccess
+}
+
+function normalizeFontSize(value: unknown): FontSize {
+  if (value === "small" || value === "medium" || value === "large") {
+    return value
+  }
+
+  return "medium"
+}
+
+export async function getInitialFontSizePreference(): Promise<FontSize> {
+  const requestHeaders = await headers()
+  const cookie = requestHeaders.get("cookie")
+
+  if (!cookie) {
+    return "medium"
+  }
+
+  const scopeMatch = cookie.match(/(?:^|;\s*)ats_scope=(admin|candidate)(?:;|$)/)
+
+  if (!scopeMatch) {
+    return "medium"
+  }
+
+  const scope = scopeMatch[1] as "admin" | "candidate"
+
+  const response = await fetch(`${betterAuthBaseURL}/api/auth/access/${scope}`, {
+    method: "GET",
+    headers: {
+      cookie,
+    },
+    cache: "no-store",
+  })
+
+  if (!response.ok) {
+    return "medium"
+  }
+
+  const payload = (await response.json()) as {
+    adminProfile?: FontSizeAccessProfile | null
+    candidateProfile?: FontSizeAccessProfile | null
+  }
+
+  const rawFontSize =
+    scope === "admin" ? payload.adminProfile?.font_size : payload.candidateProfile?.font_size
+
+  return normalizeFontSize(rawFontSize)
 }

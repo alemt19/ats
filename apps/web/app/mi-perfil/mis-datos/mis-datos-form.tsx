@@ -24,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "react/components/ui/select"
+import { useFontSize } from "react/contexts/font-size-context"
 import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 export type Country = {
@@ -73,6 +74,7 @@ export default function MisDatosForm({
   states,
   cities,
 }: MisDatosFormProps) {
+  const { fontSize, changeFontSize } = useFontSize()
   const onlyDigits = (value: string) => value.replace(/\D/g, "")
   const digitsPattern = /\d/
   const V_DNI_MIN = 100_000
@@ -496,6 +498,32 @@ export default function MisDatosForm({
                   form.setValue("profile_picture", file.name)
                 }}
               />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground/85">Tamaño de letra</p>
+              <p className="text-xs text-foreground/60">Se aplica en toda la aplicación.</p>
+            </div>
+            <div className="mt-3 max-w-xs">
+              <Select
+                value={fontSize}
+                onValueChange={(value) => {
+                  void changeFontSize(value as typeof fontSize).catch(() => {
+                    toast.error("No se pudo guardar el tamaño de letra")
+                  })
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Selecciona un tamaño" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="small">Pequeño</SelectItem>
+                  <SelectItem value="medium">Mediano</SelectItem>
+                  <SelectItem value="large">Grande</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

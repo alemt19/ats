@@ -25,6 +25,7 @@ export type AdminProfile = {
   dni: string
   phone: string
   role: string
+  font_size: string
   country: string
   state: string
   city: string
@@ -39,6 +40,7 @@ export type AdminProfilePayload = {
   dni: string
   phone: string
   phone_prefix: string
+  font_size?: string
   state: string
   city: string
   address: string

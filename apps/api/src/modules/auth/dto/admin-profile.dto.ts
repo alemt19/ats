@@ -1,6 +1,7 @@
 /** @format */
 
 import { createZodDto } from 'nestjs-zod';
+import { FontSizeSchema } from '@repo/schema';
 import { z } from 'zod';
 
 const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/;
@@ -51,6 +52,7 @@ const UpdateAdminProfileSchema = z.object({
 	dni: DniSchema,
 	phone: PhoneSchema,
 	phone_prefix: z.string().trim().min(1).max(20),
+	font_size: FontSizeSchema.optional(),
 	state: z.string().trim().min(1).max(100),
 	city: z.string().trim().min(1).max(100),
 	address: z.string().trim().min(1),
@@ -58,3 +60,9 @@ const UpdateAdminProfileSchema = z.object({
 });
 
 export class UpdateAdminProfileDto extends createZodDto(UpdateAdminProfileSchema) {}
+
+const UpdateFontSizeSchema = z.object({
+	font_size: FontSizeSchema,
+});
+
+export class UpdateFontSizeDto extends createZodDto(UpdateFontSizeSchema) {}
