@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "../../../auth-client"
-import { BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
+import { BarChart3, BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
 import { useCandidateSession } from "react/hooks/use-segmented-session"
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
@@ -25,6 +25,11 @@ import {
 } from "../ui/sidebar"
 
 const profileLinks = [
+    {
+        label: "Panel de control",
+        href: "/mi-perfil/panel-de-control",
+        icon: BarChart3,
+    },
     {
         label: "Mis datos",
         href: "/mi-perfil/mis-datos",

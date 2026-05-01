@@ -9,6 +9,10 @@ import { SidebarTrigger } from "react/components/ui/sidebar"
 import type { UserNotification } from "react/lib/notifications"
 
 function getBreadcrumbLabel(pathname: string) {
+    if (pathname === "/mi-perfil/panel-de-control") {
+        return "Panel de control"
+    }
+
     if (pathname === "/mi-perfil/competencias-valores") {
         return "Competencias y valores"
     }
