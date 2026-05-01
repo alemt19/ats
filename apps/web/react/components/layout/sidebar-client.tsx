@@ -71,8 +71,8 @@ export default function SidebarClient({ children }: SidebarClientProps) {
     return (
         <SidebarProvider className="bg-background">
             <Sidebar collapsible="offcanvas" variant="inset" className="border-border/70 bg-sidebar/90">
-                <SidebarHeader>
-                    <div className="gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
+                <SidebarHeader className="px-2 pt-0 pb-2">
+                    <div className="mt-[var(--space-content)] gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
                         <Link href="/" className="flex items-center gap-3">
                             {resolvedLogoSrc ? (
                                 <img
@@ -101,7 +101,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                                         <SidebarMenuButton
                                             asChild
                                             isActive={pathname.startsWith(item.href)}
-                                            className="rounded-xl text-muted-foreground transition-colors duration-[240ms] hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+                                            className="rounded-xl text-muted-foreground transition-all duration-[240ms] hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
                                         >
                                             <Link href={item.href}>
                                                 <item.icon aria-hidden="true" />

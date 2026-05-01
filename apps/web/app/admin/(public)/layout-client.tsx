@@ -274,8 +274,8 @@ export default function AdminPublicLayoutClient({
 				Saltar al contenido principal
 			</a>
 			<Sidebar collapsible="offcanvas" variant="inset" className="border-border/70 bg-sidebar/90">
-				<SidebarHeader>
-					<div className="gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
+				<SidebarHeader className="px-2 pt-0 pb-2">
+					<div className="mt-[var(--space-content)] gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
 						{isSidebarIdentityLoading ? (
 							<div className="flex items-center gap-3">
 								<Skeleton className="h-8 w-8 rounded-md" />
@@ -311,7 +311,7 @@ export default function AdminPublicLayoutClient({
 										<SidebarMenuButton
 											asChild
 											isActive={pathname.startsWith(item.href)}
-											className="rounded-xl text-muted-foreground transition-colors duration-240 hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+											className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
 										>
 											<Link href={item.href}>
 												<item.icon aria-hidden="true" />
@@ -326,7 +326,7 @@ export default function AdminPublicLayoutClient({
 										<CollapsibleTrigger asChild>
 											<SidebarMenuButton
 												isActive={isConfigurationSection}
-												className="rounded-xl text-muted-foreground transition-colors duration-240 hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground data-[active=true]:shadow-soft"
+												className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
 											>
 												<Settings aria-hidden="true" />
 												<span>Configuración</span>
@@ -343,7 +343,7 @@ export default function AdminPublicLayoutClient({
 													<SidebarMenuSubButton
 														asChild
 														isActive={pathname.startsWith("/admin/configuracion/informacion-valores")}
-														className="rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground"
+														className="rounded-lg text-muted-foreground transition-all hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium"
 													>
 														<Link href="/admin/configuracion/informacion-valores">
 															<span>Información y Valores</span>
@@ -355,7 +355,7 @@ export default function AdminPublicLayoutClient({
 													<SidebarMenuSubButton
 														asChild
 														isActive={pathname.startsWith("/admin/configuracion/preferencias-culturales")}
-														className="rounded-lg text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground data-[active=true]:bg-muted/70 data-[active=true]:text-foreground"
+														className="rounded-lg text-muted-foreground transition-all hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium"
 													>
 														<Link href="/admin/configuracion/preferencias-culturales">
 															<span>Preferencias Culturales</span>
@@ -419,7 +419,7 @@ export default function AdminPublicLayoutClient({
 
 			<SidebarInset className="bg-background/85">
 				<div className="content-space flex min-h-dvh flex-col gap-3">
-					<header className="sticky top-3 z-30 flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft backdrop-blur-md">
+					<header className="flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft">
 						<SidebarTrigger />
 						<Breadcrumb>
 							<BreadcrumbList>
