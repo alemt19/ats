@@ -1,13 +1,13 @@
-﻿import Link from "next/link"
 import path from "node:path"
 import { readFile } from "node:fs/promises"
 import { headers } from "next/headers"
-import { CheckCircle2, CircleX, Send, Star, UserRoundPlus } from "lucide-react"
 import { Badge } from "react/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
-import { Progress } from "react/components/ui/progress"
 import DashboardDateFilters from "./dashboard-date-filters"
 import TopOffersChart from "react/components/admin/top-offers-chart"
+import CandidateProgressChart from "react/components/admin/candidate-progress-chart"
+import MatchOfTheWeek from "react/components/admin/dashboard/match-of-the-week"
+import FeedbackStatsCard from "react/components/admin/dashboard/feedback-stats-card"
 
 type FeedbackStats = {
     employer: {
@@ -22,6 +22,19 @@ type FeedbackStats = {
         count: number
     } | null
 }
+
+type MatchOfTheWeekData = {
+    candidateName: string
+    jobTitle: string
+    overallScore: number
+    technicalScore: number
+    softScore: number
+    cultureScore: number
+    weightTechnical: number
+    weightSoft: number
+    weightCulture: number
+    createdAt: string
+} | null
 
 type DashboardData = {
     metrics: {
@@ -39,6 +52,7 @@ type DashboardData = {
         name: string
         candidates: number
     }[]
+    matchOfTheWeek?: MatchOfTheWeekData
 }
 
 type RawStatusCatalogItem = {
@@ -143,27 +157,14 @@ async function getDashboardData(from?: string, to?: string): Promise<DashboardDa
             },
             candidateProgress: [
                 { technical_name: "applied", label: "Postulados", count: 0 },
-                { technical_name: "contacted", label: "Contactados", count: 0 },
+                { technical_name: "pre_screening", label: "Preseleccionados", count: 0 },
                 { technical_name: "hired", label: "Contratados", count: 0 },
                 { technical_name: "rejected", label: "Rechazados", count: 0 },
             ],
             topOffers: [],
+            matchOfTheWeek: null,
         }
     }
-}
-
-function FeedbackStatRow({ label, value }: { label: string; value: number | null | undefined }) {
-    const rating = value ?? 0
-    const pct = Math.round((rating / 5) * 100)
-    return (
-        <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
-                <span className="text-foreground/70">{label}</span>
-                <span className="font-medium tabular-nums">{rating > 0 ? `${rating.toFixed(1)} / 5` : "—"}</span>
-            </div>
-            <Progress value={pct} className="h-1.5" />
-        </div>
-    )
 }
 
 type DashboardPageProps = {
@@ -196,23 +197,12 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         count: progressCountByStatus.get(status.technical_name) ?? 0,
     }))
 
-    const maxProgressCount = Math.max(...candidateProgress.map((item) => item.count), 1)
     const maxTopOfferCandidates = Math.max(...data.topOffers.map((item) => item.candidates), 1)
-
-    const progressIcons = {
-        applied: UserRoundPlus,
-        pre_screening: Send,
-        hired: CheckCircle2,
-        rejected: CircleX,
-    } as const
 
     return (
         <div className="space-y-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2 lg:max-w-2xl">
-                <Badge variant="outline" className="w-fit rounded-full border-primary/35 bg-primary/10 text-primary">
-                    Panel de reclutamiento
-                </Badge>
                 <div>
                     <h1 className="text-3xl font-semibold tracking-tight">Panel de control de reclutamiento</h1>
                     <p className="text-sm text-foreground/70">Resumen operativo.</p>
@@ -254,33 +244,28 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             </Card>
         </div>
 
-        <div className="space-y-4">
-            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
+        <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft lg:col-span-2">
                 <CardHeader>
                     <CardTitle>Progreso de candidatos</CardTitle>
                 </CardHeader>
-                <CardContent className="w-full space-y-4">
-                    {candidateProgress.map((item) => {
-                        const value = (item.count / maxProgressCount) * 100
-                        const Icon = progressIcons[item.technical_name as keyof typeof progressIcons] ?? UserRoundPlus
-                        return (
-                            <div key={item.technical_name} className="rounded-xl border border-border/70 bg-background/85 p-4">
-                                <div className="grid grid-cols-[1fr_auto] items-center gap-4 text-sm">
-                                    <span className="flex items-center gap-2 text-foreground/80">
-                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-muted/70">
-                                            <Icon aria-hidden="true" className="size-4" />
-                                        </span>
-                                        {item.label}
-                                    </span>
-                                    <span className="text-foreground/70 tabular-nums">{item.count}</span>
-                                </div>
-                                <Progress value={value} className="mt-3 h-2" />
-                            </div>
-                        )
-                    })}
+                <CardContent>
+                    <CandidateProgressChart data={candidateProgress} />
                 </CardContent>
             </Card>
-            </div>
+
+            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
+                <CardHeader>
+                    <CardTitle>Mejor aplicación de la semana</CardTitle>
+                    <CardDescription className="text-xs text-foreground/60">
+                        Candidato con mayor puntuación en los últimos 7 días
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <MatchOfTheWeek data={data.matchOfTheWeek ?? null} />
+                </CardContent>
+            </Card>
+        </div>
 
             <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
                 <CardHeader>
@@ -299,49 +284,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {!feedbackStats.employer && !feedbackStats.candidate ? (
-                        <p className="text-sm text-foreground/60">
-                            Aún no hay calificaciones registradas. Aparecerán aquí cuando empleadores y candidatos completen sus evaluaciones post-contratación.
-                        </p>
-                    ) : (
-                        <div className="grid gap-6 sm:grid-cols-2">
-                            {feedbackStats.employer && (
-                                <div className="space-y-4 rounded-xl border border-border/70 bg-background/85 p-5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
-                                            <Star aria-hidden="true" className="size-4 text-primary" />
-                                        </span>
-                                        <div>
-                                            <p className="text-sm font-semibold">Empleadores</p>
-                                            <p className="text-xs text-foreground/60">{feedbackStats.employer.count} evaluaciones</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <FeedbackStatRow label="Satisfacción general" value={feedbackStats.employer.avg_overall} />
-                                        <FeedbackStatRow label="Precisión del matching IA" value={feedbackStats.employer.avg_match_accuracy} />
-                                        <FeedbackStatRow label="Eficiencia del proceso" value={feedbackStats.employer.avg_process} />
-                                    </div>
-                                </div>
-                            )}
-                            {feedbackStats.candidate && (
-                                <div className="space-y-4 rounded-xl border border-border/70 bg-background/85 p-5">
-                                    <div className="flex items-center gap-2">
-                                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
-                                            <Star aria-hidden="true" className="size-4 text-amber-500" />
-                                        </span>
-                                        <div>
-                                            <p className="text-sm font-semibold">Candidatos</p>
-                                            <p className="text-xs text-foreground/60">{feedbackStats.candidate.count} evaluaciones</p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-3">
-                                        <FeedbackStatRow label="Satisfacción general" value={feedbackStats.candidate.avg_overall} />
-                                        <FeedbackStatRow label="Transparencia del proceso" value={feedbackStats.candidate.avg_process} />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    <FeedbackStatsCard feedbackStats={feedbackStats} />
                 </CardContent>
             </Card>
         </div>

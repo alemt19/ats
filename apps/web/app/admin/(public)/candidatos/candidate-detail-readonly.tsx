@@ -208,35 +208,35 @@ export default function CandidateDetailReadonly({
             <CardContent className="grid gap-4 md:grid-cols-2">
               <div>
                 <p className="text-muted-foreground text-sm">Nombre</p>
-                <p className="font-medium">{candidate.name || "-"}</p>
+                <p className="font-medium">{candidate.name || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Apellido</p>
-                <p className="font-medium">{candidate.lastname || "-"}</p>
+                <p className="font-medium">{candidate.lastname || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">País</p>
-                <p className="font-medium">{candidate.country || "-"}</p>
+                <p className="font-medium">{candidate.country || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Estado</p>
-                <p className="font-medium">{candidate.state || "-"}</p>
+                <p className="font-medium">{candidate.state || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Ciudad</p>
-                <p className="font-medium">{candidate.city || "-"}</p>
+                <p className="font-medium">{candidate.city || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Dirección</p>
-                <p className="font-medium">{candidate.address || "-"}</p>
+                <p className="font-medium">{candidate.address || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Página de contacto</p>
-                <p className="font-medium">{candidate.contact_page || "-"}</p>
+                <p className="font-medium">{candidate.contact_page || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Teléfono</p>
-                <p className="font-medium">{candidate.phone || "-"}</p>
+                <p className="font-medium">{candidate.phone || "N/A"}</p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Cédula</p>
@@ -244,7 +244,7 @@ export default function CandidateDetailReadonly({
               </div>
               <div>
                 <p className="text-muted-foreground text-sm">Correo</p>
-                <p className="font-medium">{candidate.email || "-"}</p>
+                <p className="font-medium">{candidate.email || "N/A"}</p>
               </div>
             </CardContent>
           </Card>

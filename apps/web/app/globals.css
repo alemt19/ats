@@ -338,6 +338,28 @@
   box-shadow: var(--shadow-elevated-value);
 }
 
+@utility signature-accent-bg {
+  background-color: color-mix(in oklab, var(--accent) 15%, transparent);
+  border-color: color-mix(in oklab, var(--accent) 60%, transparent);
+}
+
+@utility signature-accent-border-left {
+  border-left: 4px solid var(--accent);
+}
+
+@keyframes pulse-accent {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--accent) 0%, transparent);
+  }
+}
+
+@utility animate-pulse-accent {
+  animation: pulse-accent 2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

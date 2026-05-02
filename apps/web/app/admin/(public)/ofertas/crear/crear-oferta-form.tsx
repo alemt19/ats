@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "react/components/ui/form"
 import { Input } from "react/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "react/components/ui/select"
+import { Slider } from "react/components/ui/slider"
 import { Textarea } from "react/components/ui/textarea"
 import {
   Tooltip,
@@ -139,22 +140,6 @@ function parseSalaryOrNull(value: string) {
   return parsed > 0 ? parsed : null
 }
 
-function sanitizeDecimalInput(value: string) {
-  const normalized = value.replace(/,/g, ".").replace(/[^0-9.]/g, "")
-  const [integerPart, ...decimalParts] = normalized.split(".")
-
-  if (decimalParts.length === 0) {
-    return integerPart
-  }
-
-  return `${integerPart}.${decimalParts.join("")}`
-}
-
-function handleDecimalKeyDown(event: React.KeyboardEvent<HTMLInputElement>) {
-  if (["-", "+", "e", "E", ","].includes(event.key)) {
-    event.preventDefault()
-  }
-}
 
 function getDisplayName(options: JobParameterOption[], technicalName: string) {
   return options.find((option) => option.technical_name === technicalName)?.display_name ?? technicalName
@@ -570,6 +555,20 @@ export default function CrearOfertaForm({
     }
   }, [description, position, title])
 
+  const handleNormalize = React.useCallback(() => {
+    const t = technicalWeightValue ?? 0
+    const s = softWeightValue ?? 0
+    const c = cultureWeightValue ?? 0
+    const sum = t + s + c
+    if (sum === 0) return
+    const tPct = Math.round((t / sum) * 100)
+    const sPct = Math.round((s / sum) * 100)
+    const cPct = 100 - tPct - sPct
+    form.setValue("weight_technical", String(tPct / 100), { shouldValidate: true })
+    form.setValue("weight_soft", String(sPct / 100), { shouldValidate: true })
+    form.setValue("weight_culture", String(cPct / 100), { shouldValidate: true })
+  }, [form, technicalWeightValue, softWeightValue, cultureWeightValue])
+
   const onSubmit = async (values: CrearOfertaFormValues) => {
     if (onSubmitValues) {
       await onSubmitValues(values)
@@ -961,15 +960,28 @@ export default function CrearOfertaForm({
             </CardContent>
           </Card>
 
+          <TooltipProvider>
           <Card>
             <CardHeader>
-              <CardTitle>Pesos</CardTitle>
+              <CardTitle className="flex items-center gap-1.5">
+                Pesos de evaluación
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="¿Qué son los pesos de evaluación?">
+                      <Info className="size-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-xs text-sm">
+                    Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus habilidades técnicas. Los tres pesos deben sumar exactamente 100%.
+                  </TooltipContent>
+                </Tooltip>
+              </CardTitle>
               <CardDescription>
-                Define la ponderación para cada criterio. La suma total debe ser 1.00.
+                Arrastra cada control para definir la importancia de cada criterio. Deben sumar exactamente 100%.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <CardContent className="space-y-5">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                 <FormField
                   control={form.control}
                   name="weight_technical"
@@ -978,20 +990,33 @@ export default function CrearOfertaForm({
                     validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
                   }}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso de habilidades técnicas</FormLabel>
+                    <FormItem className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <FormLabel>Habilidades técnicas</FormLabel>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso técnico">
+                                <Info className="size-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-sm">
+                              Evalúa cuánto domina el candidato las habilidades técnicas requeridas para el puesto.
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <span className="text-xl font-semibold tabular-nums">
+                          {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
+                        </span>
+                      </div>
                       <FormControl>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={field.value}
-                          onKeyDown={handleDecimalKeyDown}
-                          onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
+                        <Slider
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
+                          onValueChange={([val = 0]) => field.onChange(String(val / 100))}
+                          className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:border-blue-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1007,20 +1032,33 @@ export default function CrearOfertaForm({
                     validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
                   }}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso de habilidades Blandas</FormLabel>
+                    <FormItem className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <FormLabel>Habilidades blandas</FormLabel>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso de habilidades blandas">
+                                <Info className="size-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-sm">
+                              Evalúa cuánto coinciden las habilidades interpersonales del candidato con las requeridas.
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <span className="text-xl font-semibold tabular-nums">
+                          {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
+                        </span>
+                      </div>
                       <FormControl>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={field.value}
-                          onKeyDown={handleDecimalKeyDown}
-                          onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
+                        <Slider
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
+                          onValueChange={([val = 0]) => field.onChange(String(val / 100))}
+                          className="[&_[data-slot=slider-range]]:bg-amber-500 [&_[data-slot=slider-thumb]]:border-amber-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1036,20 +1074,33 @@ export default function CrearOfertaForm({
                     validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
                   }}
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Peso de alineación cultural</FormLabel>
+                    <FormItem className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <FormLabel>Alineación cultural</FormLabel>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso cultural">
+                                <Info className="size-3.5" />
+                              </button>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs text-sm">
+                              Evalúa qué tan alineado está el candidato con la cultura organizacional de la empresa.
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <span className="text-xl font-semibold tabular-nums">
+                          {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
+                        </span>
+                      </div>
                       <FormControl>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={field.value}
-                          onKeyDown={handleDecimalKeyDown}
-                          onChange={(event) => field.onChange(sanitizeDecimalInput(event.target.value))}
-                          onBlur={field.onBlur}
-                          name={field.name}
-                          ref={field.ref}
+                        <Slider
+                          min={0}
+                          max={100}
+                          step={1}
+                          value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
+                          onValueChange={([val = 0]) => field.onChange(String(val / 100))}
+                          className="[&_[data-slot=slider-range]]:bg-emerald-500 [&_[data-slot=slider-thumb]]:border-emerald-500"
                         />
                       </FormControl>
                       <FormMessage />
@@ -1058,13 +1109,27 @@ export default function CrearOfertaForm({
                 />
               </div>
 
-              {hasAllWeights ? (
-                <p className={`text-sm ${isWeightSumValid ? "text-muted-foreground" : "text-destructive"}`}>
-                  Suma de pesos: {weightSum?.toFixed(2)} {isWeightSumValid ? "(correcto)" : "(debe ser 1.00)"}
-                </p>
-              ) : null}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Total</span>
+                  <span className={cn(
+                    "text-sm font-semibold tabular-nums",
+                    isWeightSumValid ? "text-emerald-600" : "text-destructive"
+                  )}>
+                    {Math.round(((technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0)) * 100)}%
+                  </span>
+                  {isWeightSumValid ? <span className="text-xs text-emerald-600">✓</span> : null}
+                </div>
+                {!isWeightSumValid && (technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0) > 0 ? (
+                  <Button type="button" size="sm" variant="outline" onClick={handleNormalize}
+                    className="h-7 rounded-full px-3 text-xs">
+                    Normalizar a 100%
+                  </Button>
+                ) : null}
+              </div>
             </CardContent>
           </Card>
+          </TooltipProvider>
 
           <Card>
             <CardHeader>
