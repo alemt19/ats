@@ -29,6 +29,8 @@ model applications {
 
   @@unique([job_id, candidate_id], map: "applications_job_id_candidate_id_idx")
   @@index([ai_feedback], map: "idx_applications_ai_feedback", type: Gin)
+  @@index([status, evaluation_status])
+  @@index([created_at])
 }
 
 model applications_registers {

@@ -13,6 +13,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { AdminOfferCandidatesQueryDto, AdminOffersQueryDto, CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
 import { Prisma } from '../../generated/prisma/client';
 import type { job_status_enum } from '../../generated/prisma/enums';
+import { STATUS_ORDER, STATUS_LABELS } from '../applications/status-order';
 
 type JobAttributeType = 'hard_skill' | 'soft_skill';
 
@@ -447,6 +448,7 @@ export class JobsService {
       select: {
         id: true,
         company_id: true,
+        name: true,
       },
     });
 
@@ -1649,6 +1651,170 @@ export class JobsService {
       progressCounts.set(row.status, parseCount(row.count));
     });
 
+    // --- Second Promise.all: new dashboard widgets ---
+    const EVAL_STATUS_ORDER = ['pending', 'processing', 'completed', 'failed'] as const;
+
+    const [
+      pendingReviewRow,
+      atRiskRow,
+      calibrationRows,
+      motwRows,
+      evalStatusRows,
+      funnelStagesRows,
+      avgFirstResponseRow,
+    ] = await Promise.all([
+      // actionStrip.pendingReview
+      this.prisma.$queryRaw<Array<{ cnt: bigint }>>`
+        SELECT COUNT(*) AS cnt
+        FROM applications a
+        INNER JOIN jobs j ON j.id = a.job_id
+        WHERE j.company_id = ${companyId}
+          AND a.status = 'applied'
+          AND a.evaluation_status = 'completed'
+          AND NOT EXISTS (
+            SELECT 1 FROM applications_registers ar
+            WHERE ar.application_id = a.id
+              AND ar.status IN ('pre_screening', 'contacted', 'hired', 'rejected')
+          )
+      `,
+      // actionStrip.atRiskOffers
+      this.prisma.$queryRaw<Array<{ cnt: bigint }>>`
+        SELECT COUNT(*) AS cnt
+        FROM jobs j
+        WHERE j.company_id = ${companyId}
+          AND j.status = 'published'
+          AND NOT EXISTS (
+            SELECT 1 FROM applications a
+            WHERE a.job_id = j.id
+              AND a.created_at >= NOW() - INTERVAL '14 days'
+          )
+      `,
+      // calibration bins
+      this.prisma.$queryRaw<Array<{ bin: bigint | number; total: bigint | number; hired: bigint | number }>>`
+        SELECT
+          LEAST(width_bucket(COALESCE(a.overall_score, 0)::float, 0, 1.001, 10), 10) AS bin,
+          COUNT(*) AS total,
+          SUM(CASE WHEN a.status = 'hired' THEN 1 ELSE 0 END) AS hired
+        FROM applications a
+        INNER JOIN jobs j ON j.id = a.job_id
+        WHERE j.company_id = ${companyId}
+          AND a.overall_score IS NOT NULL
+        GROUP BY 1
+        ORDER BY 1
+      `,
+      // matchOfTheWeek
+      this.prisma.$queryRaw<Array<{
+        candidate_name: string;
+        candidate_lastname: string;
+        job_title: string;
+        overall_score: number;
+        match_technical_score: number | null;
+        match_soft_score: number | null;
+        match_culture_score: number | null;
+        weight_technical: number | null;
+        weight_soft: number | null;
+        weight_culture: number | null;
+        created_at: Date;
+      }>>`
+        SELECT
+          c.name AS candidate_name,
+          c.lastname AS candidate_lastname,
+          j.title AS job_title,
+          a.overall_score,
+          a.match_technical_score,
+          a.match_soft_score,
+          a.match_culture_score,
+          j.weight_technical,
+          j.weight_soft,
+          j.weight_culture,
+          a.created_at
+        FROM applications a
+        INNER JOIN jobs j ON j.id = a.job_id
+        INNER JOIN candidates c ON c.id = a.candidate_id
+        WHERE j.company_id = ${companyId}
+          AND a.overall_score IS NOT NULL
+          AND a.created_at >= NOW() - INTERVAL '7 days'
+        ORDER BY a.overall_score DESC
+        LIMIT 1
+      `,
+      // evalStatusPills
+      this.prisma.$queryRaw<Array<{ status: string; cnt: bigint }>>`
+        SELECT
+          a.evaluation_status AS status,
+          COUNT(*) AS cnt
+        FROM applications a
+        INNER JOIN jobs j ON j.id = a.job_id
+        WHERE j.company_id = ${companyId}
+          AND a.created_at >= ${startDate}
+          AND a.created_at <= ${endDate}
+        GROUP BY a.evaluation_status
+      `,
+      // funnelStages
+      this.prisma.$queryRaw<Array<{ status: string; cnt: bigint }>>`
+        SELECT
+          CASE WHEN ar.status = 'contacted' THEN 'pre_screening' ELSE ar.status END AS status,
+          COUNT(DISTINCT ar.application_id) AS cnt
+        FROM applications_registers ar
+        INNER JOIN applications a ON a.id = ar.application_id
+        INNER JOIN jobs j ON j.id = a.job_id
+        WHERE j.company_id = ${companyId}
+          AND ar.created_at >= ${startDate}
+          AND ar.created_at <= ${endDate}
+        GROUP BY 1
+      `,
+      // avgFirstResponseDays
+      this.prisma.$queryRaw<Array<{ avg_days: number | null }>>`
+        SELECT AVG(diff_epoch / 86400.0) AS avg_days
+        FROM (
+          SELECT
+            EXTRACT(EPOCH FROM (MIN(ar.created_at) - a.created_at)) AS diff_epoch
+          FROM applications a
+          INNER JOIN applications_registers ar ON ar.application_id = a.id
+          INNER JOIN jobs j ON j.id = a.job_id
+          WHERE j.company_id = ${companyId}
+            AND ar.status NOT IN ('applied')
+            AND a.created_at >= ${startDate}
+            AND a.created_at <= ${endDate}
+          GROUP BY a.id, a.created_at
+        ) sub
+      `,
+    ]);
+
+    // Post-process calibration bins (10 bins, bin 1 = 0.0–0.1, bin 10 = 0.9–1.0)
+    const calibrationMap = new Map<number, { total: number; hired: number }>();
+    calibrationRows.forEach((row) => {
+      calibrationMap.set(Number(row.bin), { total: Number(row.total), hired: Number(row.hired) });
+    });
+    const calibrationBins = Array.from({ length: 10 }, (_, i) => {
+      const bin = i + 1;
+      const data = calibrationMap.get(bin);
+      const total = data?.total ?? 0;
+      const hired = data?.hired ?? 0;
+      return {
+        bin,
+        scoreMin: parseFloat(((bin - 1) * 0.1).toFixed(1)),
+        scoreMax: parseFloat((bin * 0.1).toFixed(1)),
+        total,
+        hired,
+        hireRate: total >= 3 ? hired / total : null,
+      };
+    });
+
+    // Post-process matchOfTheWeek
+    const motw = motwRows[0] ?? null;
+
+    // Post-process evalStatusPills
+    const evalStatusMap = new Map<string, bigint>();
+    evalStatusRows.forEach((row) => {
+      evalStatusMap.set(row.status, row.cnt);
+    });
+
+    // Post-process funnel stages
+    const funnelMap = new Map<string, bigint>();
+    funnelStagesRows.forEach((row) => {
+      funnelMap.set(row.status, row.cnt);
+    });
+
     return {
       metrics: {
         activeOffers: newOffers,
@@ -1665,6 +1831,45 @@ export class JobsService {
         name: row.offer_name,
         candidates: parseCount(row.candidates),
       })),
+      adminName: admin.name,
+      actionStrip: {
+        pendingReview: Number(pendingReviewRow[0]?.cnt ?? 0),
+        atRiskOffers: Number(atRiskRow[0]?.cnt ?? 0),
+      },
+      calibration: calibrationBins,
+      matchOfTheWeek: motw
+        ? {
+            candidateName: `${motw.candidate_name} ${motw.candidate_lastname}`,
+            jobTitle: motw.job_title,
+            overallScore: Number(motw.overall_score),
+            technicalScore: Number(motw.match_technical_score ?? 0),
+            softScore: Number(motw.match_soft_score ?? 0),
+            cultureScore: Number(motw.match_culture_score ?? 0),
+            weightTechnical: Number(motw.weight_technical ?? 0.33),
+            weightSoft: Number(motw.weight_soft ?? 0.33),
+            weightCulture: Number(motw.weight_culture ?? 0.34),
+            createdAt:
+              motw.created_at instanceof Date
+                ? motw.created_at.toISOString()
+                : String(motw.created_at),
+          }
+        : null,
+      evalStatusPills: EVAL_STATUS_ORDER.map((s) => ({
+        status: s,
+        count: Number(evalStatusMap.get(s) ?? 0),
+      })),
+      funnel: {
+        stages: STATUS_ORDER.map((sn) => ({
+          technical_name: sn,
+          label: STATUS_LABELS[sn],
+          count: Number(funnelMap.get(sn) ?? 0),
+          dwell_days: null,
+        })),
+        avgFirstResponseDays:
+          avgFirstResponseRow[0]?.avg_days != null
+            ? Number(avgFirstResponseRow[0].avg_days)
+            : null,
+      },
     };
   }
 }
