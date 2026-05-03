@@ -230,7 +230,10 @@ async function fetchHiredCandidateIdsFromBackend(): Promise<Set<number>> {
 
         skip += take
       }
-    } catch {
+    } catch (e: any) {
+      if (e?.name === "AbortError" || e?.message?.includes("aborted")) {
+        throw e
+      }
       // Try next endpoint variant.
     }
   }
@@ -279,7 +282,10 @@ async function fetchCandidatesFromBackend(): Promise<Candidate[]> {
 
         skip += take
       }
-    } catch {
+    } catch (e: any) {
+      if (e?.name === "AbortError" || e?.message?.includes("aborted")) {
+        throw e
+      }
       // Try next endpoint variant.
     }
   }
@@ -315,7 +321,10 @@ async function fetchCandidateByIdFromBackend(candidateId: number): Promise<Candi
 
       const record = unwrapEnvelope(payload)
       return mapCandidate(record)
-    } catch {
+    } catch (e: any) {
+      if (e?.name === "AbortError" || e?.message?.includes("aborted")) {
+        throw e
+      }
       // Try next endpoint variant.
     }
   }
@@ -390,7 +399,10 @@ export async function getCandidateApplicationsByIdServer(
           created_at: typeof record.created_at === "string" ? record.created_at : null,
         }))
         .filter((record) => record.application_id > 0 && record.offer_id > 0)
-    } catch {
+    } catch (e: any) {
+      if (e?.name === "AbortError" || e?.message?.includes("aborted")) {
+        throw e
+      }
       // Try next endpoint variant.
     }
   }
