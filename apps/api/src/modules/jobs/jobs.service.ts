@@ -1662,6 +1662,7 @@ export class JobsService {
       evalStatusRows,
       funnelStagesRows,
       avgFirstResponseRow,
+      matchScoresRow,
     ] = await Promise.all([
       // actionStrip.pendingReview
       this.prisma.$queryRaw<Array<{ cnt: bigint }>>`
@@ -1778,7 +1779,34 @@ export class JobsService {
           GROUP BY a.id, a.created_at
         ) sub
       `,
+      // matchScores — only completed evaluations
+      this.prisma.$queryRaw<Array<{
+        avg_overall: number | null;
+        avg_technical: number | null;
+        avg_soft: number | null;
+        avg_culture: number | null;
+      }>>`
+        SELECT
+          AVG(a.overall_score)::float           AS avg_overall,
+          AVG(a.match_technical_score)::float   AS avg_technical,
+          AVG(a.match_soft_score)::float        AS avg_soft,
+          AVG(a.match_culture_score)::float     AS avg_culture
+        FROM applications a
+        INNER JOIN jobs j ON j.id = a.job_id
+        WHERE j.company_id = ${companyId}
+          AND a.evaluation_status = 'completed'
+          AND a.created_at >= ${startDate}
+          AND a.created_at <= ${endDate}
+      `,
     ]);
+    
+    const toScorePct = (v: number | null | undefined): number | null =>
+      v != null ? Math.round(Number(v) * 100) : null;
+    const matchScoreData = matchScoresRow[0];
+    const avgMatchScore = toScorePct(matchScoreData?.avg_overall);
+    const avgTechnicalScore = toScorePct(matchScoreData?.avg_technical);
+    const avgSoftScore = toScorePct(matchScoreData?.avg_soft);
+    const avgCultureScore = toScorePct(matchScoreData?.avg_culture);
 
     // Post-process calibration bins (10 bins, bin 1 = 0.0–0.1, bin 10 = 0.9–1.0)
     const calibrationMap = new Map<number, { total: number; hired: number }>();
@@ -1821,6 +1849,10 @@ export class JobsService {
         newCandidates: newCandidatesCount,
         newApplications,
         culturalAlignment,
+        avgMatchScore,
+        avgTechnicalScore,
+        avgSoftScore,
+        avgCultureScore,
       },
       candidateProgress: Array.from(statusLabelMap.entries()).map(([technicalName, label]) => ({
         technical_name: technicalName,
