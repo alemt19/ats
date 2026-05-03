@@ -1,5 +1,7 @@
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 
+import { getRecruiterByIdServer } from "../recruiters-admin-service"
 import RecruiterForm from "../recruiter-form"
 
 type AdminReclutadorDetallePageProps = {
@@ -14,5 +16,12 @@ export default async function AdminReclutadorDetallePage({ params }: AdminReclut
 		notFound()
 	}
 
-	return <RecruiterForm mode="edit" recruiterId={recruiterId} />
+	const cookie = (await headers()).get("cookie") ?? undefined
+	const recruiter = await getRecruiterByIdServer(recruiterId, cookie)
+
+	if (!recruiter) {
+		notFound()
+	}
+
+	return <RecruiterForm mode="edit" recruiterId={recruiterId} initialRecruiter={recruiter} />
 }

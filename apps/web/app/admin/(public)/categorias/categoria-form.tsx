@@ -11,6 +11,7 @@ import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
 import { Input } from "react/components/ui/input"
 import { Label } from "react/components/ui/label"
+import { useSetBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 
 type CategoriaFormProps = {
   mode: "create" | "edit"
@@ -26,6 +27,7 @@ type CategoryPayload = {
 export default function CategoriaForm({ mode, categoryId, initialName = "" }: CategoriaFormProps) {
   const router = useRouter()
   const [name, setName] = React.useState(initialName)
+  useSetBreadcrumbTitle(categoryId ?? 0, mode === "edit" ? initialName : "")
 
   const mutation = useMutation<CategoryPayload, Error, { name: string }>({
     mutationFn: async (values) => {

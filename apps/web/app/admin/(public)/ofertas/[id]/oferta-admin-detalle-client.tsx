@@ -20,6 +20,7 @@ import CrearOfertaForm, {
   type CrearOfertaCatalogs,
   type CrearOfertaFormValues,
 } from "../crear/crear-oferta-form"
+import { useSetBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 import {
   type AdminOfferCandidatesQueryParams,
   type AdminOfferCandidatesResponse,
@@ -311,6 +312,7 @@ export default function OfertaAdminDetalleClient({
   initialCandidatesQuery,
   initialCandidatesData,
 }: OfertaAdminDetalleClientProps) {
+  useSetBreadcrumbTitle(offerId, offer.title)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

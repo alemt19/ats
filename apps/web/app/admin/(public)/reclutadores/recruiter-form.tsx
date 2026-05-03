@@ -27,10 +27,12 @@ import {
   type Recruiter,
   type RecruitersCatalogsResponse,
 } from "./recruiters-admin-types"
+import { useSetBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 
 type RecruiterFormProps = {
   mode: "create" | "edit"
   recruiterId?: number
+  initialRecruiter?: Recruiter
 }
 
 type RecruiterFormValues = {
@@ -193,7 +195,7 @@ function ensureOptionValue(options: string[], value: string) {
   return [normalizedValue, ...options]
 }
 
-export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps) {
+export default function RecruiterForm({ mode, recruiterId, initialRecruiter }: RecruiterFormProps) {
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
@@ -216,6 +218,7 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
   const detailQuery = useQuery<Recruiter>({
     queryKey: ["admin-recruiter-detail", recruiterId],
     enabled: mode === "edit" && Number.isFinite(recruiterId),
+    initialData: initialRecruiter,
     queryFn: async () => {
       const response = await fetch(`/api/admin/reclutadores/${recruiterId}`)
       if (response.status === 404) {
@@ -236,6 +239,11 @@ export default function RecruiterForm({ mode, recruiterId }: RecruiterFormProps)
       return recruiter
     },
   })
+
+  const recruiterFullName = detailQuery.data
+    ? `${detailQuery.data.name} ${detailQuery.data.lastname}`.trim()
+    : ""
+  useSetBreadcrumbTitle(recruiterId ?? 0, recruiterFullName)
 
   React.useEffect(() => {
     if (!catalogsQuery.data || mode !== "create") {

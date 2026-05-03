@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 
 import { useCompany } from "react/contexts/company-context"
+import { BreadcrumbTitleProvider, useBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
 import { getDefaultAdminRoute, isHeadOfRecruiters } from "react/lib/admin-role"
 import {
@@ -134,7 +135,9 @@ function getAdminBreadcrumbLabel(pathname: string) {
 	return "Panel de control"
 }
 
-function getAdminBreadcrumbItems(pathname: string) {
+function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, string>) {
+	const resolve = (id: string) => dynamicLabels.get(id) ?? id
+
 	if (pathname.startsWith("/admin/configuracion/informacion-valores")) {
 		return [
 			{ label: "Configuración" },
@@ -183,7 +186,7 @@ function getAdminBreadcrumbItems(pathname: string) {
 	if (recruiterDetailMatch && recruiterDetailMatch[1]) {
 		return [
 			{ label: "Reclutadores", href: "/admin/reclutadores" },
-			{ label: recruiterDetailMatch[1] },
+			{ label: resolve(recruiterDetailMatch[1]) },
 		]
 	}
 
@@ -192,7 +195,7 @@ function getAdminBreadcrumbItems(pathname: string) {
 	if (adminCandidateDetailMatch && adminCandidateDetailMatch[1]) {
 		return [
 			{ label: "Candidatos", href: "/admin/candidatos" },
-			{ label: adminCandidateDetailMatch[1] },
+			{ label: resolve(adminCandidateDetailMatch[1]) },
 		]
 	}
 
@@ -201,7 +204,7 @@ function getAdminBreadcrumbItems(pathname: string) {
 	if (categoryDetailMatch && categoryDetailMatch[1]) {
 		return [
 			{ label: "Categorías", href: "/admin/categorias" },
-			{ label: categoryDetailMatch[1] },
+			{ label: resolve(categoryDetailMatch[1]) },
 		]
 	}
 
@@ -212,10 +215,10 @@ function getAdminBreadcrumbItems(pathname: string) {
 		const candidateId = candidateDetailMatch[2]
 
 		return [
-			{ label: "Oferta", href: "/admin/ofertas" },
-			{ label: offerId, href: `/admin/ofertas/${offerId}` },
+			{ label: "Ofertas", href: "/admin/ofertas" },
+			{ label: resolve(offerId), href: `/admin/ofertas/${offerId}` },
 			{ label: "Candidatos" },
-			{ label: candidateId },
+			{ label: resolve(candidateId) },
 		]
 	}
 
@@ -224,7 +227,7 @@ function getAdminBreadcrumbItems(pathname: string) {
 	if (offerDetailMatch && offerDetailMatch[1]) {
 		return [
 			{ label: "Ofertas", href: "/admin/ofertas" },
-			{ label: offerDetailMatch[1] },
+			{ label: resolve(offerDetailMatch[1]) },
 		]
 	}
 
@@ -237,7 +240,15 @@ type AdminPublicLayoutClientProps = {
 	unreadCount: number
 }
 
-export default function AdminPublicLayoutClient({
+export default function AdminPublicLayoutClient(props: AdminPublicLayoutClientProps) {
+	return (
+		<BreadcrumbTitleProvider>
+			<AdminLayoutContent {...props} />
+		</BreadcrumbTitleProvider>
+	)
+}
+
+function AdminLayoutContent({
 	children,
 	notifications,
 	unreadCount,
@@ -260,7 +271,8 @@ export default function AdminPublicLayoutClient({
 	const adminRole = user?.role ?? null
 	const defaultAdminRoute = getDefaultAdminRoute(adminRole)
 	const visibleAdminLinks = adminLinks.filter((item) => !item.headOnly || isHeadOfRecruiters(adminRole))
-	const breadcrumbItems = getAdminBreadcrumbItems(pathname)
+	const { dynamicLabels } = useBreadcrumbTitle()
+	const breadcrumbItems = getAdminBreadcrumbItems(pathname, dynamicLabels)
 	const isConfigurationSection =
 		pathname.startsWith("/admin/configuracion/informacion-valores") ||
 		pathname.startsWith("/admin/configuracion/preferencias-culturales")

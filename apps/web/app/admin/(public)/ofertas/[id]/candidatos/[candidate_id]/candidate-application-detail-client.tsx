@@ -6,6 +6,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "react/components/ui/avatar"
+import { useSetBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
@@ -198,6 +199,8 @@ export default function CandidateApplicationDetailClient({
   behavioralQuestion2,
 }: CandidateApplicationDetailClientProps) {
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
+  useSetBreadcrumbTitle(offerId, candidate.offer_title)
+  useSetBreadcrumbTitle(candidate.application_id, fullName)
   const [applicationStatus, setApplicationStatus] = React.useState(candidate.application_status)
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false)
   const [notes, setNotes] = React.useState(initialNotes)
