@@ -15,13 +15,6 @@ import {
   PaginationItem,
   PaginationLink,
 } from "react/components/ui/pagination"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "react/components/ui/select"
 import { Skeleton } from "react/components/ui/skeleton"
 import {
   Table,
@@ -31,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "react/components/ui/table"
+import { Tabs, TabsList, TabsTrigger } from "react/components/ui/tabs"
 import { formatDniDisplay } from "react/lib/dni"
 import { cn } from "react/lib/utils"
 
@@ -187,20 +181,30 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
               />
             </div>
 
-            <Select
+            <Tabs
               value={query.profile}
               onValueChange={(value) =>
                 updateUrl({ profile: value as "normal" | "hired" }, true)
               }
             >
-              <SelectTrigger className="w-full border-border/70 bg-background/70 md:w-56">
-                <SelectValue placeholder="Tipo de candidato" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="normal">Candidatos normales</SelectItem>
-                <SelectItem value="hired">Sólo contratados</SelectItem>
-              </SelectContent>
-            </Select>
+              <TabsList
+                variant="default"
+                className="gap-1 rounded-full border border-border/70 bg-muted/50 p-1 shadow-soft"
+              >
+                <TabsTrigger
+                  value="normal"
+                  className="h-8 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  Todos
+                </TabsTrigger>
+                <TabsTrigger
+                  value="hired"
+                  className="h-8 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+                >
+                  Contratados
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
         </CardHeader>
 
