@@ -25,6 +25,7 @@ import { formatDniDisplay } from "react/lib/dni"
 import { cn } from "react/lib/utils"
 
 import type { Candidate, CandidateApplication } from "./candidates-admin-types"
+import { useSetBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 
 type CulturePreferenceValue = {
   technical_name: string
@@ -93,6 +94,7 @@ export default function CandidateDetailReadonly({
   const [activeTab, setActiveTab] = React.useState("datos")
   const [applicationStatusFilter, setApplicationStatusFilter] = React.useState("all")
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
+  useSetBreadcrumbTitle(candidate.id, fullName)
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
   const statusLabelMap = React.useMemo(
@@ -192,11 +194,34 @@ export default function CandidateDetailReadonly({
       </header>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
-        <TabsList variant="line" className="w-full justify-start border-b border-border/70 pb-2">
-          <TabsTrigger value="datos">Datos</TabsTrigger>
-          <TabsTrigger value="competencias">Competencias y valores</TabsTrigger>
-          <TabsTrigger value="preferencias">Preferencias culturales</TabsTrigger>
-          <TabsTrigger value="postulaciones">Postulaciones</TabsTrigger>
+        <TabsList
+          variant="default"
+          className="self-center gap-1.5 rounded-full border border-border/70 bg-muted/50 p-1.5 shadow-soft"
+        >
+          <TabsTrigger
+            value="datos"
+            className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Datos
+          </TabsTrigger>
+          <TabsTrigger
+            value="competencias"
+            className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Competencias y valores
+          </TabsTrigger>
+          <TabsTrigger
+            value="preferencias"
+            className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Preferencias culturales
+          </TabsTrigger>
+          <TabsTrigger
+            value="postulaciones"
+            className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Postulaciones
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="datos" className="space-y-4">
@@ -394,10 +419,10 @@ export default function CandidateDetailReadonly({
                         const optionId = `${category.technical_name}-${option.technical_name}`
 
                         return (
-                          <label key={option.technical_name} className="block">
+                          <label key={option.technical_name} className="block h-full">
                             <Card
                               className={cn(
-                                "border-muted/60",
+                                "h-full border-muted/60",
                                 isSelected && "border-primary/70 ring-1 ring-primary/20"
                               )}
                             >

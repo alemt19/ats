@@ -238,10 +238,10 @@ export default function PreferenciasCulturalesForm({
 																	const optionId = `${category.technical_name}-${option.technical_name}`
 
 																	return (
-																		<label key={option.technical_name} className="block">
+																		<label key={option.technical_name} className="block h-full">
 																			<Card
 																				className={cn(
-																					"cursor-pointer border border-border/70 bg-background/80 transition hover:border-primary/50 hover:bg-muted/40",
+																					"h-full cursor-pointer border border-border/70 bg-background/80 transition hover:border-primary/50 hover:bg-muted/40",
 																					isSelected && "border-primary/70 ring-1 ring-primary/25 bg-primary/5"
 																				)}
 																			>
