@@ -4,10 +4,12 @@ import * as React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "react/components/ui/button"
 import { Input } from "react/components/ui/input"
+import { cn } from "react/lib/utils"
 
 type DashboardDateFiltersProps = {
 	initialFrom?: string | null
 	initialTo?: string | null
+	variant?: "card" | "inline"
 }
 
 function getTodayIso() {
@@ -18,7 +20,7 @@ function getTodayIso() {
 	return `${year}-${month}-${day}`
 }
 
-export default function DashboardDateFilters({ initialFrom, initialTo }: DashboardDateFiltersProps) {
+export default function DashboardDateFilters({ initialFrom, initialTo, variant = "card" }: DashboardDateFiltersProps) {
 	const router = useRouter()
 	const pathname = usePathname()
 	const todayIso = React.useMemo(() => getTodayIso(), [])
@@ -66,7 +68,12 @@ export default function DashboardDateFilters({ initialFrom, initialTo }: Dashboa
 
 	return (
 		<form
-			className="w-full max-w-2xl grid grid-cols-1 items-end gap-3 rounded-2xl border border-border/70 bg-card/80 p-3 shadow-soft sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]"
+			className={cn(
+				"w-full grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]",
+				variant === "inline"
+					? "max-w-xl rounded-xl bg-background/60 p-2"
+					: "max-w-2xl rounded-2xl border border-border/70 bg-card/80 p-3 shadow-soft"
+			)}
 			onSubmit={handleSubmit}
 		>
 			<div className="space-y-1">

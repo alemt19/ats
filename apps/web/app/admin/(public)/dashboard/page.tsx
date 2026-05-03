@@ -1,8 +1,11 @@
 import path from "node:path"
 import { readFile } from "node:fs/promises"
 import { headers } from "next/headers"
-import { Badge } from "react/components/ui/badge"
+import Link from "next/link"
+import { CheckCircle2 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
+import InfoTooltip from "react/components/ui/info-tooltip"
+import { cn } from "react/lib/utils"
 import DashboardDateFilters from "./dashboard-date-filters"
 import TopOffersChart from "react/components/admin/top-offers-chart"
 import CandidateProgressChart from "react/components/admin/candidate-progress-chart"
@@ -42,6 +45,10 @@ type DashboardData = {
         newCandidates: number
         newApplications: number
         culturalAlignment: number
+        avgMatchScore: number | null
+        avgTechnicalScore: number | null
+        avgSoftScore: number | null
+        avgCultureScore: number | null
     }
     candidateProgress: {
         technical_name?: string
@@ -53,6 +60,14 @@ type DashboardData = {
         candidates: number
     }[]
     matchOfTheWeek?: MatchOfTheWeekData
+    actionStrip: {
+        pendingReview: number
+        atRiskOffers: number
+    }
+    funnel: {
+        stages: { technical_name: string; label: string; count: number; dwell_days: number | null }[]
+        avgFirstResponseDays: number | null
+    }
 }
 
 type RawStatusCatalogItem = {
@@ -154,6 +169,10 @@ async function getDashboardData(from?: string, to?: string): Promise<DashboardDa
                 newCandidates: 0,
                 newApplications: 0,
                 culturalAlignment: 0,
+                avgMatchScore: null,
+                avgTechnicalScore: null,
+                avgSoftScore: null,
+                avgCultureScore: null,
             },
             candidateProgress: [
                 { technical_name: "applied", label: "Postulados", count: 0 },
@@ -163,6 +182,8 @@ async function getDashboardData(from?: string, to?: string): Promise<DashboardDa
             ],
             topOffers: [],
             matchOfTheWeek: null,
+            actionStrip: { pendingReview: 0, atRiskOffers: 0 },
+            funnel: { stages: [], avgFirstResponseDays: null },
         }
     }
 }
@@ -199,49 +220,124 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
 
     const maxTopOfferCandidates = Math.max(...data.topOffers.map((item) => item.candidates), 1)
 
+    const avgFirstResponseDays = data.funnel?.avgFirstResponseDays ?? null
+
+    const responseDisplay =
+        avgFirstResponseDays === null
+            ? null
+            : avgFirstResponseDays < 1
+            ? `${Math.round(avgFirstResponseDays * 24)} h`
+            : `${avgFirstResponseDays.toFixed(1)} d`
+
+    const responseLabel =
+        avgFirstResponseDays === null ? null
+        : avgFirstResponseDays < 2 ? { text: "Excelente", cls: "text-green-600 dark:text-green-400" }
+        : avgFirstResponseDays <= 5 ? { text: "Normal", cls: "text-amber-600 dark:text-amber-400" }
+        : { text: "Lento", cls: "text-red-600 dark:text-red-400" }
+
     return (
         <div className="space-y-8">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="space-y-2 lg:max-w-2xl">
-                <div>
-                    <h1 className="text-3xl font-semibold tracking-tight">Panel de control de reclutamiento</h1>
-                    <p className="text-sm text-foreground/70">Resumen operativo.</p>
-                </div>
-            </div>
-
-            <DashboardDateFilters initialFrom={from} initialTo={to} />
+        <div>
+            <h1 className="text-3xl font-semibold tracking-tight">Panel de control de reclutamiento</h1>
+            <p className="text-sm text-foreground/70">Resumen operativo.</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <Card className="gradient-border min-h-30 rounded-2xl bg-card/90 shadow-soft">
-                <CardHeader className="gap-2 pb-2">
-                    <CardDescription className="text-xs text-foreground/60">Ofertas nuevas</CardDescription>
-                    <CardTitle className="text-3xl font-semibold">{data.metrics.activeOffers}</CardTitle>
-                </CardHeader>
-            </Card>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+            <Link href="/admin/candidatos" className="sm:col-span-2 xl:col-span-2 group">
+                <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
+                    <CardHeader className="gap-2 pb-2">
+                        <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                            Revisiones pendientes
+                            <InfoTooltip text="Postulaciones donde la IA completó su evaluación pero el reclutador aún no ha realizado ninguna acción." />
+                        </CardDescription>
+                        {data.actionStrip.pendingReview === 0 ? (
+                            <div className="flex items-center gap-2 py-1">
+                                <CheckCircle2 className="size-5 shrink-0 text-green-500" />
+                                <span className="text-base font-medium text-foreground/60">Cola de revisión limpia</span>
+                            </div>
+                        ) : (
+                            <>
+                                <CardTitle className={cn(
+                                    "text-5xl font-semibold tabular-nums",
+                                    data.actionStrip.pendingReview >= 16 ? "text-red-600 dark:text-red-400" :
+                                    data.actionStrip.pendingReview >= 6  ? "text-amber-600 dark:text-amber-400" :
+                                    ""
+                                )}>
+                                    {data.actionStrip.pendingReview}
+                                </CardTitle>
+                                <p className="text-xs text-foreground/60">
+                                    postulacion{data.actionStrip.pendingReview !== 1 ? "es" : ""} evaluadas por IA esperando revisión
+                                </p>
+                            </>
+                        )}
+                    </CardHeader>
+                </Card>
+            </Link>
 
-            <Card className="gradient-border min-h-30 rounded-2xl bg-card/90 shadow-soft">
-                <CardHeader className="gap-2 pb-2">
-                    <CardDescription className="text-xs text-foreground/60">Nuevos candidatos</CardDescription>
-                    <CardTitle className="text-3xl font-semibold">{data.metrics.newCandidates}</CardTitle>
-                </CardHeader>
-            </Card>
+            <Link href="/admin/ofertas?status=published" className="group">
+                <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
+                    <CardHeader className="gap-2 pb-2">
+                        <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                            Ofertas en riesgo
+                            <InfoTooltip text="Ofertas publicadas que llevan más de 14 días sin recibir ninguna postulación." />
+                        </CardDescription>
+                        <CardTitle className={cn(
+                            "text-3xl font-semibold",
+                            data.actionStrip.atRiskOffers > 0 ? "text-amber-600 dark:text-amber-400" : ""
+                        )}>
+                            {data.actionStrip.atRiskOffers}
+                        </CardTitle>
+                        <p className="text-xs text-foreground/60">
+                            {data.actionStrip.atRiskOffers === 0
+                                ? "sin riesgo actualmente"
+                                : `oferta${data.actionStrip.atRiskOffers !== 1 ? "s" : ""} publicada${data.actionStrip.atRiskOffers !== 1 ? "s" : ""} sin candidatos`
+                            }
+                        </p>
+                    </CardHeader>
+                </Card>
+            </Link>
 
-            <Card className="gradient-border min-h-30 rounded-2xl bg-card/90 shadow-soft">
+            <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
                 <CardHeader className="gap-2 pb-2">
-                    <CardDescription className="text-xs text-foreground/60">Nuevas postulaciones</CardDescription>
-                    <CardTitle className="text-3xl font-semibold">{data.metrics.newApplications}</CardTitle>
-                </CardHeader>
-            </Card>
-
-            <Card className="gradient-border min-h-30 rounded-2xl bg-card/90 shadow-soft">
-                <CardHeader className="gap-2 pb-2">
-                    <CardDescription className="line-clamp-2 text-xs text-foreground/60">
-                        Tasa de alineación cultural promedio
+                    <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                        Tiempo de respuesta
+                        <InfoTooltip text="Promedio de días desde que un candidato postula hasta la primera acción del equipo sobre su aplicación." />
                     </CardDescription>
-                    <CardTitle className="text-3xl font-semibold">{data.metrics.culturalAlignment}%</CardTitle>
+                    <CardTitle className="text-3xl font-semibold">
+                        {responseDisplay ?? "—"}
+                    </CardTitle>
+                    {responseLabel && (
+                        <p className={`text-xs font-medium ${responseLabel.cls}`}>{responseLabel.text}</p>
+                    )}
                 </CardHeader>
             </Card>
+
+            <Link href="/admin/ofertas?status=published" className="sm:col-span-2 xl:col-span-1 group">
+                <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
+                    <CardHeader className="gap-2 pb-2">
+                        <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                            Ofertas activas
+                            <InfoTooltip text="Número de ofertas de trabajo publicadas actualmente." />
+                        </CardDescription>
+                        <CardTitle className="text-3xl font-semibold">
+                            {data.metrics.activeOffers}
+                        </CardTitle>
+                        <p className="text-xs text-foreground/60">
+                            oferta{data.metrics.activeOffers !== 1 ? "s" : ""} publicada{data.metrics.activeOffers !== 1 ? "s" : ""} en curso
+                        </p>
+                    </CardHeader>
+                </Card>
+            </Link>
+        </div>
+
+        <div className="flex flex-col gap-4 border-t border-border/40 pt-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="shrink-0">
+                <p className="text-sm font-semibold text-foreground/90">Análisis del período</p>
+                <p className="text-xs text-foreground/50">Los datos de esta sección responden al rango de fechas seleccionado</p>
+            </div>
+            <div className="min-w-0">
+                <DashboardDateFilters initialFrom={from} initialTo={to} variant="inline" />
+            </div>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-3">
