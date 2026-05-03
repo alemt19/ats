@@ -51,6 +51,7 @@ export type JobApplication = {
   match_technical_score?: number | null
   match_soft_score?: number | null
   match_culture_score?: number | null
+  has_candidate_feedback?: boolean
 }
 
 type SimilarJob = {
@@ -170,25 +171,15 @@ function buildRecommendationReasons(application: JobApplication, similarJob: Sim
 
 type CandidateFeedbackSectionProps = {
   applicationId: number
+  initialSubmitted: boolean
 }
 
-function CandidateFeedbackSection({ applicationId }: CandidateFeedbackSectionProps) {
+function CandidateFeedbackSection({ applicationId, initialSubmitted }: CandidateFeedbackSectionProps) {
   const [overallRating, setOverallRating] = React.useState(0)
   const [processRating, setProcessRating] = React.useState(0)
   const [comments, setComments] = React.useState("")
   const [isSaving, setIsSaving] = React.useState(false)
-  const [submitted, setSubmitted] = React.useState(false)
-
-  React.useEffect(() => {
-    fetch(`/api/applications/${applicationId}/feedback`)
-      .then((res) => res.json())
-      .then((data: { candidate?: { overall_rating: number } | null }) => {
-        if (data?.candidate) {
-          setSubmitted(true)
-        }
-      })
-      .catch(() => null)
-  }, [applicationId])
+  const [submitted, setSubmitted] = React.useState(initialSubmitted)
 
   const handleSubmit = async () => {
     if (overallRating === 0) {
@@ -582,7 +573,10 @@ export default function PostulacionesList({
 
               {application.status === "hired" && (
                 <CardContent className="border-t border-border/60 pt-4">
-                  <CandidateFeedbackSection applicationId={application.id} />
+                  <CandidateFeedbackSection
+                    applicationId={application.id}
+                    initialSubmitted={application.has_candidate_feedback ?? false}
+                  />
                 </CardContent>
               )}
 

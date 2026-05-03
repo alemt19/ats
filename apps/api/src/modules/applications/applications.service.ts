@@ -500,6 +500,13 @@ export class ApplicationsService {
             },
           },
         },
+        _count: {
+          select: {
+            feedback: {
+              where: { author_type: 'candidate' },
+            },
+          },
+        },
       },
     });
 
@@ -519,6 +526,7 @@ export class ApplicationsService {
       match_technical_score: app.match_technical_score ?? null,
       match_soft_score: app.match_soft_score ?? null,
       match_culture_score: app.match_culture_score ?? null,
+      has_candidate_feedback: app._count.feedback > 0,
     }));
   }
 
