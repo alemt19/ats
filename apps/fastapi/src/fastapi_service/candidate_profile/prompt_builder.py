@@ -29,6 +29,10 @@ Reglas obligatorias:
         - technical_skills: habilidades tecnicas especificas del oficio/profesion
             (tecnicas, procedimientos, herramientas, equipos, normas o metodos del area).
     - soft_skills: habilidades blandas y conductuales.
+    - credentials: certificaciones tecnicas verificables, licencias profesionales o titulaciones
+        formales (ej. "AWS Solutions Architect", "Scrum Master", "PMP", "CCNA"). No incluyas
+        titulos academicos generales (ej. "Licenciado en Administracion") salvo que sean
+        licencias habilitantes. Lista vacia si no hay evidencia.
     - values: valores personales o profesionales.
 
 Contexto:

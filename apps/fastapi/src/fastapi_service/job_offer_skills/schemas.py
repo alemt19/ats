@@ -24,3 +24,12 @@ class JobOfferSkillsSuggestionResponse(BaseModel):
             "infieras del contexto si se proporciona la suficiente informacion sino no te pongas a inventar"
         ),
     )
+    credentials: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Certificaciones tecnicas verificables, licencias profesionales o titulaciones formales "
+            "requeridas o valoradas en la oferta (por ejemplo: 'AWS Solutions Architect', 'PMP', "
+            "'CCNA', 'Scrum Master', 'CPA'). Coloca las que indique explicitamente la oferta y las "
+            "que se puedan inferir con suficiente contexto. Devuelve lista vacia si no aplica."
+        ),
+    )

@@ -18,6 +18,15 @@ class CandidateProfileSuggestionResponse(BaseModel):
             "'liderazgo', 'resolucion de conflictos']."
         ),
     )
+    credentials: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Certificaciones tecnicas verificables, licencias profesionales o titulaciones formales "
+            "encontradas en el CV (por ejemplo: 'AWS Solutions Architect', 'Scrum Master', 'PMP', "
+            "'CCNA', 'CPA'). Excluye titulos academicos generales (ej. 'Licenciado en...') salvo que "
+            "sean licencias profesionales habilitantes. Devuelve lista vacia si no se encuentra ninguna."
+        ),
+    )
     values: list[str] = Field(
         default_factory=list,
         description=(

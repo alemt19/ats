@@ -15,9 +15,13 @@ Reglas obligatorias:
 {schema_example}
 2) technical_skills debe contener strings con habilidades tecnicas requeridas.
 3) soft_skills debe contener strings con habilidades blandas requeridas.
-4) Coloca las habilidades que indique explicitamente la oferta y las que se puedan inferir con suficiente contexto.
-5) Si no hay suficiente contexto, no inventes habilidades.
-6) Conserva mayusculas, minusculas y tildes de forma natural en espanol.
-7) Usa formato legible de etiqueta, por ejemplo: "Comunicación", "Trabajo en equipo", "Python", "Resolución de problemas".
-8) No repitas elementos dentro de cada lista.
+4) credentials debe contener certificaciones tecnicas verificables, licencias profesionales o
+   titulaciones formales requeridas o valoradas (ej. "AWS Solutions Architect", "PMP", "CCNA",
+   "Scrum Master"). Solo las que indique explicitamente la oferta o se puedan inferir con
+   suficiente contexto. Lista vacia si no aplica.
+5) Coloca las habilidades que indique explicitamente la oferta y las que se puedan inferir con suficiente contexto.
+6) Si no hay suficiente contexto, no inventes habilidades.
+7) Conserva mayusculas, minusculas y tildes de forma natural en espanol.
+8) Usa formato legible de etiqueta, por ejemplo: "Comunicación", "Trabajo en equipo", "Python", "Resolución de problemas".
+9) No repitas elementos dentro de cada lista.
 """.strip()
