@@ -20,6 +20,8 @@ model applications {
   created_at            DateTime?   @default(now()) @db.Timestamp(6)
   updated_at            DateTime?   @default(now()) @db.Timestamp(6)
   evaluation_status     evaluation_status_enum? @default(pending)
+  credential_match_score Decimal?               @db.Decimal(5, 4)
+  meets_min_years_required Boolean?
   candidates            candidates? @relation(fields: [candidate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   jobs                  jobs?       @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   notes                 notes[]
@@ -101,6 +103,7 @@ model candidates {
   font_size               font_size_enum                @default(medium)
   contact_page            String?                       @db.VarChar(255)
   birth_date              DateTime?                     @db.Date
+  years_of_experience     Int?
   created_at              DateTime?                     @default(now()) @db.Timestamp(6)
   updated_at              DateTime?                     @default(now()) @db.Timestamp(6)
   applications            applications[]
@@ -191,6 +194,7 @@ model jobs {
   weight_technical  Float?                 @default(0.4)
   weight_soft       Float?                 @default(0.3)
   weight_culture    Float?                 @default(0.3)
+  min_years_required Int?
   created_at        DateTime?              @default(now()) @db.Timestamp(6)
   updated_at        DateTime?              @default(now()) @db.Timestamp(6)
   applications              applications[]
@@ -365,6 +369,7 @@ enum attribute_type_enum {
   hard_skill
   soft_skill
   value
+  credential
 }
 
 enum evaluation_status_enum {
