@@ -11,5 +11,5 @@ ADD COLUMN "min_years_required" INTEGER;
 
 -- Add credential_match_score and meets_min_years_required to applications
 ALTER TABLE "applications"
-ADD COLUMN "credential_match_score" DECIMAL(5,4),
+ADD COLUMN "credential_match_score" DOUBLE PRECISION,
 ADD COLUMN "meets_min_years_required" BOOLEAN;

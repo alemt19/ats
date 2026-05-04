@@ -20,7 +20,7 @@ model applications {
   created_at            DateTime?   @default(now()) @db.Timestamp(6)
   updated_at            DateTime?   @default(now()) @db.Timestamp(6)
   evaluation_status     evaluation_status_enum? @default(pending)
-  credential_match_score Decimal?               @db.Decimal(5, 4)
+  credential_match_score Float?
   meets_min_years_required Boolean?
   candidates            candidates? @relation(fields: [candidate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   jobs                  jobs?       @relation(fields: [job_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
