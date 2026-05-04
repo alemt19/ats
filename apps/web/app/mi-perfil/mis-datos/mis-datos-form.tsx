@@ -57,6 +57,7 @@ export type ProfileFormValues = {
   contact_page: string
   phone: string
   dni: string
+  years_of_experience: string
 }
 
 type MisDatosFormProps = {
