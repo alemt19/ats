@@ -3,7 +3,7 @@
  * SEED COMPLETO PARA DEMO DE DEFENSA DE TESIS
  *
  * Crea: 1 empresa (InnovateTech), 3 reclutadores, 8 categorías,
- *       50 global_attributes, 15 jobs, 15 candidatos con cv_text,
+ *       60 global_attributes, 15 jobs, 15 candidatos con cv_text,
  *       ~33 postulaciones listas para evaluación AI.
  *
  * FLUJO COMPLETO:
@@ -85,6 +85,19 @@ const VALUES = [
 	'Sostenibilidad', 'Aprendizaje',
 ];
 
+const CREDENTIALS = [
+	'AWS Solutions Architect',
+	'AWS Cloud Practitioner',
+	'Scrum Master (PSM I)',
+	'PMP - Project Management Professional',
+	'CCNA - Cisco Certified Network Associate',
+	'Google Cloud Professional',
+	'Microsoft Azure Fundamentals',
+	'Certified Kubernetes Administrator',
+	'Tableau Desktop Specialist',
+	'Power BI Data Analyst Associate',
+];
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 type AttrMap = Record<string, number>;
@@ -100,7 +113,7 @@ function toAdminScopedEmail(email: string): string {
 }
 
 /** Devuelve los IDs de atributos para el array de nombres dados. */
-function attrs(map: AttrMap, type: 'hard_skill' | 'soft_skill' | 'value', ...names: string[]): number[] {
+function attrs(map: AttrMap, type: 'hard_skill' | 'soft_skill' | 'value' | 'credential', ...names: string[]): number[] {
 	return names.map((name) => {
 		const id = map[`${type}:${name}`];
 		if (!id) throw new Error(`Atributo no encontrado: ${type}:${name}`);
@@ -277,6 +290,7 @@ async function seedGlobalAttributes(prisma: PrismaClient): Promise<AttrMap> {
 		...HARD_SKILLS.map((name) => ({ name, type: 'hard_skill' as const })),
 		...SOFT_SKILLS.map((name) => ({ name, type: 'soft_skill' as const })),
 		...VALUES.map((name) => ({ name, type: 'value' as const })),
+		...CREDENTIALS.map((name) => ({ name, type: 'credential' as const })),
 	];
 
 	await prisma.global_attributes.createMany({ data: toCreate, skipDuplicates: true });
@@ -287,7 +301,7 @@ async function seedGlobalAttributes(prisma: PrismaClient): Promise<AttrMap> {
 		if (a.type) map[`${a.type}:${a.name}`] = a.id;
 	}
 
-	console.log(`  ✓ Global attributes: ${toCreate.length} creados (${HARD_SKILLS.length} hard, ${SOFT_SKILLS.length} soft, ${VALUES.length} values)`);
+	console.log(`  ✓ Global attributes: ${toCreate.length} creados (${HARD_SKILLS.length} hard, ${SOFT_SKILLS.length} soft, ${VALUES.length} values, ${CREDENTIALS.length} credentials)`);
 	return map;
 }
 
@@ -346,6 +360,7 @@ async function seedJobs(
 			mandatoryHard: ['React', 'TypeScript'],
 			softSkills: ['Comunicación efectiva', 'Creatividad', 'Atención al detalle'],
 			values: ['Innovación', 'Excelencia'],
+			min_years_required: 5,
 		},
 		{
 			title: 'Desarrollador Backend Node.js',
@@ -370,6 +385,7 @@ async function seedJobs(
 			mandatoryHard: ['Node.js', 'NestJS', 'PostgreSQL'],
 			softSkills: ['Resolución de problemas', 'Trabajo en equipo', 'Atención al detalle'],
 			values: ['Excelencia', 'Compromiso'],
+			min_years_required: 5,
 		},
 		{
 			title: 'Analista de Datos',
@@ -394,6 +410,7 @@ async function seedJobs(
 			mandatoryHard: ['Python', 'PostgreSQL'],
 			softSkills: ['Pensamiento crítico', 'Atención al detalle', 'Presentación'],
 			values: ['Innovación', 'Aprendizaje'],
+			min_years_required: 3,
 		},
 		{
 			title: 'DevOps Engineer',
@@ -418,6 +435,7 @@ async function seedJobs(
 			mandatoryHard: ['Docker', 'AWS', 'Linux'],
 			softSkills: ['Resolución de problemas', 'Gestión del tiempo', 'Adaptabilidad'],
 			values: ['Responsabilidad', 'Excelencia'],
+			min_years_required: 5,
 		},
 		{
 			title: 'Diseñador UX/UI',
@@ -442,6 +460,7 @@ async function seedJobs(
 			mandatoryHard: ['CSS/SCSS'],
 			softSkills: ['Creatividad', 'Atención al detalle', 'Comunicación efectiva', 'Colaboración'],
 			values: ['Innovación', 'Respeto'],
+			min_years_required: 3,
 		},
 		{
 			title: 'Especialista en Marketing Digital',
@@ -465,6 +484,7 @@ async function seedJobs(
 			mandatoryHard: [],
 			softSkills: ['Comunicación efectiva', 'Creatividad', 'Presentación', 'Negociación'],
 			values: ['Innovación', 'Colaboración'],
+			min_years_required: null,
 		},
 		{
 			title: 'Data Scientist',
@@ -489,6 +509,7 @@ async function seedJobs(
 			mandatoryHard: ['Python', 'Machine Learning'],
 			softSkills: ['Pensamiento crítico', 'Resolución de problemas', 'Aprendizaje continuo'],
 			values: ['Innovación', 'Aprendizaje'],
+			min_years_required: 5,
 		},
 		{
 			title: 'Full Stack Developer',
@@ -513,6 +534,7 @@ async function seedJobs(
 			mandatoryHard: ['React', 'Node.js', 'TypeScript'],
 			softSkills: ['Resolución de problemas', 'Trabajo en equipo', 'Adaptabilidad'],
 			values: ['Excelencia', 'Innovación'],
+			min_years_required: 3,
 		},
 		{
 			title: 'Especialista en Recursos Humanos',
@@ -537,6 +559,7 @@ async function seedJobs(
 			mandatoryHard: [],
 			softSkills: ['Comunicación efectiva', 'Empatía', 'Negociación', 'Escucha activa', 'Liderazgo'],
 			values: ['Respeto', 'Colaboración', 'Integridad'],
+			min_years_required: null,
 		},
 		{
 			title: 'Analista Financiero',
@@ -560,6 +583,7 @@ async function seedJobs(
 			mandatoryHard: ['Tableau'],
 			softSkills: ['Atención al detalle', 'Pensamiento crítico', 'Orientación a resultados'],
 			values: ['Integridad', 'Responsabilidad', 'Excelencia'],
+			min_years_required: 3,
 		},
 		// ── Closed ─────────────────────────────────────────────────────────────
 		{
@@ -584,6 +608,7 @@ async function seedJobs(
 			mandatoryHard: [],
 			softSkills: ['Liderazgo', 'Comunicación efectiva', 'Gestión del tiempo', 'Resolución de problemas'],
 			values: ['Innovación', 'Responsabilidad'],
+			min_years_required: 5,
 		},
 		{
 			title: 'Desarrollador Backend Python',
@@ -607,6 +632,7 @@ async function seedJobs(
 			mandatoryHard: ['Python', 'FastAPI'],
 			softSkills: ['Resolución de problemas', 'Trabajo en equipo', 'Atención al detalle'],
 			values: ['Excelencia', 'Aprendizaje'],
+			min_years_required: 5,
 		},
 		{
 			title: 'Gerente de Operaciones',
@@ -630,6 +656,7 @@ async function seedJobs(
 			mandatoryHard: [],
 			softSkills: ['Liderazgo', 'Gestión del tiempo', 'Orientación a resultados', 'Resolución de problemas'],
 			values: ['Responsabilidad', 'Integridad'],
+			min_years_required: 5,
 		},
 		// ── Draft ──────────────────────────────────────────────────────────────
 		{
@@ -655,6 +682,7 @@ async function seedJobs(
 			mandatoryHard: ['React'],
 			softSkills: ['Aprendizaje continuo', 'Trabajo en equipo', 'Adaptabilidad'],
 			values: ['Aprendizaje', 'Innovación'],
+			min_years_required: null,
 		},
 		{
 			title: 'Especialista en Ventas B2B',
@@ -678,13 +706,14 @@ async function seedJobs(
 			mandatoryHard: [],
 			softSkills: ['Comunicación efectiva', 'Negociación', 'Orientación a resultados', 'Presentación'],
 			values: ['Compromiso', 'Integridad'],
+			min_years_required: null,
 		},
 	];
 
 	const createdJobs: JobRecord[] = [];
 
 	for (const jobData of jobsData) {
-		const { hardSkills, mandatoryHard, softSkills, values: jobValues, ...coreData } = jobData;
+		const { hardSkills, mandatoryHard, softSkills, values: jobValues, min_years_required, ...coreData } = jobData;
 
 		const hardAttrIds = attrs(attrMap, 'hard_skill', ...hardSkills);
 		const softAttrIds = attrs(attrMap, 'soft_skill', ...softSkills);
@@ -710,6 +739,7 @@ async function seedJobs(
 			data: {
 				...coreData,
 				company_id: 1,
+				min_years_required: min_years_required ?? null,
 				job_attributes: { create: jobAttributes },
 			},
 			select: { id: true },
@@ -743,6 +773,8 @@ async function seedCandidates(prisma: PrismaClient, attrMap: AttrMap): Promise<C
 			hardSkills: ['React', 'TypeScript', 'Next.js', 'CSS/SCSS', 'Git'],
 			softSkills: ['Comunicación efectiva', 'Creatividad', 'Adaptabilidad', 'Atención al detalle'],
 			values: ['Innovación', 'Excelencia'],
+			credentials: ['AWS Cloud Practitioner'],
+			years_of_experience: 4,
 			cv_text: `ANA GARCÍA — Desarrolladora Frontend Senior
 Contacto: ana.garcia@email.com | LinkedIn: linkedin.com/in/anagarcia
 
@@ -784,6 +816,8 @@ Ingeniería en Computación – Universidad Central de Venezuela (2019)`,
 			hardSkills: ['Python', 'PostgreSQL', 'Power BI', 'Tableau', 'Machine Learning'],
 			softSkills: ['Pensamiento crítico', 'Atención al detalle', 'Presentación', 'Aprendizaje continuo'],
 			values: ['Innovación', 'Aprendizaje', 'Excelencia'],
+			credentials: ['Tableau Desktop Specialist', 'Power BI Data Analyst Associate'],
+			years_of_experience: 7,
 			cv_text: `CARLOS PÉREZ — Analista de Datos
 Contacto: carlos.perez@email.com
 
@@ -825,6 +859,8 @@ Ingeniería de Sistemas – Universidad de Carabobo (2018)`,
 			hardSkills: ['React', 'Node.js', 'TypeScript', 'CSS/SCSS', 'Git'],
 			softSkills: ['Trabajo en equipo', 'Adaptabilidad', 'Aprendizaje continuo', 'Resolución de problemas'],
 			values: ['Colaboración', 'Aprendizaje'],
+			credentials: [],
+			years_of_experience: 3,
 			cv_text: `MARÍA RODRÍGUEZ — Desarrolladora Full Stack
 Contacto: maria.rodriguez@email.com
 
@@ -866,6 +902,8 @@ Cursos: React desde cero, Node.js avanzado (Udemy)`,
 			hardSkills: ['Node.js', 'NestJS', 'PostgreSQL', 'Docker', 'Redis'],
 			softSkills: ['Resolución de problemas', 'Atención al detalle', 'Gestión del tiempo'],
 			values: ['Excelencia', 'Responsabilidad'],
+			credentials: ['AWS Solutions Architect'],
+			years_of_experience: 6,
 			cv_text: `LUIS TORRES — Backend Developer Senior
 Contacto: luis.torres@email.com
 
@@ -907,6 +945,8 @@ Ingeniería en Computación – ULA (2018)`,
 			hardSkills: ['CSS/SCSS', 'REST APIs', 'Git'],
 			softSkills: ['Creatividad', 'Atención al detalle', 'Colaboración', 'Comunicación efectiva'],
 			values: ['Innovación', 'Respeto'],
+			credentials: [],
+			years_of_experience: 5,
 			cv_text: `VALERIA CASTRO — Diseñadora UX/UI
 Contacto: valeria.castro@email.com | Portfolio: valeria.design
 
@@ -949,6 +989,8 @@ Certificación UX Design – Google (2022)`,
 			hardSkills: ['Docker', 'AWS', 'Linux', 'Git', 'Python'],
 			softSkills: ['Resolución de problemas', 'Gestión del tiempo', 'Adaptabilidad', 'Iniciativa'],
 			values: ['Responsabilidad', 'Excelencia'],
+			credentials: ['Certified Kubernetes Administrator', 'AWS Solutions Architect'],
+			years_of_experience: 8,
 			cv_text: `DIEGO MARTÍNEZ — DevOps Engineer
 Contacto: diego.martinez@email.com
 
@@ -991,6 +1033,8 @@ Ingeniería de Sistemas – USB (2017). AWS Solutions Architect Associate (2021)
 			hardSkills: ['REST APIs'],
 			softSkills: ['Comunicación efectiva', 'Empatía', 'Negociación', 'Escucha activa', 'Liderazgo', 'Colaboración'],
 			values: ['Respeto', 'Integridad', 'Compromiso'],
+			credentials: [],
+			years_of_experience: 5,
 			cv_text: `SOFÍA LÓPEZ — Especialista en Recursos Humanos
 Contacto: sofia.lopez@email.com
 
@@ -1031,6 +1075,8 @@ Licenciatura en Relaciones Industriales – UCAB (2018)`,
 			hardSkills: ['Python', 'FastAPI', 'PostgreSQL', 'Redis', 'Docker'],
 			softSkills: ['Resolución de problemas', 'Trabajo en equipo', 'Aprendizaje continuo', 'Atención al detalle'],
 			values: ['Excelencia', 'Aprendizaje'],
+			credentials: ['Google Cloud Professional'],
+			years_of_experience: 5,
 			cv_text: `ANDRÉS RAMÍREZ — Backend Python Developer
 Contacto: andres.ramirez@email.com
 
@@ -1072,6 +1118,8 @@ Ingeniería en Informática – UNEXPO (2019)`,
 			hardSkills: ['REST APIs', 'Power BI'],
 			softSkills: ['Creatividad', 'Comunicación efectiva', 'Presentación', 'Adaptabilidad', 'Negociación'],
 			values: ['Innovación', 'Colaboración'],
+			credentials: [],
+			years_of_experience: 4,
 			cv_text: `CAMILA VARGAS — Especialista en Marketing Digital
 Contacto: camila.vargas@email.com
 
@@ -1113,6 +1161,8 @@ Comunicación Social – UCAB (2019). Certificación Google Ads (2021).`,
 			hardSkills: ['React', 'Node.js', 'TypeScript', 'PostgreSQL', 'Docker', 'NestJS'],
 			softSkills: ['Resolución de problemas', 'Trabajo en equipo', 'Mentoría', 'Liderazgo'],
 			values: ['Excelencia', 'Compromiso'],
+			credentials: [],
+			years_of_experience: 8,
 			cv_text: `ROBERTO SILVA — Full Stack Developer Senior
 Contacto: roberto.silva@email.com
 
@@ -1154,6 +1204,8 @@ Ingeniería en Sistemas – UJMV (2017)`,
 			hardSkills: ['Python', 'Machine Learning', 'PostgreSQL', 'Power BI', 'Tableau'],
 			softSkills: ['Pensamiento crítico', 'Aprendizaje continuo', 'Resolución de problemas', 'Creatividad'],
 			values: ['Innovación', 'Aprendizaje'],
+			credentials: ['Google Cloud Professional'],
+			years_of_experience: 6,
 			cv_text: `ISABELLA MORA — Data Scientist
 Contacto: isabella.mora@email.com
 
@@ -1195,6 +1247,8 @@ Ingeniería en Sistemas – UC (2018). Especialización en Machine Learning – 
 			hardSkills: ['Python', 'PostgreSQL', 'Tableau', 'Power BI'],
 			softSkills: ['Atención al detalle', 'Pensamiento crítico', 'Orientación a resultados', 'Gestión del tiempo'],
 			values: ['Integridad', 'Responsabilidad'],
+			credentials: ['Tableau Desktop Specialist'],
+			years_of_experience: 7,
 			cv_text: `TOMÁS ESPINOZA — Analista Financiero
 Contacto: tomas.espinoza@email.com
 
@@ -1235,6 +1289,8 @@ Licenciatura en Contaduría Pública – UCV (2017). CPA (en proceso).`,
 			hardSkills: ['REST APIs'],
 			softSkills: ['Liderazgo', 'Comunicación efectiva', 'Gestión del tiempo', 'Creatividad', 'Negociación'],
 			values: ['Innovación', 'Responsabilidad', 'Colaboración'],
+			credentials: ['Scrum Master (PSM I)', 'PMP - Project Management Professional'],
+			years_of_experience: 7,
 			cv_text: `GABRIELA FUENTES — Product Manager
 Contacto: gabriela.fuentes@email.com
 
@@ -1276,6 +1332,8 @@ Administración de Empresas – USB (2018). Product Management – Product Schoo
 			hardSkills: ['React', 'TypeScript', 'CSS/SCSS', 'Git'],
 			softSkills: ['Aprendizaje continuo', 'Trabajo en equipo', 'Adaptabilidad', 'Creatividad'],
 			values: ['Aprendizaje', 'Innovación'],
+			credentials: [],
+			years_of_experience: 2,
 			cv_text: `SEBASTIÁN MORALES — Desarrollador Frontend Junior
 Contacto: sebastian.morales@email.com | GitHub: github.com/sebastiandev
 
@@ -1316,6 +1374,8 @@ Cursos: React + TypeScript (Frontend Masters), CSS Avanzado (Platzi).`,
 			hardSkills: [],
 			softSkills: ['Comunicación efectiva', 'Empatía', 'Negociación', 'Orientación a resultados', 'Escucha activa'],
 			values: ['Respeto', 'Colaboración', 'Compromiso'],
+			credentials: [],
+			years_of_experience: 4,
 			cv_text: `LAURA JIMÉNEZ — Ejecutiva de Ventas B2B / RRHH
 Contacto: laura.jimenez@email.com
 
@@ -1350,7 +1410,8 @@ Administración de Empresas – UCAB (2019)`,
 		const hardAttrIds = c.hardSkills.length > 0 ? attrs(attrMap, 'hard_skill', ...c.hardSkills) : [];
 		const softAttrIds = c.softSkills.length > 0 ? attrs(attrMap, 'soft_skill', ...c.softSkills) : [];
 		const valueAttrIds = c.values.length > 0 ? attrs(attrMap, 'value', ...c.values) : [];
-		const allAttrIds = [...hardAttrIds, ...softAttrIds, ...valueAttrIds];
+		const credentialAttrIds = c.credentials.length > 0 ? attrs(attrMap, 'credential', ...c.credentials) : [];
+		const allAttrIds = [...hardAttrIds, ...softAttrIds, ...valueAttrIds, ...credentialAttrIds];
 
 		const candidate = await prisma.candidates.upsert({
 			where: { user_id: userId },
@@ -1370,6 +1431,7 @@ Administración de Empresas – UCAB (2019)`,
 				cv_text: c.cv_text,
 				behavioral_ans_1: c.behavioral_ans_1,
 				behavioral_ans_2: c.behavioral_ans_2,
+				years_of_experience: c.years_of_experience,
 			},
 			create: {
 				user_id: userId,
@@ -1388,6 +1450,7 @@ Administración de Empresas – UCAB (2019)`,
 				cv_text: c.cv_text,
 				behavioral_ans_1: c.behavioral_ans_1,
 				behavioral_ans_2: c.behavioral_ans_2,
+				years_of_experience: c.years_of_experience,
 				candidate_attributes: {
 					create: allAttrIds.map((attribute_id) => ({ attribute_id })),
 				},
