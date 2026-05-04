@@ -577,6 +577,19 @@ export default function CandidateApplicationDetailClient({
                       ))}
                     </div>
                   </div>
+
+                  {(candidate.credential_match_score !== null && candidate.credential_match_score !== undefined) && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm font-medium">
+                        <span>Score Credenciales</span>
+                        <span>{candidate.credential_match_score}%</span>
+                      </div>
+                      <Progress
+                        value={candidate.credential_match_score}
+                        className={getProgressColorClass(candidate.credential_match_score)}
+                      />
+                    </div>
+                  )}
                 </section>
 
                 <section className="space-y-4">

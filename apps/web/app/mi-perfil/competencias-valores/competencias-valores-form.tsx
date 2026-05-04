@@ -590,6 +590,7 @@ export default function CompetenciasValoresForm({
           : [],
         soft_skills: Array.isArray(payload?.soft_skills) ? dedupe(payload.soft_skills) : [],
         values: Array.isArray(payload?.values) ? dedupe(payload.values) : [],
+        credentials: Array.isArray(payload?.credentials) ? dedupe(payload.credentials) : [],
       }
 
       setSuggestions(normalizedPayload)
@@ -925,6 +926,11 @@ export default function CompetenciasValoresForm({
                   options={credentialOptions}
                   selectedValues={candidateCredentials}
                   onChangeValues={(values) => setMultiFieldValue("credentials", values)}
+                  suggestionItems={suggestions?.credentials ?? []}
+                  onAddSuggestion={(value) => addSuggestionToField("credentials", value)}
+                  onAddAllSuggestions={() =>
+                    addAllSuggestionsToField("credentials", suggestions?.credentials ?? [])
+                  }
                   disabled={!isSkillsSectionUnlocked}
                 />
               </div>
