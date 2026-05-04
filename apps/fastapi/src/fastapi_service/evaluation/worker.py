@@ -45,6 +45,7 @@ QUEUE_NAME = "evaluation"
 TOP_SIMILAR_JOBS = 3
 CULTURE_PREFERENCE_WEIGHT = float(os.getenv("CULTURE_PREFERENCE_WEIGHT", "0.5"))
 CULTURE_VALUE_WEIGHT = float(os.getenv("CULTURE_VALUE_WEIGHT", "0.5"))
+CREDENTIAL_SUBWEIGHT = float(os.getenv("CREDENTIAL_SUBWEIGHT", "0.2"))
 BEHAVIORAL_QUESTION_1_DEFAULT = (
     "Cuentame sobre una ocasion en la que tuviste que lidiar con un conflicto en un equipo. "
     "Cual fue la situacion, como la manejaste y cual fue el resultado?"
@@ -230,6 +231,7 @@ class EvaluationWorker:
             "hard_skill": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
             "soft_skill": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
             "value": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
+            "credential": AttributeGroup(names=[], embeddings=[], mandatory_flags=[]),
         }
 
         with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
@@ -809,6 +811,19 @@ class EvaluationWorker:
             job_attrs["hard_skill"].mandatory_flags,
         )
 
+        credential_result = analyze_embeddings(
+            job_attrs["credential"].names,
+            cand_attrs["credential"].names,
+            job_attrs["credential"].embeddings,
+            cand_attrs["credential"].embeddings,
+            job_attrs["credential"].mandatory_flags,
+        )
+
+        tech_final_score = (
+            tech_result.final_score * (1 - CREDENTIAL_SUBWEIGHT)
+            + credential_result.final_score * CREDENTIAL_SUBWEIGHT
+        )
+
         soft_result = analyze_embeddings(
             job_attrs["soft_skill"].names,
             cand_attrs["soft_skill"].names,
@@ -853,16 +868,18 @@ class EvaluationWorker:
         )
 
         overall = (
-            tech_result.final_score * weights.technical
+            tech_final_score * weights.technical
             + soft_result.final_score * weights.soft
             + culture_final_score * weights.culture
         )
 
         return {
-            "match_technical_score": tech_result.final_score,
+            "match_technical_score": tech_final_score,
             "match_soft_score": soft_result.final_score,
             "match_culture_score": culture_final_score,
             "overall_score": overall,
+            "credential_match_score": credential_result.final_score,
+            "meets_min_years_required": None,
         }
 
     def _update_application_scores(
@@ -876,7 +893,9 @@ class EvaluationWorker:
                     SET match_technical_score = %s,
                         match_soft_score = %s,
                         match_culture_score = %s,
-                        overall_score = %s
+                        overall_score = %s,
+                        credential_match_score = %s,
+                        meets_min_years_required = %s
                     WHERE id = %s
                     """,
                     (
@@ -884,10 +903,31 @@ class EvaluationWorker:
                         scores["match_soft_score"],
                         scores["match_culture_score"],
                         scores["overall_score"],
+                        scores["credential_match_score"],
+                        scores["meets_min_years_required"],
                         application_id,
                     ),
                 )
             conn.commit()
+
+    def _fetch_yoe_data(self, job_id: int, candidate_id: int) -> tuple[int | None, int | None]:
+        """Fetch min_years_required for job and years_of_experience for candidate."""
+        with psycopg.connect(self.database_url, prepare_threshold=None) as conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT min_years_required FROM jobs WHERE id = %s",
+                    (job_id,),
+                )
+                job_row = cur.fetchone()
+                cur.execute(
+                    "SELECT years_of_experience FROM candidates WHERE id = %s",
+                    (candidate_id,),
+                )
+                cand_row = cur.fetchone()
+
+        min_years = job_row[0] if job_row else None
+        years_exp = cand_row[0] if cand_row else None
+        return min_years, years_exp
 
     def _find_similar_jobs(self, job_id: int, limit: int = TOP_SIMILAR_JOBS) -> list[tuple[int, float]]:
         """Find top N similar jobs using pgvector cosine distance on summary_embedding."""
@@ -979,13 +1019,16 @@ class EvaluationWorker:
                 self._set_evaluation_status, application_id, "processing"
             )
 
-            # Fetch all independent data in parallel: attrs, weights, culture prefs
-            job_attrs, cand_attrs, weights, culture_prefs = await asyncio.gather(
+            # Fetch all independent data in parallel: attrs, weights, culture prefs, yoe
+            job_attrs, cand_attrs, weights, culture_prefs, yoe_data = await asyncio.gather(
                 asyncio.to_thread(self._fetch_attributes, "job", job_id),
                 asyncio.to_thread(self._fetch_attributes, "candidate", candidate_id),
                 asyncio.to_thread(self._fetch_job_weights, job_id),
                 asyncio.to_thread(self._fetch_culture_preferences, job_id, candidate_id),
+                asyncio.to_thread(self._fetch_yoe_data, job_id, candidate_id),
             )
+
+            min_years_required, years_of_experience = yoe_data
 
             # Evaluate for the applied job (uses preloaded culture prefs — no extra DB call)
             scores = await asyncio.to_thread(
@@ -997,6 +1040,11 @@ class EvaluationWorker:
                 weights,
                 culture_prefs,
             )
+
+            meets_min_years: bool | None = None
+            if years_of_experience is not None and min_years_required is not None:
+                meets_min_years = years_of_experience >= min_years_required
+            scores["meets_min_years_required"] = meets_min_years
             await asyncio.to_thread(
                 self._update_application_scores, application_id, scores
             )
