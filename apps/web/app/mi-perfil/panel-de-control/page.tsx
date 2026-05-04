@@ -266,7 +266,7 @@ export default async function PanelDeControlPage() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-foreground/70">Overall</span>
+              <span className="text-foreground/70">General</span>
               <span className="font-semibold">
                 {bestApplication ? formatPercent(bestApplication.overall_score * 100) : "-"}
               </span>
