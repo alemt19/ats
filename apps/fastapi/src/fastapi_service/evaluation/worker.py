@@ -811,18 +811,28 @@ class EvaluationWorker:
             job_attrs["hard_skill"].mandatory_flags,
         )
 
-        credential_result = analyze_embeddings(
-            job_attrs["credential"].names,
-            cand_attrs["credential"].names,
-            job_attrs["credential"].embeddings,
-            cand_attrs["credential"].embeddings,
-            job_attrs["credential"].mandatory_flags,
-        )
+        has_job_credentials = bool(job_attrs["credential"].names)
+        credential_score: float | None = None
 
-        tech_final_score = (
-            tech_result.final_score * (1 - CREDENTIAL_SUBWEIGHT)
-            + credential_result.final_score * CREDENTIAL_SUBWEIGHT
-        )
+        if has_job_credentials:
+            credential_result = analyze_embeddings(
+                job_attrs["credential"].names,
+                cand_attrs["credential"].names,
+                job_attrs["credential"].embeddings,
+                cand_attrs["credential"].embeddings,
+                job_attrs["credential"].mandatory_flags,
+            )
+            credential_score = credential_result.final_score
+            tech_final_score = (
+                tech_result.final_score * (1 - CREDENTIAL_SUBWEIGHT)
+                + credential_result.final_score * CREDENTIAL_SUBWEIGHT
+            )
+        else:
+            tech_final_score = tech_result.final_score
+            logger.info(
+                "Credential blend skipped for job %s because no credential requirements were found",
+                job_id,
+            )
 
         soft_result = analyze_embeddings(
             job_attrs["soft_skill"].names,
@@ -878,7 +888,7 @@ class EvaluationWorker:
             "match_soft_score": soft_result.final_score,
             "match_culture_score": culture_final_score,
             "overall_score": overall,
-            "credential_match_score": credential_result.final_score,
+            "credential_match_score": credential_score,
             "meets_min_years_required": None,
         }
 

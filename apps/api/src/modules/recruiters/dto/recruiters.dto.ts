@@ -42,7 +42,7 @@ const DniSchema = z
 const PhoneSchema = z
 	.string()
 	.trim()
-	.regex(/^\d{11}$/, 'El teléfono debe tener exactamente 11 dígitos');
+	.regex(/^\d{10}$/, 'El teléfono debe tener exactamente 10 dígitos');
 
 const RecruitersQuerySchema = z.object({
 	search: z.string().trim().optional(),

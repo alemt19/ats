@@ -747,8 +747,8 @@ export default function MisDatosForm({
               rules={{
                 required: "El teléfono es obligatorio",
                 validate: (value) =>
-                  onlyDigits(value).length === 11 ||
-                  "El teléfono debe tener exactamente 11 números (sin prefijo)",
+                  onlyDigits(value).length === 10 ||
+                  "El teléfono debe tener exactamente 10 números (sin prefijo)",
               }}
               render={({ field }) => (
                 <FormItem>

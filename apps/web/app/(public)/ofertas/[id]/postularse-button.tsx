@@ -370,11 +370,7 @@ export default function PostularseButton({
             </DialogHeader>
 
             <div className="rounded-xl border border-border/70 bg-muted/30 p-4 text-sm text-foreground/80">
-              {applicationId ? (
-                <p>Id de postulación: #{applicationId}</p>
-              ) : (
-                <p>Tu postulación fue registrada correctamente.</p>
-              )}
+              <p>Tu postulación fue registrada correctamente.</p>
             </div>
 
             <DialogFooter>

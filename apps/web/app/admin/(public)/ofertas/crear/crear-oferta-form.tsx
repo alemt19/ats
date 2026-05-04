@@ -1002,7 +1002,7 @@ export default function CrearOfertaForm({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="max-w-xs text-sm">
-                    Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus habilidades técnicas. Los tres pesos deben sumar exactamente 100%.
+                    Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus habilidades técnicas. Los tres pesos deben sumar exactamente 100%. Le recomendamos que ajuste los pesos en 40% habilidades tecnicas, 30% habilidades blandas y 30% alineación cultural, para un analisis balanceado.
                   </TooltipContent>
                 </Tooltip>
               </CardTitle>
