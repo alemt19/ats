@@ -921,7 +921,7 @@ export default function CompetenciasValoresForm({
 
                 <MultiDatalistField
                   fieldName="credentials"
-                  label="Credenciales / Certificaciones (opcional)"
+                  label="Credenciales Profesionales"
                   placeholder="AWS SAA, Scrum Master, PMP..."
                   options={credentialOptions}
                   selectedValues={candidateCredentials}

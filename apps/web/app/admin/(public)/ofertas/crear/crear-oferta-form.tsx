@@ -978,7 +978,7 @@ export default function CrearOfertaForm({
                   name="min_years_required"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Años mínimos requeridos (opcional)</FormLabel>
+                      <FormLabel>Años de experiencia mínimos requeridos (opcional)</FormLabel>
                       <FormControl>
                         <Input type="number" min={0} placeholder="Ej: 3" {...field} />
                       </FormControl>
@@ -1259,7 +1259,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <MultiDatalistField
                         fieldName="credentials"
-                        label="Credenciales / Certificaciones"
+                        label="Credenciales Profesionales"
                         placeholder="AWS SAA, Scrum Master, PMP..."
                         options={catalogs.credentialOptions ?? []}
                         selectedValues={credentials}

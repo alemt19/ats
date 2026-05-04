@@ -84,8 +84,11 @@ export type CandidateApplicationDetail = {
   culture_score: number
   credential_match_score?: number | null
   meets_min_years_required?: boolean | null
+  years_of_experience?: number | null
+  min_years_required?: number | null
   technical_skills: string[]
   soft_skills: string[]
+  credentials?: string[]
   values: string[]
   cultural_preferences: Partial<Record<string, string>>
   cv_url?: string
@@ -200,6 +203,18 @@ export default function CandidateApplicationDetailClient({
   behavioralQuestion1,
   behavioralQuestion2,
 }: CandidateApplicationDetailClientProps) {
+  const candidateCredentials = React.useMemo(
+    () => (candidate.credentials ?? []).filter((value) => value.trim().length > 0),
+    [candidate.credentials]
+  )
+  const candidateYearsOfExperience =
+    typeof candidate.years_of_experience === "number" && Number.isFinite(candidate.years_of_experience)
+      ? candidate.years_of_experience
+      : null
+  const minYearsRequired =
+    typeof candidate.min_years_required === "number" && Number.isFinite(candidate.min_years_required)
+      ? candidate.min_years_required
+      : null
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
   useSetBreadcrumbTitle(offerId, candidate.offer_title)
   useSetBreadcrumbTitle(candidate.application_id, fullName)
@@ -578,18 +593,35 @@ export default function CandidateApplicationDetailClient({
                     </div>
                   </div>
 
-                  {(candidate.credential_match_score !== null && candidate.credential_match_score !== undefined) && (
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm font-medium">
-                        <span>Score Credenciales</span>
-                        <span>{candidate.credential_match_score}%</span>
-                      </div>
-                      <Progress
-                        value={candidate.credential_match_score}
-                        className={getProgressColorClass(candidate.credential_match_score)}
-                      />
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm font-medium">
+                      <span>Credenciales profesionales</span>
                     </div>
-                  )}
+                    {candidateCredentials.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {candidateCredentials.map((credential) => (
+                          <Badge key={credential} variant="secondary">
+                            {credential}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">NA</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm font-medium">
+                      <span>Años de experiencia del candidato</span>
+                      <span>
+                        {candidateYearsOfExperience === null
+                          ? "NA"
+                          : candidateYearsOfExperience === 1
+                            ? "1 año"
+                            : `${candidateYearsOfExperience} años`}
+                      </span>
+                    </div>
+                  </div>
                 </section>
 
                 <section className="space-y-4">
@@ -635,15 +667,22 @@ export default function CandidateApplicationDetailClient({
                   </div>
                 </section>
 
-                {(candidate.meets_min_years_required !== null && candidate.meets_min_years_required !== undefined) && (
+                {minYearsRequired !== null && (
                   <div className="mt-4">
+                    <p className="mb-2 text-sm font-medium text-foreground">
+                      Años mínimos requeridos por el puesto: {minYearsRequired === 1 ? "1 año" : `${minYearsRequired} años`}
+                    </p>
                     {candidate.meets_min_years_required ? (
                       <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
                         ✓ Cumple años requeridos
                       </Badge>
-                    ) : (
+                    ) : candidate.meets_min_years_required === false ? (
                       <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
                         ⚠ Años de experiencia insuficientes
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border">
+                        NA: no se pudo determinar si cumple con los años requeridos
                       </Badge>
                     )}
                   </div>

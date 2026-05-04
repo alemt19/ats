@@ -271,6 +271,14 @@ export default function CandidateDetailReadonly({
                 <p className="text-muted-foreground text-sm">Correo</p>
                 <p className="font-medium">{candidate.email || "N/A"}</p>
               </div>
+              <div>
+                <p className="text-muted-foreground text-sm">Años de experiencia</p>
+                <p className="font-medium">
+                  {typeof candidate.years_of_experience === "number"
+                    ? `${candidate.years_of_experience}`
+                    : "NA"}
+                </p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -363,6 +371,21 @@ export default function CandidateDetailReadonly({
                     candidate.values.map((value) => (
                       <Badge key={value} variant="outline">
                         {value}
+                      </Badge>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <p className="mb-2 text-sm font-medium">Credenciales profesionales</p>
+                <div className="flex flex-wrap gap-2">
+                  {candidate.credentials.length === 0 ? (
+                    <span className="text-muted-foreground text-sm">NA</span>
+                  ) : (
+                    candidate.credentials.map((credential) => (
+                      <Badge key={credential} variant="secondary">
+                        {credential}
                       </Badge>
                     ))
                   )}

@@ -61,7 +61,6 @@ const adminLinks = [
 		label: "Panel de control",
 		href: "/admin/dashboard",
 		icon: LayoutDashboard,
-		headOnly: true,
 	},
 	{
 		label: "Ofertas",

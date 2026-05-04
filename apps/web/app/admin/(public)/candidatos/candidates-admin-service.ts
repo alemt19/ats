@@ -20,7 +20,7 @@ type BackendEnvelope<T> = {
 type CandidateAttribute = {
   global_attributes?: {
     name?: string | null
-    type?: "hard_skill" | "soft_skill" | "value" | null
+    type?: "hard_skill" | "soft_skill" | "value" | "credential" | null
   } | null
 }
 
@@ -40,6 +40,7 @@ type BackendCandidateRecord = {
   cv_file_url?: string | null
   behavioral_ans_1?: string | null
   behavioral_ans_2?: string | null
+  years_of_experience?: number | null
   dress_code?: string | null
   collaboration_style?: string | null
   work_pace?: string | null
@@ -89,6 +90,7 @@ function mapCandidate(record: BackendCandidateRecord): Candidate {
   const technicalSkills = mapAttributeNames(record.candidate_attributes, "hard_skill")
   const softSkills = mapAttributeNames(record.candidate_attributes, "soft_skill")
   const values = mapAttributeNames(record.candidate_attributes, "value")
+  const credentials = mapAttributeNames(record.candidate_attributes, "credential")
 
   const culturalPreferences: Record<string, string> = {}
   const cultureKeys = [
@@ -123,9 +125,14 @@ function mapCandidate(record: BackendCandidateRecord): Candidate {
     cv_url: safeText(record.cv_file_url) || undefined,
     behavioral_ans_1: safeText(record.behavioral_ans_1),
     behavioral_ans_2: safeText(record.behavioral_ans_2),
+    years_of_experience:
+      typeof record.years_of_experience === "number" && Number.isFinite(record.years_of_experience)
+        ? record.years_of_experience
+        : undefined,
     technical_skills: technicalSkills,
     soft_skills: softSkills,
     values,
+    credentials,
     cultural_preferences: culturalPreferences,
   }
 }
@@ -151,10 +158,6 @@ function applyFilters(
     const isHired = hiredCandidateIds.has(candidate.id)
 
     if (query.profile === "hired" && !isHired) {
-      return false
-    }
-
-    if (query.profile === "normal" && isHired) {
       return false
     }
 

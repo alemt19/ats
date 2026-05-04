@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises"
 import { headers } from "next/headers"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "react/components/ui/card"
+import InfoTooltip from "react/components/ui/info-tooltip"
 import StatusBarsChart from "./status-bars-chart"
 import StatusMonthlyChart from "./status-monthly-chart"
 
@@ -198,21 +199,30 @@ export default async function PanelDeControlPage() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card className="rounded-2xl border-border/70 bg-card/90">
           <CardHeader className="pb-2">
-            <CardDescription>Total de postulaciones</CardDescription>
+            <CardDescription className="flex items-center gap-1.5">
+              <span>Total de postulaciones</span>
+              <InfoTooltip text="Cantidad total de postulaciones registradas en tu cuenta." />
+            </CardDescription>
             <CardTitle className="text-3xl">{totalApplications}</CardTitle>
           </CardHeader>
         </Card>
 
         <Card className="rounded-2xl border-border/70 bg-card/90">
           <CardHeader className="pb-2">
-            <CardDescription>Aplicaciones evaluadas</CardDescription>
+            <CardDescription className="flex items-center gap-1.5">
+              <span>Aplicaciones evaluadas</span>
+              <InfoTooltip text="Postulaciones que ya tienen un resultado de evaluación calculado." />
+            </CardDescription>
             <CardTitle className="text-3xl">{evaluatedApplications}</CardTitle>
           </CardHeader>
         </Card>
 
         <Card className="rounded-2xl border-border/70 bg-card/90">
           <CardHeader className="pb-2">
-            <CardDescription>Promedio de compatibilidad</CardDescription>
+            <CardDescription className="flex items-center gap-1.5">
+              <span>Promedio de compatibilidad</span>
+              <InfoTooltip text="Promedio de la puntuacion general de tus postulaciones evaluadas, expresado en porcentaje." />
+            </CardDescription>
             <CardTitle className="text-3xl">{formatPercent(overallAverage)}</CardTitle>
           </CardHeader>
         </Card>

@@ -1338,6 +1338,19 @@ export class JobsService {
   async findOne(id: number) {
     const job = await this.prisma.jobs.findUnique({
       where: { id },
+      include: {
+        job_attributes: {
+          select: {
+            is_mandatory: true,
+            global_attributes: {
+              select: {
+                name: true,
+                type: true,
+              },
+            },
+          },
+        },
+      },
     });
     if (!job) {
       throw new NotFoundException(`Job with ID ${id} not found`);
@@ -1484,7 +1497,7 @@ export class JobsService {
         ai_feedback: true,
         credential_match_score: true,
         meets_min_years_required: true,
-        jobs: { select: { title: true } },
+        jobs: { select: { title: true, min_years_required: true } },
         candidates: {
           select: {
             id: true,
@@ -1498,6 +1511,7 @@ export class JobsService {
             cv_file_url: true,
             behavioral_ans_1: true,
             behavioral_ans_2: true,
+            years_of_experience: true,
             dress_code: true,
             collaboration_style: true,
             work_pace: true,
@@ -1523,6 +1537,7 @@ export class JobsService {
     const technicalSkills = attrs.filter((a) => a?.type === 'hard_skill').map((a) => a!.name);
     const softSkills = attrs.filter((a) => a?.type === 'soft_skill').map((a) => a!.name);
     const values = attrs.filter((a) => a?.type === 'value').map((a) => a!.name);
+    const credentials = attrs.filter((a) => a?.type === 'credential').map((a) => a!.name);
 
     const culturalPreferences: Record<string, string> = {};
     if (c.dress_code) culturalPreferences['dress_code'] = c.dress_code;
@@ -1555,9 +1570,12 @@ export class JobsService {
       culture_score: toPercent(application.match_culture_score),
       credential_match_score: toPercent(application.credential_match_score),
       meets_min_years_required: application.meets_min_years_required ?? null,
+      years_of_experience: c.years_of_experience ?? null,
+      min_years_required: application.jobs?.min_years_required ?? null,
       technical_skills: technicalSkills,
       soft_skills: softSkills,
       values,
+      credentials,
       cultural_preferences: culturalPreferences,
       cv_url: c.cv_file_url ?? undefined,
       behavioral_ans_1: c.behavioral_ans_1 ?? '',

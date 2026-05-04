@@ -16,9 +16,11 @@ export type Candidate = {
   cv_url?: string
   behavioral_ans_1: string
   behavioral_ans_2: string
+  years_of_experience?: number
   technical_skills: string[]
   soft_skills: string[]
   values: string[]
+  credentials: string[]
   cultural_preferences: CandidateCulturalPreferences
 }
 

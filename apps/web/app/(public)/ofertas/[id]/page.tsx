@@ -47,6 +47,15 @@ type JobOfferDetail = {
 	position: string
 	salary: number | string
 	updated_at: string
+	min_years_required?: number | null
+	credentials?: string[] | null
+	job_attributes?: Array<{
+		is_mandatory?: boolean | null
+		global_attributes?: {
+			name?: string | null
+			type?: string | null
+		} | null
+	}> | null
 	status?: string | null
 }
 
@@ -369,6 +378,34 @@ function buildStatusMap(statusItems: ApplicationStatusItem[]) {
 	)
 }
 
+function getRequiredCredentials(offerDetail: JobOfferDetail | null) {
+	if (!offerDetail) {
+		return []
+	}
+
+	const directCredentials = Array.isArray(offerDetail.credentials)
+		? offerDetail.credentials.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+		: []
+
+	const attributeCredentials = Array.isArray(offerDetail.job_attributes)
+		? offerDetail.job_attributes.flatMap((item) => {
+			const attribute = item.global_attributes
+			if (
+				attribute?.type === "credential" &&
+				typeof attribute.name === "string" &&
+				attribute.name.trim().length > 0
+			) {
+				return [attribute.name.trim()]
+			}
+
+			return []
+		})
+		: []
+
+	return Array.from(new Set([...directCredentials, ...attributeCredentials]))
+		.sort((left, right) => left.localeCompare(right, "es"))
+}
+
 async function fetchOfferDetailServer(offerId: number): Promise<JobOfferDetail | null> {
 	const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 	const endpoints = [`${apiBaseUrl}/api/jobs/${offerId}`, `${apiBaseUrl}/jobs/${offerId}`]
@@ -580,7 +617,9 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 		notFound()
 	}
 
-	if ((offerDetail.status ?? "").toLowerCase() !== "published") {
+	const activeOfferDetail = offerDetail!
+
+	if ((activeOfferDetail.status ?? "").toLowerCase() !== "published") {
 		return (
 			<section className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10 sm:px-6">
 				<div>
@@ -663,13 +702,18 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 	const workplaceTypeLabel = getMappedLabel(
 		jobParameters,
 		"workplace_type",
-		offerDetail.workplace_type
+		activeOfferDetail.workplace_type
 	)
 	const employmentTypeLabel = getMappedLabel(
 		jobParameters,
 		"employment_type",
-		offerDetail.employment_type
+		activeOfferDetail.employment_type
 	)
+	const requiredCredentials = getRequiredCredentials(activeOfferDetail)
+	const minYearsRequired =
+		typeof activeOfferDetail.min_years_required === "number" && Number.isFinite(activeOfferDetail.min_years_required)
+			? activeOfferDetail.min_years_required
+			: null
 
 	return (
 		<section className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10 sm:px-6">
@@ -688,12 +732,12 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 							<Badge variant="outline" className="border-primary/35 bg-primary/10 text-primary">{workplaceTypeLabel}</Badge>
 							<Badge variant="secondary" className="bg-muted text-foreground">{employmentTypeLabel}</Badge>
 					</div>
-					<CardTitle className="text-2xl">{offerDetail.title}</CardTitle>
+					<CardTitle className="text-2xl">{activeOfferDetail.title}</CardTitle>
 				</CardHeader>
 
 				<CardContent className="space-y-6">
 					<p className="text-base leading-relaxed text-muted-foreground whitespace-pre-line">
-						{offerDetail.description}
+						{activeOfferDetail.description}
 					</p>
 
 					<Separator />
@@ -702,20 +746,20 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
 								<MapPin aria-hidden="true" className="size-4 text-primary" />
 							<span>
-								{offerDetail.city}, {offerDetail.state}
+								{activeOfferDetail.city}, {activeOfferDetail.state}
 							</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
 								<BriefcaseBusiness aria-hidden="true" className="size-4 text-primary" />
-							<span>{offerDetail.position}</span>
+							<span>{activeOfferDetail.position}</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
 								<MapPin aria-hidden="true" className="size-4 text-primary" />
-							<span>{offerDetail.address}</span>
+							<span>{activeOfferDetail.address}</span>
 						</p>
 						<p className="flex items-center gap-2 text-sm font-semibold">
 								<Wallet aria-hidden="true" className="size-4 text-accent" />
-							<span>${offerDetail.salary} / mes</span>
+							<span>${activeOfferDetail.salary} / mes</span>
 							<TooltipProvider>
 								<Tooltip>
 									<TooltipTrigger asChild>
@@ -733,9 +777,46 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 						</p>
 						<p className="flex items-center gap-2 text-sm text-muted-foreground">
 								<CalendarDays aria-hidden="true" className="size-4 text-primary" />
-							<span>Publicado: {formatPublishedDate(offerDetail.updated_at)}</span>
+							<span>Publicado: {formatPublishedDate(activeOfferDetail.updated_at)}</span>
 						</p>
 					</div>
+
+					{minYearsRequired !== null || requiredCredentials.length > 0 ? (
+						<>
+							<Separator />
+							<div className="space-y-4">
+								<h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+									Requisitos profesionales
+								</h3>
+
+								{minYearsRequired !== null ? (
+									<div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+										<p className="text-sm font-medium text-foreground">Años mínimos requeridos</p>
+										<p className="mt-1 text-sm text-muted-foreground">
+											{minYearsRequired === 1 ? "1 año" : `${minYearsRequired} años`} de experiencia profesional.
+										</p>
+									</div>
+								) : null}
+
+								{requiredCredentials.length > 0 ? (
+									<div className="space-y-3">
+										<p className="text-sm font-medium text-foreground">Credenciales profesionales requeridas</p>
+										<div className="flex flex-wrap gap-2">
+											{requiredCredentials.map((credential) => (
+												<Badge
+													key={credential}
+													variant="secondary"
+													className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium"
+												>
+													{credential}
+												</Badge>
+											))}
+										</div>
+									</div>
+								) : null}
+							</div>
+						</>
+					) : null}
 
 					<Separator />
 
