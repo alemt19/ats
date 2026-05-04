@@ -9,6 +9,7 @@ type CompetenciasValoresPageResponse = {
     technicalSkillOptions: string[]
     softSkillOptions: string[]
     valueOptions: string[]
+    credentialOptions: string[]
 }
 
 async function fetchProfileDataServer(
@@ -46,10 +47,12 @@ async function fetchProfileDataServer(
             technical_skills: [],
             soft_skills: [],
             values: [],
+            credentials: [],
         },
         technicalSkillOptions: [],
         softSkillOptions: [],
         valueOptions: [],
+        credentialOptions: [],
     }
 }
 
@@ -73,6 +76,7 @@ export default async function CompetenciasValoresPage() {
             technicalSkillOptions={profileData.technicalSkillOptions}
             softSkillOptions={profileData.softSkillOptions}
             valueOptions={profileData.valueOptions}
+            credentialOptions={profileData.credentialOptions}
             behavioralQuestion1={behavioralQuestion1}
             behavioralQuestion2={behavioralQuestion2}
         />

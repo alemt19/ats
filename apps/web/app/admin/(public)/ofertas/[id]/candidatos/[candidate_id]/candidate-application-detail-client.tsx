@@ -82,6 +82,8 @@ export type CandidateApplicationDetail = {
   technical_score: number
   soft_score: number
   culture_score: number
+  credential_match_score?: number | null
+  meets_min_years_required?: boolean | null
   technical_skills: string[]
   soft_skills: string[]
   values: string[]
@@ -619,6 +621,20 @@ export default function CandidateApplicationDetailClient({
                     </div>
                   </div>
                 </section>
+
+                {(candidate.meets_min_years_required !== null && candidate.meets_min_years_required !== undefined) && (
+                  <div className="mt-4">
+                    {candidate.meets_min_years_required ? (
+                      <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
+                        ✓ Cumple años requeridos
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
+                        ⚠ Años de experiencia insuficientes
+                      </Badge>
+                    )}
+                  </div>
+                )}
 
                 <section className="space-y-3">
                   <h3 className="font-medium">Retroalimentación</h3>

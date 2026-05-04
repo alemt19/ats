@@ -22,7 +22,7 @@ import {
 } from "react/components/ui/tooltip"
 import { cn } from "react/lib/utils"
 
-type MultiFieldName = "soft_skills" | "technical_skills"
+type MultiFieldName = "soft_skills" | "technical_skills" | "credentials"
 
 type JobParameterOption = {
   technical_name: string
@@ -50,6 +50,7 @@ export type CrearOfertaCatalogs = {
   cityOptions: string[]
   technicalSkillOptions: string[]
   softSkillOptions: string[]
+  credentialOptions: string[]
 }
 
 export type CrearOfertaFormValues = {
@@ -71,6 +72,8 @@ export type CrearOfertaFormValues = {
   technical_skills: string[]
   mandatory_soft_skills: string[]
   mandatory_technical_skills: string[]
+  credentials: string[]
+  min_years_required: string
 }
 
 type CrearOfertaFormProps = {
@@ -389,6 +392,8 @@ export default function CrearOfertaForm({
       technical_skills: initialValues?.technical_skills ?? [],
       mandatory_soft_skills: initialValues?.mandatory_soft_skills ?? [],
       mandatory_technical_skills: initialValues?.mandatory_technical_skills ?? [],
+      credentials: initialValues?.credentials ?? [],
+      min_years_required: initialValues?.min_years_required ?? "",
     }),
     [categories, cityOptions, employmentTypes, fixedLocation.state, initialValues, mode, workplaceTypes]
   )
@@ -419,6 +424,7 @@ export default function CrearOfertaForm({
   const technicalSkills = form.watch("technical_skills")
   const mandatorySoftSkills = form.watch("mandatory_soft_skills")
   const mandatoryTechnicalSkills = form.watch("mandatory_technical_skills")
+  const credentials = form.watch("credentials")
 
   const technicalWeightValue = parseFloatOrNull(weightTechnical)
   const softWeightValue = parseFloatOrNull(weightSoft)
@@ -456,6 +462,10 @@ export default function CrearOfertaForm({
       const dedupedValues = dedupe(values)
       form.setValue(fieldName, dedupedValues, { shouldDirty: true, shouldValidate: true })
 
+      if (fieldName === "credentials") {
+        return
+      }
+
       const mandatoryFieldName =
         fieldName === "technical_skills" ? "mandatory_technical_skills" : "mandatory_soft_skills"
       const currentMandatoryValues = form.getValues(mandatoryFieldName)
@@ -472,6 +482,10 @@ export default function CrearOfertaForm({
 
   const toggleMandatoryValue = React.useCallback(
     (fieldName: MultiFieldName, value: string) => {
+      if (fieldName === "credentials") {
+        return
+      }
+
       const mandatoryFieldName =
         fieldName === "technical_skills" ? "mandatory_technical_skills" : "mandatory_soft_skills"
       const currentMandatoryValues = form.getValues(mandatoryFieldName)
@@ -598,6 +612,7 @@ export default function CrearOfertaForm({
       category_id: categoryId,
       technical_skills: dedupe(values.technical_skills),
       soft_skills: dedupe(values.soft_skills),
+      credentials: dedupe(values.credentials),
       technical_skill_items: dedupe(values.technical_skills).map((name) => ({
         name,
         is_mandatory: values.mandatory_technical_skills.some(
@@ -610,6 +625,7 @@ export default function CrearOfertaForm({
           (mandatoryValue) => normalizeValue(mandatoryValue) === normalizeValue(name)
         ),
       })),
+      min_years_required: values.min_years_required ? parseInt(values.min_years_required) : null,
     }
 
     if (mode === "edit" && persistedStatus !== "draft" && payload.status === "draft") {
@@ -956,6 +972,20 @@ export default function CrearOfertaForm({
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="min_years_required"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Años mínimos requeridos (opcional)</FormLabel>
+                      <FormControl>
+                        <Input type="number" min={0} placeholder="Ej: 3" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </CardContent>
           </Card>
@@ -1215,6 +1245,27 @@ export default function CrearOfertaForm({
                         onAddAllSuggestions={() =>
                           addAllSuggestionsToField("soft_skills", suggestions?.soft_skills ?? [])
                         }
+                        disabled={!isSkillsSectionUnlocked}
+                      />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="credentials"
+                  render={() => (
+                    <FormItem>
+                      <MultiDatalistField
+                        fieldName="credentials"
+                        label="Credenciales / Certificaciones"
+                        placeholder="AWS SAA, Scrum Master, PMP..."
+                        options={catalogs.credentialOptions ?? []}
+                        selectedValues={credentials}
+                        mandatoryValues={[]}
+                        onChangeValues={(values) => setMultiFieldValue("credentials", values)}
+                        onToggleMandatory={() => {}}
                         disabled={!isSkillsSectionUnlocked}
                       />
                       <FormMessage />

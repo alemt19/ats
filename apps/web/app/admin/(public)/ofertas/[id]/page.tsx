@@ -120,6 +120,7 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       cityOptions,
       technicalSkillOptions: offersCatalogs.technical_skills,
       softSkillOptions: offersCatalogs.soft_skills,
+      credentialOptions: offersCatalogs.credentials ?? [],
     }
   } catch {
     return {
@@ -146,6 +147,7 @@ async function getOfferFormCatalogsServer(): Promise<CrearOfertaCatalogs> {
       cityOptions: ["Valencia"],
       technicalSkillOptions: ["SQL", "Python", "Power BI"],
       softSkillOptions: ["Comunicacion", "Pensamiento critico", "Trabajo en equipo"],
+      credentialOptions: [],
     }
   }
 }

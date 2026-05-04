@@ -9,6 +9,7 @@ const CandidateCompetenciasValoresSchema = z.object({
 	technical_skills: z.string().trim().optional().default('[]'),
 	soft_skills: z.string().trim().optional().default('[]'),
 	values: z.string().trim().optional().default('[]'),
+	credentials: z.string().trim().optional().default('[]'),
 	cv_existing_url: z.string().trim().optional(),
 });
 

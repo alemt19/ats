@@ -42,6 +42,7 @@ const UpdateMyCandidateSchema = z.object({
 	dealing_with_management: DealingWithManagementSchema.nullable().optional(),
 	level_of_monitoring: LevelOfMonitoringSchema.nullable().optional(),
 	font_size: FontSizeSchema.optional(),
+	years_of_experience: z.number().int().min(0).optional().nullable(),
 });
 
 export class UpdateMyCandidateDto extends createZodDto(UpdateMyCandidateSchema) {}

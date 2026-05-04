@@ -10,7 +10,7 @@ import { Queue } from 'bullmq';
 import { StorageService } from '../../common/storage/storage.service';
 import { CV_PARSE_QUEUE } from '../queues/queues.constants';
 
-type CandidateAttributeType = 'hard_skill' | 'soft_skill' | 'value';
+type CandidateAttributeType = 'hard_skill' | 'soft_skill' | 'value' | 'credential';
 
 type CandidateCompetenciasValoresResponse = {
   initialData: {
@@ -20,10 +20,12 @@ type CandidateCompetenciasValoresResponse = {
     technical_skills: string[];
     soft_skills: string[];
     values: string[];
+    credentials: string[];
   };
   technicalSkillOptions: string[];
   softSkillOptions: string[];
   valueOptions: string[];
+  credentialOptions: string[];
 };
 
 @Injectable()
@@ -179,7 +181,7 @@ export class CandidatesService {
       this.prisma.global_attributes.findMany({
         where: {
           type: {
-            in: ['hard_skill', 'soft_skill', 'value'],
+            in: ['hard_skill', 'soft_skill', 'value', 'credential'],
           },
         },
         select: {
@@ -217,6 +219,11 @@ export class CandidatesService {
       .map((item) => item.name)
       .filter(Boolean);
 
+    const credentialOptions = catalogs
+      .filter((item) => item.type === 'credential')
+      .map((item) => item.name)
+      .filter(Boolean);
+
     const technicalSkills = candidateAttributes
       .map((link) => link.global_attributes)
       .filter((attribute): attribute is { name: string; type: CandidateAttributeType } =>
@@ -241,6 +248,14 @@ export class CandidatesService {
       .map((attribute) => attribute.name)
       .sort((a, b) => a.localeCompare(b, 'es'));
 
+    const credentials = candidateAttributes
+      .map((link) => link.global_attributes)
+      .filter((attribute): attribute is { name: string; type: CandidateAttributeType } =>
+        Boolean(attribute?.name && attribute.type === 'credential'),
+      )
+      .map((attribute) => attribute.name)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
     return {
       initialData: {
         cv_url: candidate.cv_file_url ?? '',
@@ -249,10 +264,12 @@ export class CandidatesService {
         technical_skills: technicalSkills,
         soft_skills: softSkills,
         values,
+        credentials,
       },
       technicalSkillOptions,
       softSkillOptions,
       valueOptions,
+      credentialOptions,
     };
   }
 
@@ -270,11 +287,15 @@ export class CandidatesService {
       this.parseStringArray(dto.soft_skills, 'soft_skills'),
     );
     const values = this.normalizeAttributeNames(this.parseStringArray(dto.values, 'values'));
+    const credentials = this.normalizeAttributeNames(
+      this.parseStringArray(dto.credentials, 'credentials'),
+    );
 
     const groupedByType: Record<CandidateAttributeType, string[]> = {
       hard_skill: technicalSkills,
       soft_skill: softSkills,
       value: values,
+      credential: credentials,
     };
 
     const selectedAttributeIds: number[] = [];

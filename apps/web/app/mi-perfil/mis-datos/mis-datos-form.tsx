@@ -246,6 +246,7 @@ export default function MisDatosForm({
       contact_page: initialProfile.contact_page ?? "",
       phone: resolvedPhone,
       dni: initialDni.number,
+      years_of_experience: initialProfile.years_of_experience?.toString() ?? "",
     },
   })
 
@@ -433,6 +434,7 @@ export default function MisDatosForm({
         ? (phonePrefix ? `${phonePrefix}${normalizedLocalPhone}` : normalizedLocalPhone)
         : null,
       dni: buildDni(dniPrefix, values.dni) || null,
+      years_of_experience: form.getValues("years_of_experience") ? parseInt(form.getValues("years_of_experience")) : null,
     }
 
     try {
@@ -807,6 +809,26 @@ export default function MisDatosForm({
                       />
                     </FormControl>
                   </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="years_of_experience"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm font-medium text-foreground/85">Años de experiencia profesional (opcional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
+                      placeholder="Ej: 5"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

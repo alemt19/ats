@@ -108,6 +108,7 @@ async function fetchCreateOfferCatalogsServer(input: {
 	cityCatalogOptions: string[]
 	technicalSkillOptions: string[]
 	softSkillOptions: string[]
+	credentialOptions: string[]
 }): Promise<CrearOfertaCatalogs> {
 	try {
 		const normalizedState = input.companyState.trim()
@@ -153,6 +154,7 @@ async function fetchCreateOfferCatalogsServer(input: {
 			cityOptions,
 			technicalSkillOptions: input.technicalSkillOptions,
 			softSkillOptions: input.softSkillOptions,
+			credentialOptions: input.credentialOptions,
 		}
 	} catch {
 		const normalizedState = input.companyState.trim()
@@ -193,6 +195,7 @@ async function fetchCreateOfferCatalogsServer(input: {
 				input.softSkillOptions.length > 0
 					? input.softSkillOptions
 					: ["Comunicación", "Trabajo en equipo", "Resolución de problemas"],
+			credentialOptions: input.credentialOptions,
 		}
 	}
 }
@@ -255,6 +258,7 @@ export default async function CrearOfertaPage() {
 	let cityCatalogOptions: string[] = []
 	let technicalSkillOptions: string[] = []
 	let softSkillOptions: string[] = []
+	let credentialOptions: string[] = []
 
 	if (offersCatalogsResult.status === "fulfilled") {
 		statuses = offersCatalogsResult.value.statuses
@@ -262,6 +266,7 @@ export default async function CrearOfertaPage() {
 		cityCatalogOptions = offersCatalogsResult.value.cities
 		technicalSkillOptions = offersCatalogsResult.value.technical_skills
 		softSkillOptions = offersCatalogsResult.value.soft_skills
+		credentialOptions = offersCatalogsResult.value.credentials ?? []
 	} else {
 		const reason = offersCatalogsResult.reason
 		if (reason instanceof Error) {
@@ -340,6 +345,7 @@ export default async function CrearOfertaPage() {
 		cityCatalogOptions,
 		technicalSkillOptions,
 		softSkillOptions,
+		credentialOptions,
 	})
 
 	return <CrearOfertaForm catalogs={catalogs} />

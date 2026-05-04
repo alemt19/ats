@@ -44,6 +44,8 @@ const CreateAdminOfferSchema = CreateJobSchema.omit({
 	summary: z.string().trim().optional(),
 	technical_skills: z.array(z.string().trim()).optional().default([]),
 	soft_skills: z.array(z.string().trim()).optional().default([]),
+	credentials: z.array(z.string().trim()).optional().default([]),
+	min_years_required: z.number().int().min(0).optional().nullable(),
 });
 
 const AdminOffersQuerySchema = z.object({

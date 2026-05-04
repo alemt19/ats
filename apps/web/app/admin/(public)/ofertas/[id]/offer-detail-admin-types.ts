@@ -22,10 +22,12 @@ export type AdminOfferDetail = {
   category: string
   technical_skills: string[]
   soft_skills: string[]
+  credentials?: string[]
   technical_skill_items: Array<{ name: string; is_mandatory: boolean }>
   soft_skill_items: Array<{ name: string; is_mandatory: boolean }>
   published_at: string
   candidates_count: number
+  min_years_required?: number | null
 }
 
 export type CandidateStatusOption = {

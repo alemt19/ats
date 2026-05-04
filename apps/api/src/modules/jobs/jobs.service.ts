@@ -15,7 +15,7 @@ import { Prisma } from '../../generated/prisma/client';
 import type { job_status_enum } from '../../generated/prisma/enums';
 import { STATUS_ORDER, STATUS_LABELS } from '../applications/status-order';
 
-type JobAttributeType = 'hard_skill' | 'soft_skill';
+type JobAttributeType = 'hard_skill' | 'soft_skill' | 'credential';
 
 type AdminSkillItemInput = {
   name: string;
@@ -39,12 +39,13 @@ type AdminOfferRecord = {
   weight_culture: number | null;
   created_at: Date | null;
   category_id: number | null;
+  min_years_required: number | null;
   job_categories: { id: number; name: string | null } | null;
   job_attributes: Array<{
     is_mandatory: boolean | null;
     global_attributes: {
       name: string;
-      type: 'hard_skill' | 'soft_skill' | 'value' | null;
+      type: 'hard_skill' | 'soft_skill' | 'value' | 'credential' | null;
     } | null;
   }>;
   _count: { applications: number };
@@ -356,6 +357,14 @@ export class JobsService {
       }))
       .sort((a, b) => a.name.localeCompare(b.name, 'es'));
 
+    const credentialItems = job.job_attributes
+      .filter(
+        (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'credential' } } =>
+          Boolean(link.global_attributes?.name && link.global_attributes.type === 'credential'),
+      )
+      .map((link) => link.global_attributes.name)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
     return {
       offer: {
         id: job.id,
@@ -376,10 +385,12 @@ export class JobsService {
         category: job.job_categories?.name?.trim() ?? '',
         technical_skills: technicalSkillItems.map((item) => item.name),
         soft_skills: softSkillItems.map((item) => item.name),
+        credentials: credentialItems,
         technical_skill_items: technicalSkillItems,
         soft_skill_items: softSkillItems,
         published_at: (job.created_at ?? new Date()).toISOString(),
         candidates_count: job._count.applications,
+        min_years_required: job.min_years_required ?? null,
       },
       status_display_name: this.getStatusDisplayName(job.status ?? 'draft'),
     };
@@ -410,6 +421,7 @@ export class JobsService {
         weight_culture: true,
         created_at: true,
         category_id: true,
+        min_years_required: true,
         job_categories: {
           select: {
             id: true,
@@ -503,6 +515,7 @@ export class JobsService {
     const groupedByType: Record<JobAttributeType, Array<{ name: string; is_mandatory: boolean }>> = {
       hard_skill: this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills),
       soft_skill: this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills),
+      credential: this.normalizeAdminSkillItems(undefined, dto.credentials),
     };
 
     const selectedAttributes: Array<{ attribute_id: number; is_mandatory: boolean }> = [];
@@ -567,6 +580,7 @@ export class JobsService {
           weight_soft: dto.weight_soft,
           weight_culture: dto.weight_culture,
           summary: dto.summary ?? null,
+          min_years_required: dto.min_years_required ?? null,
         },
       });
 
@@ -737,7 +751,7 @@ export class JobsService {
       this.prisma.global_attributes.findMany({
         where: {
           type: {
-            in: ['hard_skill', 'soft_skill'],
+            in: ['hard_skill', 'soft_skill', 'credential'],
           },
         },
         orderBy: { name: 'asc' },
@@ -813,6 +827,12 @@ export class JobsService {
         .map((attribute) => attribute.name),
     );
 
+    const credentials = this.normalizeAttributeNames(
+      attributes
+        .filter((attribute) => attribute.type === 'credential')
+        .map((attribute) => attribute.name),
+    );
+
     return {
       categories: categories
         .map((category) => category.name?.trim() || '')
@@ -839,6 +859,7 @@ export class JobsService {
         })),
       technical_skills: technicalSkills,
       soft_skills: softSkills,
+      credentials,
     };
   }
 
@@ -879,6 +900,7 @@ export class JobsService {
     const groupedByType: Record<JobAttributeType, Array<{ name: string; is_mandatory: boolean }>> = {
       hard_skill: this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills),
       soft_skill: this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills),
+      credential: this.normalizeAdminSkillItems(undefined, dto.credentials),
     };
 
     const selectedAttributes: Array<{ attribute_id: number; is_mandatory: boolean }> = [];
@@ -942,6 +964,7 @@ export class JobsService {
           weight_soft: dto.weight_soft,
           weight_culture: dto.weight_culture,
           category_id: dto.category_id,
+          min_years_required: dto.min_years_required ?? null,
         },
       });
 
@@ -1444,6 +1467,8 @@ export class JobsService {
         match_culture_score: true,
         overall_score: true,
         ai_feedback: true,
+        credential_match_score: true,
+        meets_min_years_required: true,
         jobs: { select: { title: true } },
         candidates: {
           select: {
@@ -1513,6 +1538,8 @@ export class JobsService {
       technical_score: toPercent(application.match_technical_score),
       soft_score: toPercent(application.match_soft_score),
       culture_score: toPercent(application.match_culture_score),
+      credential_match_score: application.credential_match_score ?? null,
+      meets_min_years_required: application.meets_min_years_required ?? null,
       technical_skills: technicalSkills,
       soft_skills: softSkills,
       values,

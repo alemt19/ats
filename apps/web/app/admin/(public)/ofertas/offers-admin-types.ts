@@ -47,6 +47,7 @@ export type AdminOffersCatalogsResponse = {
   statuses: JobParameterOption[]
   technical_skills: string[]
   soft_skills: string[]
+  credentials: string[]
 }
 
 const DEFAULT_PAGE = 1

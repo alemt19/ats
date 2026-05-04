@@ -529,12 +529,14 @@ export default function OfertaAdminDetalleClient({
       category: String(offer.category_id),
       technical_skills: offer.technical_skills ?? [],
       soft_skills: offer.soft_skills ?? [],
+      credentials: offer.credentials ?? [],
       mandatory_technical_skills: (offer.technical_skill_items ?? [])
         .filter((item) => item.is_mandatory)
         .map((item) => item.name),
       mandatory_soft_skills: (offer.soft_skill_items ?? [])
         .filter((item) => item.is_mandatory)
         .map((item) => item.name),
+      min_years_required: offer.min_years_required != null ? String(offer.min_years_required) : "",
     }),
     [offer]
   )
@@ -618,6 +620,7 @@ export default function OfertaAdminDetalleClient({
                 category_id: Number(values.category),
                 technical_skills: values.technical_skills,
                 soft_skills: values.soft_skills,
+                credentials: values.credentials ?? [],
                 technical_skill_items: values.technical_skills.map((name) => ({
                   name,
                   is_mandatory: values.mandatory_technical_skills.some(
@@ -630,6 +633,7 @@ export default function OfertaAdminDetalleClient({
                     (mandatoryValue) => mandatoryValue.trim().toLowerCase() === name.trim().toLowerCase()
                   ),
                 })),
+                min_years_required: values.min_years_required ? parseInt(values.min_years_required) : null,
               }
 
               const response = await fetch(`/api/admin/ofertas/${offerId}`, {
