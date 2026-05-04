@@ -226,8 +226,22 @@ export class JobsService {
       undefined,
     );
 
+    const currentCredentials = this.normalizeAdminSkillItems(
+      existingOffer.job_attributes
+        .filter(
+          (link): link is { is_mandatory: boolean | null; global_attributes: { name: string; type: 'credential' } } =>
+            Boolean(link.global_attributes?.name && link.global_attributes.type === 'credential'),
+        )
+        .map((link) => ({
+          name: link.global_attributes.name,
+          is_mandatory: Boolean(link.is_mandatory),
+        })),
+      undefined,
+    );
+
     const incomingTechnicalSkills = this.normalizeAdminSkillItems(dto.technical_skill_items, dto.technical_skills);
     const incomingSoftSkills = this.normalizeAdminSkillItems(dto.soft_skill_items, dto.soft_skills);
+    const incomingCredentials = this.normalizeAdminSkillItems(undefined, dto.credentials);
 
     return (
       dto.title.trim() !== existingOffer.title.trim() ||
@@ -236,7 +250,8 @@ export class JobsService {
       dto.weight_soft !== (existingOffer.weight_soft ?? 0) ||
       dto.weight_culture !== (existingOffer.weight_culture ?? 0) ||
       !this.areNormalizedSkillItemsEqual(incomingTechnicalSkills, currentTechnicalSkills) ||
-      !this.areNormalizedSkillItemsEqual(incomingSoftSkills, currentSoftSkills)
+      !this.areNormalizedSkillItemsEqual(incomingSoftSkills, currentSoftSkills) ||
+      !this.areNormalizedSkillItemsEqual(incomingCredentials, currentCredentials)
     );
   }
 
@@ -1538,7 +1553,7 @@ export class JobsService {
       technical_score: toPercent(application.match_technical_score),
       soft_score: toPercent(application.match_soft_score),
       culture_score: toPercent(application.match_culture_score),
-      credential_match_score: application.credential_match_score ?? null,
+      credential_match_score: toPercent(application.credential_match_score),
       meets_min_years_required: application.meets_min_years_required ?? null,
       technical_skills: technicalSkills,
       soft_skills: softSkills,
