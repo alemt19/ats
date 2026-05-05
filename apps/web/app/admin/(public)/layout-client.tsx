@@ -185,7 +185,7 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 	if (recruiterDetailMatch && recruiterDetailMatch[1]) {
 		return [
 			{ label: "Reclutadores", href: "/admin/reclutadores" },
-			{ label: resolve(recruiterDetailMatch[1]) },
+			{ label: resolve(`recruiter-${recruiterDetailMatch[1]}`) },
 		]
 	}
 
@@ -194,7 +194,7 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 	if (adminCandidateDetailMatch && adminCandidateDetailMatch[1]) {
 		return [
 			{ label: "Candidatos", href: "/admin/candidatos" },
-			{ label: resolve(adminCandidateDetailMatch[1]) },
+			{ label: resolve(`candidate-${adminCandidateDetailMatch[1]}`) },
 		]
 	}
 
@@ -203,7 +203,7 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 	if (categoryDetailMatch && categoryDetailMatch[1]) {
 		return [
 			{ label: "Categorías", href: "/admin/categorias" },
-			{ label: resolve(categoryDetailMatch[1]) },
+			{ label: resolve(`category-${categoryDetailMatch[1]}`) },
 		]
 	}
 
@@ -215,9 +215,9 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 
 		return [
 			{ label: "Ofertas", href: "/admin/ofertas" },
-			{ label: resolve(offerId), href: `/admin/ofertas/${offerId}` },
+			{ label: resolve(`offer-${offerId}`), href: `/admin/ofertas/${offerId}` },
 			{ label: "Candidatos" },
-			{ label: resolve(candidateId) },
+			{ label: resolve(`application-${candidateId}`) },
 		]
 	}
 
@@ -226,7 +226,7 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 	if (offerDetailMatch && offerDetailMatch[1]) {
 		return [
 			{ label: "Ofertas", href: "/admin/ofertas" },
-			{ label: resolve(offerDetailMatch[1]) },
+			{ label: resolve(`offer-${offerDetailMatch[1]}`) },
 		]
 	}
 

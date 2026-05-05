@@ -27,7 +27,7 @@ type CategoryPayload = {
 export default function CategoriaForm({ mode, categoryId, initialName = "" }: CategoriaFormProps) {
   const router = useRouter()
   const [name, setName] = React.useState(initialName)
-  useSetBreadcrumbTitle(categoryId ?? 0, mode === "edit" ? initialName : "")
+  useSetBreadcrumbTitle(`category-${categoryId ?? 0}`, mode === "edit" ? initialName : "")
 
   const mutation = useMutation<CategoryPayload, Error, { name: string }>({
     mutationFn: async (values) => {

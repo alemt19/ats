@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import * as React from "react"
 import Link from "next/link"
@@ -111,7 +111,7 @@ export default function CandidateDetailReadonly({
   const [activeTab, setActiveTab] = React.useState("datos")
   const [applicationStatusFilter, setApplicationStatusFilter] = React.useState("all")
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
-  useSetBreadcrumbTitle(candidate.id, fullName)
+  useSetBreadcrumbTitle(`candidate-${candidate.id}`, fullName)
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
   const statusLabelMap = React.useMemo(

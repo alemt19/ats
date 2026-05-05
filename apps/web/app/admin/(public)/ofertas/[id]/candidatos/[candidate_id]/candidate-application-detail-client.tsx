@@ -264,8 +264,8 @@ export default function CandidateApplicationDetailClient({
     [candidate.experiences]
   )
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
-  useSetBreadcrumbTitle(offerId, candidate.offer_title)
-  useSetBreadcrumbTitle(candidate.application_id, fullName)
+  useSetBreadcrumbTitle(`offer-${offerId}`, candidate.offer_title)
+  useSetBreadcrumbTitle(`application-${candidate.application_id}`, fullName)
   const [applicationStatus, setApplicationStatus] = React.useState(candidate.application_status)
   const [isUpdatingStatus, setIsUpdatingStatus] = React.useState(false)
   const [notes, setNotes] = React.useState(initialNotes)

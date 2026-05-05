@@ -1,4 +1,4 @@
-﻿
+
 "use client"
 
 import * as React from "react"
@@ -312,7 +312,7 @@ export default function OfertaAdminDetalleClient({
   initialCandidatesQuery,
   initialCandidatesData,
 }: OfertaAdminDetalleClientProps) {
-  useSetBreadcrumbTitle(offerId, offer.title)
+  useSetBreadcrumbTitle(`offer-${offerId}`, offer.title)
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()

@@ -243,7 +243,7 @@ export default function RecruiterForm({ mode, recruiterId, initialRecruiter }: R
   const recruiterFullName = detailQuery.data
     ? `${detailQuery.data.name} ${detailQuery.data.lastname}`.trim()
     : ""
-  useSetBreadcrumbTitle(recruiterId ?? 0, recruiterFullName)
+  useSetBreadcrumbTitle(`recruiter-${recruiterId ?? 0}`, recruiterFullName)
 
   React.useEffect(() => {
     if (!catalogsQuery.data || mode !== "create") {
