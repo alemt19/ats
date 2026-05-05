@@ -3,58 +3,7 @@ import { headers } from "next/headers"
 import CompetenciasValoresForm, {
     type CompetenciasValoresInitialData,
 } from "./competencias-valores-form"
-
-type CompetenciasValoresPageResponse = {
-    initialData: CompetenciasValoresInitialData
-    technicalSkillOptions: string[]
-    softSkillOptions: string[]
-    valueOptions: string[]
-    credentialOptions: string[]
-}
-
-async function fetchProfileDataServer(
-    cookie: string
-): Promise<CompetenciasValoresPageResponse> {
-    const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
-
-    try {
-        const response = await fetch(`${apiBaseUrl}/api/candidates/me/competencias-valores`, {
-            method: "GET",
-            headers: {
-                cookie,
-            },
-            cache: "no-store",
-        })
-
-        if (response.ok) {
-            const payload = (await response.json()) as {
-                data?: CompetenciasValoresPageResponse
-            }
-
-            if (payload.data) {
-                return payload.data
-            }
-        }
-    } catch {
-        // Return empty defaults if backend is unavailable.
-    }
-
-    return {
-        initialData: {
-            cv_url: "",
-            behavioral_ans_1: "",
-            behavioral_ans_2: "",
-            technical_skills: [],
-            soft_skills: [],
-            values: [],
-            credentials: [],
-        },
-        technicalSkillOptions: [],
-        softSkillOptions: [],
-        valueOptions: [],
-        credentialOptions: [],
-    }
-}
+import { fetchProfileDataServer } from "../profile-data"
 
 export default async function CompetenciasValoresPage() {
     const session = await getSession()
@@ -76,7 +25,6 @@ export default async function CompetenciasValoresPage() {
             technicalSkillOptions={profileData.technicalSkillOptions}
             softSkillOptions={profileData.softSkillOptions}
             valueOptions={profileData.valueOptions}
-            credentialOptions={profileData.credentialOptions}
             behavioralQuestion1={behavioralQuestion1}
             behavioralQuestion2={behavioralQuestion2}
         />

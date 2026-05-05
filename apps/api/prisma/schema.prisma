@@ -108,9 +108,25 @@ model candidates {
   updated_at              DateTime?                     @default(now()) @db.Timestamp(6)
   applications            applications[]
   candidate_attributes    candidate_attributes[]
+  candidate_experiences   candidate_experiences[]
 
   @@index([user_id], map: "idx_candidates_user_id")
   @@index([summary_embedding], map: "idx_candidates_summary_embedding")
+}
+
+model candidate_experiences {
+  id            Int        @id @default(autoincrement())
+  candidate_id  Int
+  position      String     @db.VarChar(255)
+  company_name  String     @db.VarChar(255)
+  start_date    DateTime   @db.Date
+  end_date      DateTime?  @db.Date
+  created_at    DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?  @default(now()) @db.Timestamp(6)
+  candidates    candidates @relation(fields: [candidate_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([candidate_id], map: "idx_candidate_experiences_candidate_id")
+  @@index([candidate_id, end_date], map: "idx_candidate_experiences_candidate_id_end_date")
 }
 
 model companies {

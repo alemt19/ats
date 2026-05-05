@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Sparkles, Upload, X } from "lucide-react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
@@ -27,6 +28,13 @@ import { Textarea } from "react/components/ui/textarea"
 
 type MultiFieldName = "technical_skills" | "soft_skills" | "values" | "credentials"
 
+export type ExperienceFormValue = {
+  position: string
+  company_name: string
+  start_date: string
+  end_date: string
+}
+
 export type CompetenciasValoresInitialData = {
   cv_url?: string
   behavioral_ans_1: string
@@ -35,6 +43,7 @@ export type CompetenciasValoresInitialData = {
   soft_skills: string[]
   values: string[]
   credentials: string[]
+  experiences: ExperienceFormValue[]
 }
 
 type SuggestionPayload = {
@@ -50,7 +59,6 @@ type CompetenciasValoresFormProps = {
   technicalSkillOptions: string[]
   softSkillOptions: string[]
   valueOptions: string[]
-  credentialOptions: string[]
   behavioralQuestion1: string
   behavioralQuestion2: string
 }
@@ -122,7 +130,7 @@ function getCvType(urlOrName?: string): "pdf" | "docx" | null {
   return null
 }
 
-function MultiDatalistField({
+export function MultiDatalistField({
   fieldName,
   label,
   placeholder,
@@ -278,7 +286,6 @@ export default function CompetenciasValoresForm({
   technicalSkillOptions,
   softSkillOptions,
   valueOptions,
-  credentialOptions,
   behavioralQuestion1,
   behavioralQuestion2,
 }: CompetenciasValoresFormProps) {
@@ -305,7 +312,6 @@ export default function CompetenciasValoresForm({
     technical_skills: normalizeList(initialData.technical_skills ?? []),
     soft_skills: normalizeList(initialData.soft_skills ?? []),
     values: normalizeList(initialData.values ?? []),
-    credentials: normalizeList(initialData.credentials ?? []),
   })
   const apiBaseUrl = process.env.BACKEND_API_URL ?? "http://localhost:4000"
 
@@ -318,13 +324,13 @@ export default function CompetenciasValoresForm({
       soft_skills: initialData.soft_skills ?? [],
       values: initialData.values ?? [],
       credentials: initialData.credentials ?? [],
+      experiences: initialData.experiences ?? [],
     },
   })
 
   const technicalSkills = form.watch("technical_skills")
   const softSkills = form.watch("soft_skills")
   const candidateValues = form.watch("values")
-  const candidateCredentials = form.watch("credentials")
   const behavioralAns1 = form.watch("behavioral_ans_1")
   const behavioralAns2 = form.watch("behavioral_ans_2")
   const hasCvLoaded = Boolean(cvFile || initialCvUrl || cvPreviewUrl)
@@ -665,8 +671,7 @@ export default function CompetenciasValoresForm({
     const skillsOrValuesChanged =
       !areListsEqual(values.technical_skills, savedListsRef.current.technical_skills) ||
       !areListsEqual(values.soft_skills, savedListsRef.current.soft_skills) ||
-      !areListsEqual(values.values, savedListsRef.current.values) ||
-      !areListsEqual(values.credentials ?? [], savedListsRef.current.credentials)
+      !areListsEqual(values.values, savedListsRef.current.values)
 
     const formData = new FormData()
 
@@ -675,7 +680,6 @@ export default function CompetenciasValoresForm({
     formData.append("technical_skills", JSON.stringify(values.technical_skills))
     formData.append("soft_skills", JSON.stringify(values.soft_skills))
     formData.append("values", JSON.stringify(values.values))
-    formData.append("credentials", JSON.stringify(values.credentials ?? []))
 
     if (cvFile) {
       formData.append("cv", cvFile)
@@ -711,7 +715,6 @@ export default function CompetenciasValoresForm({
         technical_skills: normalizeList(values.technical_skills),
         soft_skills: normalizeList(values.soft_skills),
         values: normalizeList(values.values),
-        credentials: normalizeList(values.credentials ?? []),
       }
 
       setCvFile(null)
@@ -918,24 +921,11 @@ export default function CompetenciasValoresForm({
                 {form.formState.errors.values?.message ? (
                   <p className="text-sm text-destructive">{form.formState.errors.values.message}</p>
                 ) : null}
-
-                <MultiDatalistField
-                  fieldName="credentials"
-                  label="Credenciales Profesionales"
-                  placeholder="AWS SAA, Scrum Master, PMP..."
-                  options={credentialOptions}
-                  selectedValues={candidateCredentials}
-                  onChangeValues={(values) => setMultiFieldValue("credentials", values)}
-                  suggestionItems={suggestions?.credentials ?? []}
-                  onAddSuggestion={(value) => addSuggestionToField("credentials", value)}
-                  onAddAllSuggestions={() =>
-                    addAllSuggestionsToField("credentials", suggestions?.credentials ?? [])
-                  }
-                  disabled={!isSkillsSectionUnlocked}
-                />
               </div>
             </CardContent>
           </Card>
+
+          
 
           <CardFooter className="justify-end px-0">
             <Button type="submit" disabled={form.formState.isSubmitting} className="rounded-full px-5">

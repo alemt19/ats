@@ -20,7 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { CandidatesService } from './candidates.service';
 import { CandidatesQueryDto, CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
-import { UpdateMyCompetenciasValoresDto } from './dto/competencias-valores.dto';
+import { UpdateMyCompetenciasValoresDto, UpdateMyCredencialesExperienciasDto } from './dto/competencias-valores.dto';
 import { BetterAuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { Request } from 'express';
@@ -110,6 +110,16 @@ export class CandidatesController {
       : undefined;
 
     return this.candidatesService.updateMeCompetenciasValores(userId, dto, cvFileUrl);
+  }
+
+  @UseGuards(BetterAuthGuard)
+  @Patch('me/credenciales-experiencias')
+  async updateMeCredencialesExperiencias(
+    @CurrentUser() session: any,
+    @Body() dto: UpdateMyCredencialesExperienciasDto,
+  ) {
+    const userId = this.getUserIdFromSession(session);
+    return this.candidatesService.updateMeCredencialesExperiencias(userId, dto);
   }
 
   @UseGuards(BetterAuthGuard)

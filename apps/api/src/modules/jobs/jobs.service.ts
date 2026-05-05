@@ -51,6 +51,48 @@ type AdminOfferRecord = {
   _count: { applications: number };
 };
 
+function toDateOnlyString(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return null;
+    }
+
+    const year = value.getUTCFullYear();
+    const month = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(value.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
+
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[1]}-${dateOnlyMatch[2]}-${dateOnlyMatch[3]}`;
+  }
+
+  const parsed = new Date(trimmed);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
 @Injectable()
 export class JobsService {
   constructor(
@@ -1511,7 +1553,6 @@ export class JobsService {
             cv_file_url: true,
             behavioral_ans_1: true,
             behavioral_ans_2: true,
-            years_of_experience: true,
             dress_code: true,
             collaboration_style: true,
             work_pace: true,
@@ -1522,6 +1563,14 @@ export class JobsService {
             candidate_attributes: {
               select: {
                 global_attributes: { select: { name: true, type: true } },
+              },
+            },
+            candidate_experiences: {
+              select: {
+                position: true,
+                company_name: true,
+                start_date: true,
+                end_date: true,
               },
             },
           },
@@ -1538,6 +1587,34 @@ export class JobsService {
     const softSkills = attrs.filter((a) => a?.type === 'soft_skill').map((a) => a!.name);
     const values = attrs.filter((a) => a?.type === 'value').map((a) => a!.name);
     const credentials = attrs.filter((a) => a?.type === 'credential').map((a) => a!.name);
+    const experiences = (c.candidate_experiences ?? [])
+      .map((experience) => ({
+        position: experience.position,
+        company_name: experience.company_name,
+        start_date: toDateOnlyString(experience.start_date) ?? '',
+        end_date: toDateOnlyString(experience.end_date),
+      }))
+      .sort((left, right) => {
+        const leftEnd = left.end_date ? new Date(`${left.end_date}T00:00:00.000Z`).getTime() : null;
+        const rightEnd = right.end_date ? new Date(`${right.end_date}T00:00:00.000Z`).getTime() : null;
+
+        if (leftEnd === null && rightEnd !== null) {
+          return -1;
+        }
+
+        if (leftEnd !== null && rightEnd === null) {
+          return 1;
+        }
+
+        if (leftEnd !== rightEnd) {
+          return (rightEnd ?? 0) - (leftEnd ?? 0);
+        }
+
+        const leftStart = new Date(`${left.start_date}T00:00:00.000Z`).getTime();
+        const rightStart = new Date(`${right.start_date}T00:00:00.000Z`).getTime();
+
+        return rightStart - leftStart;
+      });
 
     const culturalPreferences: Record<string, string> = {};
     if (c.dress_code) culturalPreferences['dress_code'] = c.dress_code;
@@ -1570,12 +1647,12 @@ export class JobsService {
       culture_score: toPercent(application.match_culture_score),
       credential_match_score: toPercent(application.credential_match_score),
       meets_min_years_required: application.meets_min_years_required ?? null,
-      years_of_experience: c.years_of_experience ?? null,
       min_years_required: application.jobs?.min_years_required ?? null,
       technical_skills: technicalSkills,
       soft_skills: softSkills,
       values,
       credentials,
+      experiences,
       cultural_preferences: culturalPreferences,
       cv_url: c.cv_file_url ?? undefined,
       behavioral_ans_1: c.behavioral_ans_1 ?? '',

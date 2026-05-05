@@ -16,12 +16,19 @@ export type Candidate = {
   cv_url?: string
   behavioral_ans_1: string
   behavioral_ans_2: string
-  years_of_experience?: number
   technical_skills: string[]
   soft_skills: string[]
   values: string[]
   credentials: string[]
+  experiences: CandidateExperience[]
   cultural_preferences: CandidateCulturalPreferences
+}
+
+export type CandidateExperience = {
+  position: string
+  company_name: string
+  start_date: string
+  end_date: string | null
 }
 
 export type CandidateListItem = {

@@ -1,0 +1,2 @@
+-- No-op migration.
+-- These indexes are already managed by

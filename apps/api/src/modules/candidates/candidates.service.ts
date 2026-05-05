@@ -4,13 +4,27 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.producer';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateCandidateDto, UpdateCandidateDto, UpdateMyCandidateDto } from './dto/candidates.dto';
-import { UpdateMyCompetenciasValoresDto } from './dto/competencias-valores.dto';
+import { UpdateMyCompetenciasValoresDto, UpdateMyCredencialesExperienciasDto } from './dto/competencias-valores.dto';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { StorageService } from '../../common/storage/storage.service';
 import { CV_PARSE_QUEUE } from '../queues/queues.constants';
 
 type CandidateAttributeType = 'hard_skill' | 'soft_skill' | 'value' | 'credential';
+
+type CandidateExperienceInput = {
+  position: string;
+  company_name: string;
+  start_date: string;
+  end_date: string | null;
+};
+
+type CandidateExperienceRecord = {
+  position: string;
+  company_name: string;
+  start_date: string;
+  end_date: string | null;
+};
 
 type CandidateCompetenciasValoresResponse = {
   initialData: {
@@ -21,12 +35,103 @@ type CandidateCompetenciasValoresResponse = {
     soft_skills: string[];
     values: string[];
     credentials: string[];
+    experiences: CandidateExperienceRecord[];
   };
   technicalSkillOptions: string[];
   softSkillOptions: string[];
   valueOptions: string[];
   credentialOptions: string[];
 };
+
+function parseDateOnlyToDate(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+
+  if (!match) {
+    return null;
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    Number.isNaN(date.getTime()) ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return date;
+}
+
+function toDateOnlyString(value: Date | string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return null;
+    }
+
+    const year = value.getUTCFullYear();
+    const month = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(value.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed);
+
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[1]}-${dateOnlyMatch[2]}-${dateOnlyMatch[3]}`;
+  }
+
+  const parsed = new Date(trimmed);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  const year = parsed.getUTCFullYear();
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(parsed.getUTCDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+function sortCandidateExperiences(experiences: CandidateExperienceRecord[]) {
+  return [...experiences].sort((left, right) => {
+    const leftEnd = left.end_date ? new Date(`${left.end_date}T00:00:00.000Z`).getTime() : null;
+    const rightEnd = right.end_date ? new Date(`${right.end_date}T00:00:00.000Z`).getTime() : null;
+
+    if (leftEnd === null && rightEnd !== null) {
+      return -1;
+    }
+
+    if (leftEnd !== null && rightEnd === null) {
+      return 1;
+    }
+
+    if (leftEnd !== rightEnd) {
+      return (rightEnd ?? 0) - (leftEnd ?? 0);
+    }
+
+    const leftStart = new Date(`${left.start_date}T00:00:00.000Z`).getTime();
+    const rightStart = new Date(`${right.start_date}T00:00:00.000Z`).getTime();
+
+    return rightStart - leftStart;
+  });
+}
 
 @Injectable()
 export class CandidatesService {
@@ -94,6 +199,82 @@ export class CandidatesService {
       return parsed.map((item) => String(item));
     } catch {
       throw new BadRequestException(`Invalid ${fieldName} payload`);
+    }
+  }
+
+  private parseExperienceArray(value: string): CandidateExperienceInput[] {
+    try {
+      const parsed = JSON.parse(value) as unknown;
+
+      if (!Array.isArray(parsed)) {
+        throw new Error('Invalid array payload');
+      }
+
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+      return parsed
+        .map((item): CandidateExperienceInput | null => {
+          if (!item || typeof item !== 'object') {
+            return null;
+          }
+
+          const record = item as Record<string, unknown>;
+          const position = typeof record.position === 'string' ? record.position.trim() : '';
+          const companyName = typeof record.company_name === 'string' ? record.company_name.trim() : '';
+          const startDate = typeof record.start_date === 'string' ? record.start_date.trim() : '';
+          const endDate =
+            typeof record.end_date === 'string'
+              ? record.end_date.trim() || null
+              : record.end_date === null
+                ? null
+                : undefined;
+
+          if (!position || !companyName || !startDate) {
+            return null;
+          }
+
+          const parsedStartDate = parseDateOnlyToDate(startDate);
+
+          if (!parsedStartDate) {
+            throw new BadRequestException('La fecha de inicio de la experiencia no es válida');
+          }
+
+          if (parsedStartDate.getTime() > todayStart.getTime()) {
+            throw new BadRequestException('La fecha de inicio no puede ser futura');
+          }
+
+          let parsedEndDate: Date | null = null;
+
+          if (typeof endDate === 'string') {
+            parsedEndDate = parseDateOnlyToDate(endDate);
+
+            if (!parsedEndDate) {
+              throw new BadRequestException('La fecha de fin de la experiencia no es válida');
+            }
+
+            if (parsedEndDate.getTime() > todayStart.getTime()) {
+              throw new BadRequestException('La fecha de fin no puede ser futura');
+            }
+
+            if (parsedStartDate.getTime() > parsedEndDate.getTime()) {
+              throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin');
+            }
+          }
+
+          return {
+            position,
+            company_name: companyName,
+            start_date: startDate,
+            end_date: endDate ?? null,
+          };
+        })
+        .filter((item): item is CandidateExperienceInput => Boolean(item));
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException('Invalid experiences payload');
     }
   }
 
@@ -177,7 +358,7 @@ export class CandidatesService {
   async findMeCompetenciasValores(userId: string): Promise<CandidateCompetenciasValoresResponse> {
     const candidate = await this.findMe(userId);
 
-    const [catalogs, candidateAttributes] = await Promise.all([
+    const [catalogs, candidateAttributes, candidateExperiences] = await Promise.all([
       this.prisma.global_attributes.findMany({
         where: {
           type: {
@@ -200,6 +381,15 @@ export class CandidatesService {
               type: true,
             },
           },
+        },
+      }),
+      this.prisma.candidate_experiences.findMany({
+        where: { candidate_id: candidate.id },
+        select: {
+          position: true,
+          company_name: true,
+          start_date: true,
+          end_date: true,
         },
       }),
     ]);
@@ -256,6 +446,15 @@ export class CandidatesService {
       .map((attribute) => attribute.name)
       .sort((a, b) => a.localeCompare(b, 'es'));
 
+    const experiences = sortCandidateExperiences(
+      candidateExperiences.map((experience) => ({
+        position: experience.position,
+        company_name: experience.company_name,
+        start_date: toDateOnlyString(experience.start_date) ?? '',
+        end_date: toDateOnlyString(experience.end_date),
+      })),
+    );
+
     return {
       initialData: {
         cv_url: candidate.cv_file_url ?? '',
@@ -265,6 +464,7 @@ export class CandidatesService {
         soft_skills: softSkills,
         values,
         credentials,
+        experiences,
       },
       technicalSkillOptions,
       softSkillOptions,
@@ -287,15 +487,11 @@ export class CandidatesService {
       this.parseStringArray(dto.soft_skills, 'soft_skills'),
     );
     const values = this.normalizeAttributeNames(this.parseStringArray(dto.values, 'values'));
-    const credentials = this.normalizeAttributeNames(
-      this.parseStringArray(dto.credentials, 'credentials'),
-    );
 
-    const groupedByType: Record<CandidateAttributeType, string[]> = {
+    const groupedByType: Record<Exclude<CandidateAttributeType, 'credential'>, string[]> = {
       hard_skill: technicalSkills,
       soft_skill: softSkills,
       value: values,
-      credential: credentials,
     };
 
     const selectedAttributeIds: number[] = [];
@@ -373,6 +569,111 @@ export class CandidatesService {
     return this.findMeCompetenciasValores(userId);
   }
 
+  async updateMeCredencialesExperiencias(
+    userId: string,
+    dto: UpdateMyCredencialesExperienciasDto,
+  ) {
+    const candidate = await this.findMe(userId);
+
+    const credentials = this.normalizeAttributeNames(
+      this.parseStringArray(dto.credentials, 'credentials'),
+    );
+    const experiences = sortCandidateExperiences(
+      this.parseExperienceArray(dto.experiences ?? '[]').map((experience) => ({
+        position: experience.position,
+        company_name: experience.company_name,
+        start_date: experience.start_date,
+        end_date: experience.end_date,
+      })),
+    );
+
+    const selectedAttributeIds: number[] = [];
+    const createdAttributes: Array<{ id: number; name: string }> = [];
+
+    for (const name of credentials) {
+      let attribute = await this.findGlobalAttributeByNameInsensitive(name, 'credential');
+
+      if (!attribute) {
+        try {
+          attribute = await this.prisma.global_attributes.create({
+            data: {
+              name,
+              type: 'credential',
+            },
+            select: {
+              id: true,
+              name: true,
+            },
+          });
+
+          createdAttributes.push(attribute);
+        } catch (error) {
+          attribute = await this.findGlobalAttributeByNameInsensitive(name, 'credential');
+
+          if (!attribute) {
+            throw error;
+          }
+        }
+      }
+
+      selectedAttributeIds.push(attribute.id);
+    }
+
+    const uniqueSelectedAttributeIds = Array.from(new Set(selectedAttributeIds));
+
+    await this.prisma.$transaction([
+      this.prisma.candidate_attributes.deleteMany({
+        where: {
+          candidate_id: candidate.id,
+          global_attributes: {
+            type: 'credential',
+          },
+        },
+      }),
+      this.prisma.candidate_experiences.deleteMany({
+        where: { candidate_id: candidate.id },
+      }),
+      ...(uniqueSelectedAttributeIds.length > 0
+        ? [
+            this.prisma.candidate_attributes.createMany({
+              data: uniqueSelectedAttributeIds.map((attributeId) => ({
+                candidate_id: candidate.id,
+                attribute_id: attributeId,
+              })),
+            }),
+          ]
+        : []),
+      ...(experiences.length > 0
+        ? [
+            this.prisma.candidate_experiences.createMany({
+              data: experiences.map((experience) => ({
+                candidate_id: candidate.id,
+                position: experience.position,
+                company_name: experience.company_name,
+                start_date: parseDateOnlyToDate(experience.start_date) as Date,
+                end_date: experience.end_date
+                  ? (parseDateOnlyToDate(experience.end_date) as Date)
+                  : null,
+              })),
+            }),
+          ]
+        : []),
+    ]);
+
+    await this.embeddingsQueueProducer.enqueueAttributes(
+      createdAttributes.map((attribute) => ({
+        attributeId: attribute.id,
+        name: attribute.name,
+      })),
+    );
+
+    return {
+      ...candidate,
+      credentials,
+      experiences,
+    };
+  }
+
   async updateMe(userId: string, dto: UpdateMyCandidateDto) {
     const current = await this.findMe(userId);
 
@@ -441,6 +742,14 @@ export class CandidatesService {
             },
           },
         },
+        candidate_experiences: {
+          select: {
+            position: true,
+            company_name: true,
+            start_date: true,
+            end_date: true,
+          },
+        },
       },
     });
   }
@@ -465,6 +774,14 @@ export class CandidatesService {
                 type: true,
               },
             },
+          },
+        },
+        candidate_experiences: {
+          select: {
+            position: true,
+            company_name: true,
+            start_date: true,
+            end_date: true,
           },
         },
       },

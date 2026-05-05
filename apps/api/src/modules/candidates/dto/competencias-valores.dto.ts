@@ -10,9 +10,19 @@ const CandidateCompetenciasValoresSchema = z.object({
 	soft_skills: z.string().trim().optional().default('[]'),
 	values: z.string().trim().optional().default('[]'),
 	credentials: z.string().trim().optional().default('[]'),
+	experiences: z.string().trim().optional().default('[]'),
 	cv_existing_url: z.string().trim().optional(),
+});
+
+const CandidateCredencialesExperienciasSchema = z.object({
+	credentials: z.string().trim().optional().default('[]'),
+	experiences: z.string().trim().optional().default('[]'),
 });
 
 export class UpdateMyCompetenciasValoresDto extends createZodDto(
 	CandidateCompetenciasValoresSchema,
+) {}
+
+export class UpdateMyCredencialesExperienciasDto extends createZodDto(
+	CandidateCredencialesExperienciasSchema,
 ) {}

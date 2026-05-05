@@ -84,16 +84,23 @@ export type CandidateApplicationDetail = {
   culture_score: number
   credential_match_score?: number | null
   meets_min_years_required?: boolean | null
-  years_of_experience?: number | null
   min_years_required?: number | null
   technical_skills: string[]
   soft_skills: string[]
   credentials?: string[]
+  experiences?: CandidateExperience[]
   values: string[]
   cultural_preferences: Partial<Record<string, string>>
   cv_url?: string
   behavioral_ans_1: string
   behavioral_ans_2: string
+}
+
+export type CandidateExperience = {
+  position: string
+  company_name: string
+  start_date: string
+  end_date: string | null
 }
 
 type CandidateApplicationDetailClientProps = {
@@ -193,6 +200,23 @@ function formatRelativeDate(value: string) {
   return "Hace un momento"
 }
 
+function formatExperienceDate(value: string | null) {
+  if (!value) {
+    return "Actualidad"
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`)
+
+  if (Number.isNaN(date.getTime())) {
+    return "Actualidad"
+  }
+
+  return date.toLocaleDateString("es-VE", {
+    month: "short",
+    year: "numeric",
+  })
+}
+
 export default function CandidateApplicationDetailClient({
   offerId,
   candidate,
@@ -207,14 +231,38 @@ export default function CandidateApplicationDetailClient({
     () => (candidate.credentials ?? []).filter((value) => value.trim().length > 0),
     [candidate.credentials]
   )
-  const candidateYearsOfExperience =
-    typeof candidate.years_of_experience === "number" && Number.isFinite(candidate.years_of_experience)
-      ? candidate.years_of_experience
-      : null
-  const minYearsRequired =
-    typeof candidate.min_years_required === "number" && Number.isFinite(candidate.min_years_required)
-      ? candidate.min_years_required
-      : null
+  const candidateExperiences = React.useMemo(
+    () =>
+      (candidate.experiences ?? [])
+        .filter(
+          (experience) =>
+            experience.position.trim().length > 0 &&
+            experience.company_name.trim().length > 0 &&
+            experience.start_date.trim().length > 0
+        )
+        .sort((left, right) => {
+          const leftEnd = left.end_date ? new Date(`${left.end_date}T00:00:00.000Z`).getTime() : null
+          const rightEnd = right.end_date ? new Date(`${right.end_date}T00:00:00.000Z`).getTime() : null
+
+          if (leftEnd === null && rightEnd !== null) {
+            return -1
+          }
+
+          if (leftEnd !== null && rightEnd === null) {
+            return 1
+          }
+
+          if (leftEnd !== rightEnd) {
+            return (rightEnd ?? 0) - (leftEnd ?? 0)
+          }
+
+          const leftStart = new Date(`${left.start_date}T00:00:00.000Z`).getTime()
+          const rightStart = new Date(`${right.start_date}T00:00:00.000Z`).getTime()
+
+          return rightStart - leftStart
+        }),
+    [candidate.experiences]
+  )
   const fullName = `${candidate.name} ${candidate.lastname}`.trim()
   useSetBreadcrumbTitle(offerId, candidate.offer_title)
   useSetBreadcrumbTitle(candidate.application_id, fullName)
@@ -593,35 +641,6 @@ export default function CandidateApplicationDetailClient({
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm font-medium">
-                      <span>Credenciales profesionales</span>
-                    </div>
-                    {candidateCredentials.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {candidateCredentials.map((credential) => (
-                          <Badge key={credential} variant="secondary">
-                            {credential}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">NA</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm font-medium">
-                      <span>Años de experiencia del candidato</span>
-                      <span>
-                        {candidateYearsOfExperience === null
-                          ? "NA"
-                          : candidateYearsOfExperience === 1
-                            ? "1 año"
-                            : `${candidateYearsOfExperience} años`}
-                      </span>
-                    </div>
-                  </div>
                 </section>
 
                 <section className="space-y-4">
@@ -665,28 +684,43 @@ export default function CandidateApplicationDetailClient({
                       ))}
                     </div>
                   </div>
-                </section>
 
-                {minYearsRequired !== null && (
-                  <div className="mt-4">
-                    <p className="mb-2 text-sm font-medium text-foreground">
-                      Años mínimos requeridos por el puesto: {minYearsRequired === 1 ? "1 año" : `${minYearsRequired} años`}
-                    </p>
-                    {candidate.meets_min_years_required ? (
-                      <Badge variant="default" className="bg-green-100 text-green-800 border-green-200">
-                        ✓ Cumple años requeridos
-                      </Badge>
-                    ) : candidate.meets_min_years_required === false ? (
-                      <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200">
-                        ⚠ Años de experiencia insuficientes
-                      </Badge>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm font-medium">
+                      <span>Credenciales profesionales</span>
+                    </div>
+                    {candidateCredentials.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {candidateCredentials.map((credential) => (
+                          <Badge key={credential} variant="secondary">
+                            {credential}
+                          </Badge>
+                        ))}
+                      </div>
                     ) : (
-                      <Badge variant="outline" className="bg-muted/50 text-muted-foreground border-border">
-                        NA: no se pudo determinar si cumple con los años requeridos
-                      </Badge>
+                      <p className="text-sm text-muted-foreground">NA</p>
                     )}
                   </div>
-                )}
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Experiencias</p>
+                    {candidateExperiences.length > 0 ? (
+                      <div className="space-y-2">
+                        {candidateExperiences.map((experience, index) => (
+                          <div key={`${experience.company_name}-${experience.position}-${index}`} className="rounded-lg border border-border/70 bg-background/70 p-3">
+                            <p className="font-medium">{experience.position}</p>
+                            <p className="text-sm text-muted-foreground">{experience.company_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatExperienceDate(experience.start_date)} - {formatExperienceDate(experience.end_date)}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No ha registrado experiencias.</p>
+                    )}
+                  </div>
+                </section>
 
                 <section className="space-y-3">
                   <h3 className="font-medium">Retroalimentación</h3>

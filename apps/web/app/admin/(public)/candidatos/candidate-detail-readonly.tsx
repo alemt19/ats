@@ -83,6 +83,23 @@ function getCvType(urlOrName?: string): "pdf" | "docx" | null {
   return null
 }
 
+function formatExperienceDate(value: string | null) {
+  if (!value) {
+    return "Actualidad"
+  }
+
+  const date = new Date(`${value}T00:00:00.000Z`)
+
+  if (Number.isNaN(date.getTime())) {
+    return "Actualidad"
+  }
+
+  return date.toLocaleDateString("es-VE", {
+    month: "short",
+    year: "numeric",
+  })
+}
+
 export default function CandidateDetailReadonly({
   candidate,
   applications,
@@ -211,6 +228,12 @@ export default function CandidateDetailReadonly({
             Competencias y valores
           </TabsTrigger>
           <TabsTrigger
+            value="credenciales-experiencias"
+            className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
+          >
+            Credenciales profesionales y experiencias
+          </TabsTrigger>
+          <TabsTrigger
             value="preferencias"
             className="h-9 rounded-full px-4 text-sm font-medium text-muted-foreground transition hover:text-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm"
           >
@@ -270,14 +293,6 @@ export default function CandidateDetailReadonly({
               <div>
                 <p className="text-muted-foreground text-sm">Correo</p>
                 <p className="font-medium">{candidate.email || "N/A"}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-sm">Años de experiencia</p>
-                <p className="font-medium">
-                  {typeof candidate.years_of_experience === "number"
-                    ? `${candidate.years_of_experience}`
-                    : "NA"}
-                </p>
               </div>
             </CardContent>
           </Card>
@@ -377,20 +392,50 @@ export default function CandidateDetailReadonly({
                 </div>
               </div>
 
-              <div>
-                <p className="mb-2 text-sm font-medium">Credenciales profesionales</p>
-                <div className="flex flex-wrap gap-2">
-                  {candidate.credentials.length === 0 ? (
-                    <span className="text-muted-foreground text-sm">NA</span>
-                  ) : (
-                    candidate.credentials.map((credential) => (
-                      <Badge key={credential} variant="secondary">
-                        {credential}
-                      </Badge>
-                    ))
-                  )}
-                </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="credenciales-experiencias" className="space-y-4">
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
+            <CardHeader>
+              <CardTitle>Credenciales profesionales</CardTitle>
+              <CardDescription>Credenciales registradas por el candidato.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {candidate.credentials.length === 0 ? (
+                  <span className="text-muted-foreground text-sm">NA</span>
+                ) : (
+                  candidate.credentials.map((credential) => (
+                    <Badge key={credential} variant="secondary">
+                      {credential}
+                    </Badge>
+                  ))
+                )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-2xl bg-card/90 shadow-soft">
+            <CardHeader>
+              <CardTitle>Experiencias</CardTitle>
+              <CardDescription>Historial laboral ordenado por fecha de fin.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {candidate.experiences.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No ha registrado experiencias.</p>
+              ) : (
+                candidate.experiences.map((experience, index) => (
+                  <div key={`${experience.company_name}-${experience.position}-${index}`} className="rounded-xl border border-border/70 bg-background/70 p-4">
+                    <p className="font-medium">{experience.position}</p>
+                    <p className="text-sm text-muted-foreground">{experience.company_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatExperienceDate(experience.start_date)} - {formatExperienceDate(experience.end_date)}
+                    </p>
+                  </div>
+                ))
+              )}
             </CardContent>
           </Card>
         </TabsContent>

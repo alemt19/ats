@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "../../../auth-client"
-import { BarChart3, BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
+import { ArrowUpRight, BarChart3, BriefcaseBusiness, ClipboardList, LogOut, UserRound, UsersRound } from "lucide-react"
 import { useCandidateSession } from "react/hooks/use-segmented-session"
 
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
@@ -41,6 +41,11 @@ const profileLinks = [
         icon: BriefcaseBusiness,
     },
     {
+        label: "Credenciales y experiencias",
+        href: "/mi-perfil/credenciales-experiencias",
+        icon: ArrowUpRight,
+    },
+    {
         label: "Preferencias culturales",
         href: "/mi-perfil/preferencias-culturales",
         icon: UsersRound,
@@ -72,7 +77,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
         <SidebarProvider className="bg-background">
             <Sidebar collapsible="offcanvas" variant="inset" className="border-border/70 bg-sidebar/90">
                 <SidebarHeader className="px-2 pt-0 pb-2">
-                    <div className="mt-[var(--space-content)] gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
+                    <div className="mt-(--space-content) gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
                         <Link href="/" className="flex items-center gap-3">
                             {resolvedLogoSrc ? (
                                 <img
@@ -85,7 +90,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                                     {resolvedCompanyName.slice(0, 2).toUpperCase()}
                                 </div>
                             )}
-                            <span className="font-[family-name:var(--font-display)] text-base font-semibold tracking-tight">
+                            <span className="font-display text-base font-semibold tracking-tight">
                                 {resolvedCompanyName}
                             </span>
                         </Link>
@@ -101,7 +106,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                                         <SidebarMenuButton
                                             asChild
                                             isActive={pathname.startsWith(item.href)}
-                                            className="rounded-xl text-muted-foreground transition-all duration-[240ms] hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
+                                            className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
                                         >
                                             <Link href={item.href}>
                                                 <item.icon aria-hidden="true" />

@@ -17,6 +17,10 @@ function getBreadcrumbLabel(pathname: string) {
         return "Competencias y valores"
     }
 
+    if (pathname === "/mi-perfil/credenciales-experiencias") {
+        return "Credenciales y experiencias"
+    }
+
     if (
         pathname === "/mi-perfil/mis-datos/preferencias-culturales" ||
         pathname === "/mi-perfil/preferencias-culturales"

@@ -24,6 +24,13 @@ type CandidateAttribute = {
   } | null
 }
 
+type CandidateExperience = {
+  position?: string | null
+  company_name?: string | null
+  start_date?: string | null
+  end_date?: string | null
+}
+
 type BackendCandidateRecord = {
   id?: number
   name?: string | null
@@ -40,13 +47,13 @@ type BackendCandidateRecord = {
   cv_file_url?: string | null
   behavioral_ans_1?: string | null
   behavioral_ans_2?: string | null
-  years_of_experience?: number | null
   dress_code?: string | null
   collaboration_style?: string | null
   work_pace?: string | null
   level_of_autonomy?: string | null
   dealing_with_management?: string | null
   level_of_monitoring?: string | null
+  candidate_experiences?: CandidateExperience[]
   user?: {
     email?: string | null
   } | null
@@ -74,9 +81,51 @@ function safeText(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function toDateOnlyString(value: Date | string | null | undefined) {
+  if (!value) {
+    return ""
+  }
+
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return ""
+    }
+
+    const year = value.getUTCFullYear()
+    const month = String(value.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(value.getUTCDate()).padStart(2, "0")
+
+    return `${year}-${month}-${day}`
+  }
+
+  const trimmed = value.trim()
+
+  if (!trimmed) {
+    return ""
+  }
+
+  const dateOnlyMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(trimmed)
+
+  if (dateOnlyMatch) {
+    return `${dateOnlyMatch[1]}-${dateOnlyMatch[2]}-${dateOnlyMatch[3]}`
+  }
+
+  const parsed = new Date(trimmed)
+
+  if (Number.isNaN(parsed.getTime())) {
+    return ""
+  }
+
+  const year = parsed.getUTCFullYear()
+  const month = String(parsed.getUTCMonth() + 1).padStart(2, "0")
+  const day = String(parsed.getUTCDate()).padStart(2, "0")
+
+  return `${year}-${month}-${day}`
+}
+
 function mapAttributeNames(
   attributes: CandidateAttribute[] | undefined,
-  expectedType: "hard_skill" | "soft_skill" | "value"
+  expectedType: "hard_skill" | "soft_skill" | "value" | "credential"
 ) {
   return (attributes ?? [])
     .map((item) => item.global_attributes)
@@ -84,6 +133,38 @@ function mapAttributeNames(
     .map((attribute) => safeText(attribute?.name))
     .filter((entry) => entry.length > 0)
     .sort((a, b) => a.localeCompare(b, "es"))
+}
+
+function sortExperiences(experiences: CandidateExperience[] | undefined) {
+  return (experiences ?? [])
+    .map((experience) => ({
+      position: safeText(experience.position),
+      company_name: safeText(experience.company_name),
+      start_date: toDateOnlyString(experience.start_date),
+      end_date: toDateOnlyString(experience.end_date) || null,
+    }))
+    .filter((experience) => experience.position && experience.company_name && experience.start_date)
+    .sort((left, right) => {
+      const leftEnd = left.end_date ? new Date(`${left.end_date}T00:00:00.000Z`).getTime() : null
+      const rightEnd = right.end_date ? new Date(`${right.end_date}T00:00:00.000Z`).getTime() : null
+
+      if (leftEnd === null && rightEnd !== null) {
+        return -1
+      }
+
+      if (leftEnd !== null && rightEnd === null) {
+        return 1
+      }
+
+      if (leftEnd !== rightEnd) {
+        return (rightEnd ?? 0) - (leftEnd ?? 0)
+      }
+
+      const leftStart = new Date(`${left.start_date}T00:00:00.000Z`).getTime()
+      const rightStart = new Date(`${right.start_date}T00:00:00.000Z`).getTime()
+
+      return rightStart - leftStart
+    })
 }
 
 function mapCandidate(record: BackendCandidateRecord): Candidate {
@@ -125,14 +206,11 @@ function mapCandidate(record: BackendCandidateRecord): Candidate {
     cv_url: safeText(record.cv_file_url) || undefined,
     behavioral_ans_1: safeText(record.behavioral_ans_1),
     behavioral_ans_2: safeText(record.behavioral_ans_2),
-    years_of_experience:
-      typeof record.years_of_experience === "number" && Number.isFinite(record.years_of_experience)
-        ? record.years_of_experience
-        : undefined,
     technical_skills: technicalSkills,
     soft_skills: softSkills,
     values,
     credentials,
+    experiences: sortExperiences(record.candidate_experiences),
     cultural_preferences: culturalPreferences,
   }
 }
