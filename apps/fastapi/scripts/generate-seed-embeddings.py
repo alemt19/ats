@@ -2,8 +2,8 @@
 generate-seed-embeddings.py
 
 Genera embeddings via Gemini API para:
-  1. global_attributes (hard_skill, soft_skill, value) que no tienen embedding
-  2. jobs que no tienen summary_embedding (texto compuesto de título + descripción + skills)
+    1. global_attributes (hard_skill, soft_skill, value, credential) que no tienen embedding
+    2. jobs que no tienen summary_embedding (texto compuesto de título + descripción + skills + credenciales)
 
 Debe ejecutarse DESPUÉS de prisma db seed y ANTES de trigger-evaluations.
 
@@ -188,7 +188,14 @@ def generate_attribute_embeddings() -> int:
 
 # ─── Paso 2: Embeddings de jobs (summary_embedding) ──────────────────────────
 
-def build_job_text(title: str, description: str, hard_skills: list[str], soft_skills: list[str], values: list[str]) -> str:
+def build_job_text(
+    title: str,
+    description: str,
+    hard_skills: list[str],
+    soft_skills: list[str],
+    values: list[str],
+    credentials: list[str],
+) -> str:
     """
     Construye texto compuesto para embedding de job.
     Replica la lógica del job_summary_worker.py.
@@ -203,6 +210,8 @@ def build_job_text(title: str, description: str, hard_skills: list[str], soft_sk
         parts.append(f"Habilidades blandas requeridas: {', '.join(soft_skills)}.")
     if values:
         parts.append(f"Valores de la empresa: {', '.join(values)}.")
+    if credentials:
+        parts.append(f"Credenciales requeridas: {', '.join(credentials)}.")
     return " ".join(parts)
 
 
@@ -247,7 +256,7 @@ def generate_job_embeddings() -> int:
 
     # Organizar atributos por job
     job_attrs: dict[int, dict[str, list[str]]] = {
-        job_id: {"hard_skill": [], "soft_skill": [], "value": []} for job_id in job_ids
+        job_id: {"hard_skill": [], "soft_skill": [], "value": [], "credential": []} for job_id in job_ids
     }
     for job_id, name, attr_type in attr_rows:
         if attr_type in job_attrs.get(job_id, {}):
@@ -269,6 +278,7 @@ def generate_job_embeddings() -> int:
                 hard_skills=attrs.get("hard_skill", []),
                 soft_skills=attrs.get("soft_skill", []),
                 values=attrs.get("value", []),
+                credentials=attrs.get("credential", []),
             )
             batch_ids.append(job_id)
             texts.append(text)

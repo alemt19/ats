@@ -11,7 +11,14 @@ import { Pool } from 'pg';
 import { createClient } from '@supabase/supabase-js';
 import { PrismaClient } from '../src/generated/prisma/client';
 
-type AttrType = 'hard_skill' | 'soft_skill' | 'value';
+type AttrType = 'hard_skill' | 'soft_skill' | 'value' | 'credential';
+
+type CandidateExperienceData = {
+	position: string;
+	company_name: string;
+	start_date: string;
+	end_date?: string | null;
+};
 
 type CompanyData = {
 	id: number;
@@ -73,6 +80,8 @@ type JobData = {
 	weight_culture?: number;
 	category_id?: number;
 	company_id?: number;
+	credentials?: string[];
+	min_years_required?: number | null;
 };
 
 type CandidateData = {
@@ -94,6 +103,8 @@ type CandidateData = {
 	hard_skills?: string[];
 	soft_skills?: string[];
 	values?: string[];
+	credentials?: string[];
+	experiences?: CandidateExperienceData[];
 	dress_code?: string;
 	collaboration_style?: string;
 	work_pace?: string;
@@ -183,6 +194,13 @@ function filePathFromProjectRoot(input?: string | null): string | null {
 }
 
 function parseBirthDate(value?: string): Date | undefined {
+	if (!value) return undefined;
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return undefined;
+	return date;
+}
+
+function parseDateOnly(value?: string | null): Date | undefined {
 	if (!value) return undefined;
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return undefined;
@@ -413,6 +431,7 @@ async function seedGlobalAttributes(
 	const hard = new Set<string>();
 	const soft = new Set<string>();
 	const values = new Set<string>();
+	const credentials = new Set<string>();
 
 	for (const job of jobs) {
 		for (const item of job.hard_skills ?? []) hard.add(item.trim());
@@ -423,6 +442,11 @@ async function seedGlobalAttributes(
 		for (const item of candidate.hard_skills ?? []) hard.add(item.trim());
 		for (const item of candidate.soft_skills ?? []) soft.add(item.trim());
 		for (const item of candidate.values ?? []) values.add(item.trim());
+		for (const item of candidate.credentials ?? []) credentials.add(item.trim());
+	}
+
+	for (const job of jobs) {
+		for (const item of job.credentials ?? []) credentials.add(item.trim());
 	}
 
 	for (const item of companyValues) values.add(item.trim());
@@ -431,6 +455,7 @@ async function seedGlobalAttributes(
 		...Array.from(hard).filter(Boolean).map((name) => ({ name, type: 'hard_skill' as const })),
 		...Array.from(soft).filter(Boolean).map((name) => ({ name, type: 'soft_skill' as const })),
 		...Array.from(values).filter(Boolean).map((name) => ({ name, type: 'value' as const })),
+		...Array.from(credentials).filter(Boolean).map((name) => ({ name, type: 'credential' as const })),
 	];
 
 	if (toCreate.length > 0) {
@@ -443,6 +468,7 @@ async function seedGlobalAttributes(
 				{ type: 'hard_skill', name: { in: Array.from(hard) } },
 				{ type: 'soft_skill', name: { in: Array.from(soft) } },
 				{ type: 'value', name: { in: Array.from(values) } },
+				{ type: 'credential', name: { in: Array.from(credentials) } },
 			],
 		},
 		select: { id: true, name: true, type: true },
@@ -454,7 +480,7 @@ async function seedGlobalAttributes(
 	}
 
 	console.log(
-		`  ✓ Atributos globales: ${toCreate.length} potenciales (${hard.size} hard, ${soft.size} soft, ${values.size} values)`,
+		`  ✓ Atributos globales: ${toCreate.length} potenciales (${hard.size} hard, ${soft.size} soft, ${values.size} values, ${credentials.size} credentials)`,
 	);
 
 	return map;
@@ -632,6 +658,7 @@ async function seedJobs(
 
 		const hardSkillIds = resolveAttrIds(attrMap, 'hard_skill', job.hard_skills ?? []);
 		const softSkillIds = resolveAttrIds(attrMap, 'soft_skill', job.soft_skills ?? []);
+		const credentialIds = resolveAttrIds(attrMap, 'credential', job.credentials ?? []);
 		const data = {
 			company_id: companyId,
 			category_id: categoryId,
@@ -648,6 +675,7 @@ async function seedJobs(
 			weight_technical: job.weight_technical ?? 0.4,
 			weight_soft: job.weight_soft ?? 0.3,
 			weight_culture: job.weight_culture ?? 0.3,
+			min_years_required: job.min_years_required ?? null,
 		};
 
 		const existing = await prisma.jobs.findFirst({
@@ -662,7 +690,16 @@ async function seedJobs(
 		const jobAttributeRows = [
 			...hardSkillIds.map((attribute_id) => ({ job_id: dbJob.id, attribute_id, is_mandatory: false })),
 			...softSkillIds.map((attribute_id) => ({ job_id: dbJob.id, attribute_id, is_mandatory: false })),
+			...credentialIds.map((attribute_id) => ({ job_id: dbJob.id, attribute_id, is_mandatory: false })),
 		];
+		await prisma.job_attributes.deleteMany({
+			where: {
+				job_id: dbJob.id,
+				global_attributes: {
+					type: 'credential',
+				},
+			},
+		});
 		if (jobAttributeRows.length > 0) {
 			await prisma.job_attributes.createMany({ data: jobAttributeRows, skipDuplicates: true });
 		}
@@ -734,8 +771,72 @@ async function seedCandidates(
 		const hardIds = resolveAttrIds(attrMap, 'hard_skill', candidate.hard_skills ?? []);
 		const softIds = resolveAttrIds(attrMap, 'soft_skill', candidate.soft_skills ?? []);
 		const valueIds = resolveAttrIds(attrMap, 'value', candidate.values ?? []);
+		const credentialIds = resolveAttrIds(attrMap, 'credential', candidate.credentials ?? []);
 		const allIds = Array.from(new Set([...hardIds, ...softIds, ...valueIds]));
+
+		await prisma.candidate_attributes.deleteMany({
+			where: {
+				candidate_id: dbCandidate.id,
+				global_attributes: {
+					type: 'credential',
+				},
+			},
+		});
+		if (credentialIds.length > 0) {
+			await prisma.candidate_attributes.createMany({
+				data: credentialIds.map((attribute_id) => ({ candidate_id: dbCandidate.id, attribute_id })),
+				skipDuplicates: true,
+			});
+		}
+
+		await prisma.candidate_experiences.deleteMany({ where: { candidate_id: dbCandidate.id } });
+		const experienceRows = (candidate.experiences ?? [])
+			.map((experience) => {
+				const position = experience.position.trim();
+				const companyName = experience.company_name.trim();
+				const startDate = parseDateOnly(experience.start_date);
+				const endDate = parseDateOnly(experience.end_date ?? null);
+
+				if (!position || !companyName || !startDate) {
+					console.warn(
+						`  ! Experiencia omitida para candidate=${candidate.id} por datos invalidos (${experience.position} | ${experience.company_name} | ${experience.start_date})`,
+					);
+					return null;
+				}
+
+				return {
+					candidate_id: dbCandidate.id,
+					position,
+					company_name: companyName,
+					start_date: startDate,
+					end_date: endDate ?? null,
+				};
+			})
+			.filter(Boolean);
+		if (experienceRows.length > 0) {
+			await prisma.candidate_experiences.createMany({
+				data: experienceRows as Array<{
+					candidate_id: number;
+					position: string;
+					company_name: string;
+					start_date: Date;
+					end_date: Date | null;
+				}>,
+				skipDuplicates: true,
+			});
+		}
+
 		if (allIds.length > 0) {
+			await prisma.candidate_attributes.deleteMany({
+				where: {
+					candidate_id: dbCandidate.id,
+					global_attributes: {
+						type: {
+							in: ['hard_skill', 'soft_skill', 'value'],
+						},
+					},
+				},
+			});
 			await prisma.candidate_attributes.createMany({
 				data: allIds.map((attribute_id) => ({ candidate_id: dbCandidate.id, attribute_id })),
 				skipDuplicates: true,
@@ -769,15 +870,47 @@ async function seedApplications(
 
 		const dbApplication = await prisma.applications.upsert({
 			where: { job_id_candidate_id: { job_id: jobId, candidate_id: candidateId } },
-			update: { status: 'applied', evaluation_status: 'pending' },
+			update: {
+				status: application.job_id === 2 && application.candidate_id === 7 ? 'hired' : 'applied',
+				evaluation_status: application.job_id === 2 && application.candidate_id === 7 ? 'completed' : 'pending',
+			},
 			create: {
 				job_id: jobId,
 				candidate_id: candidateId,
-				status: 'applied',
-				evaluation_status: 'pending',
+				status: application.job_id === 2 && application.candidate_id === 7 ? 'hired' : 'applied',
+				evaluation_status: application.job_id === 2 && application.candidate_id === 7 ? 'completed' : 'pending',
 			},
 			select: { id: true },
 		});
+
+		if (application.job_id === 2 && application.candidate_id === 7) {
+			await prisma.application_feedback.deleteMany({
+				where: {
+					application_id: dbApplication.id,
+					author_type: { in: ['employer', 'candidate'] },
+				},
+			});
+
+			await prisma.application_feedback.createMany({
+				data: [
+					{
+						application_id: dbApplication.id,
+						author_type: 'employer',
+						overall_rating: 4,
+						process_rating: 4,
+						match_accuracy_rating: 4,
+					},
+					{
+						application_id: dbApplication.id,
+						author_type: 'candidate',
+						overall_rating: 4,
+						process_rating: 4,
+						match_accuracy_rating: null,
+					},
+				],
+				skipDuplicates: true,
+			});
+		}
 
 		const existingRegister = await prisma.applications_registers.findFirst({
 			where: { application_id: dbApplication.id, status: 'applied' },

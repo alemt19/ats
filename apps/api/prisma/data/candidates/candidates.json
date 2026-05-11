@@ -80,7 +80,28 @@
         "work_pace": "accelerated",
         "level_of_autonomy": "indifferent",
         "dealing_with_management": "strictly_professional",
-        "level_of_monitoring": "frequent_monitoring"
+        "level_of_monitoring": "frequent_monitoring",
+        "experiences": [
+            {
+                "position": "Desarrollador Frontend",
+                "company_name": "Freelance",
+                "start_date": "2025-01-02",
+                "end_date": "2025-05-02"
+            },
+            {
+                "position": "Desarrollador Backend",
+                "company_name": "Freelance",
+                "start_date": "2024-06-02",
+                "end_date": "2025-07-02"
+            },
+            {
+                "position": "Desarrollador Frontend",
+                "company_name": "Freelance",
+                "start_date": "2024-10-02",
+                "end_date": "2024-12-02"
+            }
+        ],
+        "credentials": []
     },
     {
         "id": 2,
@@ -146,7 +167,16 @@
         "work_pace": "accelerated",
         "level_of_autonomy": "indifferent",
         "dealing_with_management": "strictly_professional",
-        "level_of_monitoring": "frequent_monitoring"
+        "level_of_monitoring": "frequent_monitoring",
+        "experiences": [
+            {
+                "position": "Instructor de Mecatrónica",
+                "company_name": "LIDA",
+                "start_date": "2026-01-02",
+                "end_date": "2026-04-02"
+            }
+        ],
+        "credentials": ["Diplomado en Electrónica y Automatización"]
     },
     {
         "id": 3,
@@ -215,7 +245,28 @@
         "work_pace": "indifferent",
         "level_of_autonomy": "high_control",
         "dealing_with_management": "friendly_and_approachable",
-        "level_of_monitoring": "weekly_goalssaul"
+        "level_of_monitoring": "weekly_goalssaul",
+        "experiences": [
+            {
+                "position": "Analista nivel 1 - NOC",
+                "company_name": "Fibex Telecom",
+                "start_date": "2026-01-02",
+                "end_date": "2026-04-02"
+            },
+            {
+                "position": "Auxiliar nivel 1 - NOC",
+                "company_name": "Fibex Telecom",
+                "start_date": "2025-10-02",
+                "end_date": "2026-01-02"
+            },
+            {
+                "position": "Auxiliar general",
+                "company_name": "Mini-Market Tribilin",
+                "start_date": "2024-01-02",
+                "end_date": "2025-10-02"
+            }
+        ],
+        "credentials": []
     },
     {
         "id": 4,
@@ -280,11 +331,14 @@
         "work_pace": "slow",
         "level_of_autonomy": "balanced",
         "dealing_with_management": "nearby",
-        "level_of_monitoring": "total_trust"
+        "level_of_monitoring": "total_trust",
+        "experiences": [],
+        "credentials": ["Power BI (Business Intelligence) Nivel intermedio"]
     },
     {
         "id": 5,
         "email": "gianella.alvarez@gmail.com",
+        "password": "Abrilcita123$",
         "name": "Gianella",
         "lastname": "Alvarez",
         "dni": "V30000004",
@@ -341,7 +395,22 @@
         "work_pace": "moderate",
         "level_of_autonomy": "total_freedom",
         "dealing_with_management": "indifferent",
-        "level_of_monitoring": "biweekly_goals"
+        "level_of_monitoring": "biweekly_goals",
+        "experiences": [
+            {
+                "position": "Analista de Tesorería",
+                "company_name": "Prisma Sistemas de Información, C.A.",
+                "start_date": "2025-06-02",
+                "end_date": null
+            },
+            {
+                "position": "Pasante en Control Bancario",
+                "company_name": "Prisma Sistemas de Información, C.A.",
+                "start_date": "2024-11-02",
+                "end_date": "2025-06-02"
+            }
+        ],
+        "credentials": ["Licenciatura en Contaduría Pública"]
     },
     {
         "id": 6,
@@ -406,7 +475,22 @@
         "work_pace": "accelerated",
         "level_of_autonomy": "indifferent",
         "dealing_with_management": "strictly_professional",
-        "level_of_monitoring": "frequent_monitoring"
+        "level_of_monitoring": "frequent_monitoring",
+        "experiences": [
+            {
+                "position": "Arquitecta",
+                "company_name": "Equifax",
+                "start_date": "2025-01-02",
+                "end_date": null
+            },
+            {
+                "position": "Arquitecta",
+                "company_name": "Planate Management Group",
+                "start_date": "2020-01-02",
+                "end_date": "2025-01-02"
+            }
+        ],
+        "credentials": ["Arquitecta"]
     },
     {
         "id": 7,
@@ -468,7 +552,22 @@
         "work_pace": "indifferent",
         "level_of_autonomy": "indifferent",
         "dealing_with_management": "indifferent",
-        "level_of_monitoring": "indifferent"
+        "level_of_monitoring": "indifferent",
+        "experiences": [
+            {
+                "position": "Ingeniero Civil",
+                "company_name": "Smithson Engineering",
+                "start_date": "2025-01-02",
+                "end_date": null
+            },
+            {
+                "position": "Ingeniero Civil",
+                "company_name": "Urban Solutions Ltd",
+                "start_date": "2023-01-02",
+                "end_date": "2025-01-02"
+            }
+        ],
+        "credentials": ["Ingeniero Civil"]
     },
     {
         "id": 8,
@@ -531,7 +630,22 @@
         "work_pace": "indifferent",
         "level_of_autonomy": "high_control",
         "dealing_with_management": "friendly_and_approachable",
-        "level_of_monitoring": "weekly_goals"
+        "level_of_monitoring": "weekly_goals",
+        "experiences": [
+            {
+                "position": "Gerente de Adquisición de Talento",
+                "company_name": "Zydus Wellness Ltd",
+                "start_date": "2025-01-02",
+                "end_date": null
+            },
+            {
+                "position": "Subgerente de Adquisición de Talento",
+                "company_name": "Zydus Wellness Ltd",
+                "start_date": "2023-01-02",
+                "end_date": "2025-01-02"
+            }
+        ],
+        "credentials": ["Licenciatura en relaciones industriales"]
     },
     {
         "id": 9,
@@ -597,7 +711,28 @@
         "work_pace": "slow",
         "level_of_autonomy": "balanced",
         "dealing_with_management": "nearby",
-        "level_of_monitoring": "biweekly_goals"
+        "level_of_monitoring": "biweekly_goals",
+        "experiences": [
+            {
+                "position": "Diseñadora",
+                "company_name": "VSA Partners",
+                "start_date": "2023-01-02",
+                "end_date": null
+            },
+            {
+                "position": "Gerente de Marketing",
+                "company_name": "Lend Lease Group",
+                "start_date": "2022-01-02",
+                "end_date": "2023-01-02"
+            },
+            {
+                "position": "Directora de Desarrollo",
+                "company_name": "Can Academies",
+                "start_date": "2021-01-02",
+                "end_date": "2022-01-02"
+            }
+        ],
+        "credentials": ["Licenciatura en administración de empresas"]
     },
     {
         "id": 10,
@@ -665,6 +800,27 @@
         "work_pace": "moderate",
         "level_of_autonomy": "total_freedom",
         "dealing_with_management": "indifferent",
-        "level_of_monitoring": "daily_monitoring"
+        "level_of_monitoring": "daily_monitoring",
+        "experiences": [
+            {
+                "position": "Desarrollador Full Stack",
+                "company_name": "Blink Smart Solutions",
+                "start_date": "2025-10-02",
+                "end_date": "2025-12-02"
+            },
+            {
+                "position": "Desarrollador de IA y Automatización",
+                "company_name": "LIDA",
+                "start_date": "2025-07-02",
+                "end_date": "2025-12-02"
+            },
+            {
+                "position": "Desarrollador Full Stack",
+                "company_name": "Orquesta Sinfónica de Carabobo",
+                "start_date": "2024-09-02",
+                "end_date": "2024-12-02"
+            }
+        ],
+        "credentials": []
     }
 ]

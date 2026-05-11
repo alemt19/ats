@@ -21,7 +21,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 1,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": [],
+        "min_years_required": null
     },
     {
         "id": 2,
@@ -45,7 +47,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 2,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": ["Ingeniería Civil"],
+        "min_years_required": 2
     },
     {
         "id": 3,
@@ -69,7 +73,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 3,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": [],
+        "min_years_required": null
     },
     {
         "id": 4,
@@ -93,7 +99,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 4,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": [],
+        "min_years_required": 1
     },
     {
         "id": 5,
@@ -126,7 +134,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 5,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": ["Arquitectura"],
+        "min_years_required": 3
     },
     {
         "id": 6,
@@ -150,7 +160,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 6,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": [],
+        "min_years_required": null
     },
     {
         "id": 7,
@@ -174,7 +186,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 7,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": [],
+        "min_years_required": null
     },
     {
         "id": 8,
@@ -216,7 +230,9 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 8,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": ["Licenciatura en recursos humanos"],
+        "min_years_required": 2
     },
     {
         "id": 9,
@@ -258,6 +274,8 @@
         "weight_soft": 0.30,
         "weight_culture": 0.30,
         "category_id": 9,
-        "company_id": 1
+        "company_id": 1,
+        "credentials": ["Contador Público"],
+        "min_years_required": 1
     }
 ]
