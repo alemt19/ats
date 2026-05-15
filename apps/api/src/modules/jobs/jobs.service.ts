@@ -1645,6 +1645,7 @@ export class JobsService {
       technical_score: toPercent(application.match_technical_score),
       soft_score: toPercent(application.match_soft_score),
       culture_score: toPercent(application.match_culture_score),
+      overall_score: toPercent(application.overall_score),
       credential_match_score: toPercent(application.credential_match_score),
       meets_min_years_required: application.meets_min_years_required ?? null,
       min_years_required: application.jobs?.min_years_required ?? null,

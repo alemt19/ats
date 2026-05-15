@@ -1002,7 +1002,7 @@ export default function CrearOfertaForm({
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right" className="max-w-xs text-sm">
-                    Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus habilidades técnicas. Los tres pesos deben sumar exactamente 100%. Le recomendamos que ajuste los pesos en 40% habilidades tecnicas, 30% habilidades blandas y 30% alineación cultural, para un analisis balanceado.
+                    Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus aspectos técnicos. Los tres pesos deben sumar exactamente 100%. Le recomendamos que ajuste los pesos en 40% técnico, 30% habilidades blandas y 30% alineación cultural, para un analisis balanceado.
                   </TooltipContent>
                 </Tooltip>
               </CardTitle>
@@ -1023,7 +1023,7 @@ export default function CrearOfertaForm({
                     <FormItem className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          <FormLabel>Habilidades técnicas</FormLabel>
+                          <FormLabel>Técnico</FormLabel>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso técnico">
@@ -1031,7 +1031,7 @@ export default function CrearOfertaForm({
                               </button>
                             </TooltipTrigger>
                             <TooltipContent side="top" className="max-w-xs text-sm">
-                              Evalúa cuánto domina el candidato las habilidades técnicas requeridas para el puesto.
+                              Evalúa cuánto domina el candidato los aspectos técnicos requeridos para el puesto.
                             </TooltipContent>
                           </Tooltip>
                         </div>
@@ -1259,7 +1259,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <MultiDatalistField
                         fieldName="credentials"
-                        label="Credenciales Profesionales"
+                        label="Credenciales Profesionales (Opcional)"
                         placeholder="AWS SAA, Scrum Master, PMP..."
                         options={catalogs.credentialOptions ?? []}
                         selectedValues={credentials}

@@ -216,7 +216,7 @@ function ScoreFilterPanel({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación de habilidades técnicas</Label>
+        <Label className="text-xs text-muted-foreground">Puntuación técnica</Label>
         <Slider
           min={0}
           max={100}

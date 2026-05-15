@@ -871,46 +871,17 @@ async function seedApplications(
 		const dbApplication = await prisma.applications.upsert({
 			where: { job_id_candidate_id: { job_id: jobId, candidate_id: candidateId } },
 			update: {
-				status: application.job_id === 2 && application.candidate_id === 7 ? 'hired' : 'applied',
-				evaluation_status: application.job_id === 2 && application.candidate_id === 7 ? 'completed' : 'pending',
+				status: 'applied',
+				evaluation_status: 'pending',
 			},
 			create: {
 				job_id: jobId,
 				candidate_id: candidateId,
-				status: application.job_id === 2 && application.candidate_id === 7 ? 'hired' : 'applied',
-				evaluation_status: application.job_id === 2 && application.candidate_id === 7 ? 'completed' : 'pending',
+				status: 'applied',
+				evaluation_status: 'pending',
 			},
 			select: { id: true },
 		});
-
-		if (application.job_id === 2 && application.candidate_id === 7) {
-			await prisma.application_feedback.deleteMany({
-				where: {
-					application_id: dbApplication.id,
-					author_type: { in: ['employer', 'candidate'] },
-				},
-			});
-
-			await prisma.application_feedback.createMany({
-				data: [
-					{
-						application_id: dbApplication.id,
-						author_type: 'employer',
-						overall_rating: 4,
-						process_rating: 4,
-						match_accuracy_rating: 4,
-					},
-					{
-						application_id: dbApplication.id,
-						author_type: 'candidate',
-						overall_rating: 4,
-						process_rating: 4,
-						match_accuracy_rating: null,
-					},
-				],
-				skipDuplicates: true,
-			});
-		}
 
 		const existingRegister = await prisma.applications_registers.findFirst({
 			where: { application_id: dbApplication.id, status: 'applied' },

@@ -82,6 +82,7 @@ export type CandidateApplicationDetail = {
   technical_score: number
   soft_score: number
   culture_score: number
+  overall_score?: number | null
   credential_match_score?: number | null
   meets_min_years_required?: boolean | null
   min_years_required?: number | null
@@ -352,6 +353,14 @@ export default function CandidateApplicationDetailClient({
     [applicationStatus, statusOptions]
   )
 
+  const overallCompatibilityScore = React.useMemo(() => {
+    if (typeof candidate.overall_score !== "number" || !Number.isFinite(candidate.overall_score)) {
+      return null
+    }
+
+    return candidate.overall_score
+  }, [candidate.overall_score])
+
   const aiFeedbackSections = React.useMemo(() => {
     const entries = Object.entries(candidate.ai_feedback ?? {}).filter(
       ([title, content]) => title.trim().length > 0 && content.trim().length > 0
@@ -610,7 +619,7 @@ export default function CandidateApplicationDetailClient({
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm font-medium">
-                      <span>Habilidades técnicas</span>
+                      <span>Puntuación técnica</span>
                       <span>{candidate.technical_score}%</span>
                     </div>
                     <Progress
@@ -628,7 +637,7 @@ export default function CandidateApplicationDetailClient({
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm font-medium">
-                      <span>Habilidades blandas</span>
+                      <span>Puntuación blanda</span>
                       <span>{candidate.soft_score}%</span>
                     </div>
                     <Progress value={candidate.soft_score} className={getProgressColorClass(candidate.soft_score)} />
@@ -683,6 +692,23 @@ export default function CandidateApplicationDetailClient({
                         </Tooltip>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-2 rounded-lg border border-border/70 bg-background/70 p-3">
+                    <div className="flex items-center justify-between gap-3 text-sm font-medium">
+                      <span>Puntaje de compatibilidad general</span>
+                      <span>
+                        {overallCompatibilityScore !== null ? `${overallCompatibilityScore.toFixed(1)}%` : "NA"}
+                      </span>
+                    </div>
+                    {overallCompatibilityScore !== null ? (
+                      <Progress
+                        value={overallCompatibilityScore}
+                        className={getProgressColorClass(overallCompatibilityScore)}
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No hay puntaje general disponible.</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
