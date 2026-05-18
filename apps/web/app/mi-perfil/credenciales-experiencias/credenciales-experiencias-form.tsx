@@ -114,7 +114,7 @@ export default function CredencialesExperienciasForm({
             <CardHeader className="space-y-1">
               <CardTitle>Credenciales profesionales</CardTitle>
               <CardDescription>
-                Añade certificaciones, credenciales o reconocimientos que quieras mostrar.
+                Añade certificaciones, credenciales o títulos que quieras mostrar.
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -933,9 +933,9 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 							<div className="space-y-4">
 								<div>
 									<h3 className="text-lg font-semibold">Lectura transparente del resultado</h3>
-									<p className="text-sm text-muted-foreground">
+									{/* <p className="text-sm text-muted-foreground">
 										Esta sección muestra solo datos devueltos por la evaluación backend, sin clasificación o interpretación adicional en frontend.
-									</p>
+									</p> */}
 								</div>
 
 								<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
