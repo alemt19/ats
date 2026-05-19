@@ -829,7 +829,7 @@ export default function CandidateApplicationDetailClient({
                       <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Empleador</p>
                       <StarRating value={feedback.employer.overall_rating} readonly label="Satisfacción general" size="sm" />
                       {feedback.employer.match_accuracy_rating !== null && (
-                        <StarRating value={feedback.employer.match_accuracy_rating} readonly label="Precisión del matching IA" size="sm" />
+                        <StarRating value={feedback.employer.match_accuracy_rating} readonly label="Precisión del emparejamiento de la IA" size="sm" />
                       )}
                       {feedback.employer.process_rating !== null && (
                         <StarRating value={feedback.employer.process_rating} readonly label="Proceso de selección" size="sm" />

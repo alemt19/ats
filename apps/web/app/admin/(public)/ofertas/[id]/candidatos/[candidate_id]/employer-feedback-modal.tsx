@@ -81,8 +81,7 @@ export function EmployerFeedbackModal({
         <DialogHeader>
           <DialogTitle>Calificar experiencia de contratación</DialogTitle>
           <DialogDescription>
-            Comparte tu experiencia al contratar a {candidateName}. Esto nos ayuda a mejorar el
-            sistema de matching.
+            Comparte tu experiencia al contratar a {candidateName}.
           </DialogDescription>
         </DialogHeader>
 
@@ -94,7 +93,7 @@ export function EmployerFeedbackModal({
           />
 
           <StarRating
-            label="Precisión del matching IA"
+            label="Precisión del emparejamiento de la IA"
             value={matchAccuracyRating}
             onChange={setMatchAccuracyRating}
           />

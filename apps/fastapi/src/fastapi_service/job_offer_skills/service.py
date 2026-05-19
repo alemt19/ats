@@ -86,12 +86,21 @@ class JobOfferSkillsSuggestionService:
             raise SuggestionGenerationError("No se pudieron generar sugerencias") from error
 
         parsed = getattr(response, "parsed", None)
-        if not isinstance(parsed, JobOfferSkillsSuggestionResponse):
+        if parsed is None:
             raise SuggestionGenerationError("La respuesta del LLM no tiene el formato esperado")
 
+        if isinstance(parsed, JobOfferSkillsSuggestionResponse):
+            parsed_response = parsed
+        else:
+            try:
+                parsed_response = JobOfferSkillsSuggestionResponse.model_validate(parsed)
+            except Exception as error:
+                raise SuggestionGenerationError("La respuesta del LLM no tiene el formato esperado") from error
+
         return JobOfferSkillsSuggestionResponse(
-            technical_skills=self._normalize_terms(parsed.technical_skills),
-            soft_skills=self._normalize_terms(parsed.soft_skills),
+            technical_skills=self._normalize_terms(parsed_response.technical_skills),
+            soft_skills=self._normalize_terms(parsed_response.soft_skills),
+            credentials=self._normalize_terms(parsed_response.credentials),
         )
 
 
