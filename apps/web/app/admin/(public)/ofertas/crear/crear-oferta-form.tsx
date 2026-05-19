@@ -980,7 +980,7 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Años de experiencia mínimos requeridos (opcional)</FormLabel>
                       <FormControl>
-                        <Input type="number" min={0} placeholder="Ej: 3" {...field} />
+                        <Input type="number" min={1} placeholder="Ej: 3" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -53,8 +53,8 @@ const informacionValoresSchema = z.object({
 	contact_email: z
 		.string()
 		.trim()
-		.min(1, "El email de contacto es obligatorio.")
-		.email("Ingresa un email de contacto válido."),
+		.min(1, "El correo de contacto es obligatorio.")
+		.email("Ingresa un correo de contacto válido."),
 	country: z.string().trim().min(1, "El país es obligatorio."),
 	state: z.string().trim().min(1, "El estado es obligatorio."),
 	city: z.string().trim().min(1, "Selecciona una ciudad."),
@@ -520,7 +520,7 @@ export default function InformacionValoresForm({
 								name="contact_email"
 								render={({ field }) => (
 									<FormItem>
-										<FormLabel>Email de contacto</FormLabel>
+										<FormLabel>Correo de contacto</FormLabel>
 										<FormControl>
 											<Input type="email" placeholder="contacto@empresa.com" {...field} disabled={isFormDisabled} />
 										</FormControl>

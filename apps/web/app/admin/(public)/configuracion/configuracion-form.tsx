@@ -480,7 +480,7 @@ export default function ConfiguracionForm({
                 name="contact_email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email de contacto</FormLabel>
+                    <FormLabel>Correo de contacto</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="contacto@empresa.com" {...field} />
                     </FormControl>
