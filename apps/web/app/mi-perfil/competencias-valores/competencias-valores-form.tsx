@@ -289,7 +289,7 @@ export default function CompetenciasValoresForm({
   behavioralQuestion1,
   behavioralQuestion2,
 }: CompetenciasValoresFormProps) {
-  const MAX_CV_FILE_SIZE_BYTES = 5 * 1024 * 1024
+  const MAX_CV_FILE_SIZE_BYTES = 10 * 1024 * 1024
   const MAX_CV_PAGES = 10
 
   const initialCvUrl = initialData.cv_url ?? ""
