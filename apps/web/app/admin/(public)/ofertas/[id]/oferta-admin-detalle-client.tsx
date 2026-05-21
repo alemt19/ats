@@ -543,16 +543,18 @@ export default function OfertaAdminDetalleClient({
 
   return (
     <section className="mx-auto w-full space-y-6">
-      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-card/95 via-card/90 to-muted/40 p-6 shadow-soft">
+      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-linear-to-br from-card/95 via-card/90 to-muted/40 p-6 shadow-soft">
         <div className="absolute -right-10 -top-10 hidden size-40 rounded-full bg-primary/10 blur-3xl md:block" />
-        <div className="relative space-y-3">
+        <div className="relative min-w-0 space-y-3">
           <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
             <Badge variant={offerStatusBadgeVariant(offer.status)}>{statusDisplayName}</Badge>
             <span>Creado {formatPublishedDate(offer.published_at)}</span>
             <span className="hidden h-1 w-1 rounded-full bg-muted-foreground/60 sm:inline-block" />
             <span>{offer.candidates_count} candidatos</span>
           </div>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{offer.title}</h1>
+          <h1 className="wrap-break-word text-3xl font-semibold leading-tight tracking-tight md:text-4xl">
+            {offer.title}
+          </h1>
           {metaChips.length ? (
             <div className="flex flex-wrap gap-2">
               {metaChips.map((chip) => (

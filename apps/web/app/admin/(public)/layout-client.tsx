@@ -286,7 +286,7 @@ function AdminLayoutContent({
 			</a>
 			<Sidebar collapsible="offcanvas" variant="inset" className="border-border/70 bg-sidebar/90">
 				<SidebarHeader className="px-2 pt-0 pb-2">
-					<div className="mt-[var(--space-content)] gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
+						<div className="mt-(--space-content) gradient-border flex items-center gap-3 rounded-xl px-3 py-2 shadow-soft">
 						{isSidebarIdentityLoading ? (
 							<div className="flex items-center gap-3">
 								<Skeleton className="h-8 w-8 rounded-md" />
@@ -322,7 +322,7 @@ function AdminLayoutContent({
 										<SidebarMenuButton
 											asChild
 											isActive={pathname.startsWith(item.href)}
-											className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
+											className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
 										>
 											<Link href={item.href}>
 												<item.icon aria-hidden="true" />
@@ -337,7 +337,7 @@ function AdminLayoutContent({
 										<CollapsibleTrigger asChild>
 											<SidebarMenuButton
 												isActive={isConfigurationSection}
-												className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
+												className="rounded-xl text-muted-foreground transition-all duration-240 hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-primary data-[active=true]:font-medium data-[active=true]:shadow-soft"
 											>
 												<Settings aria-hidden="true" />
 												<span>Configuración</span>
@@ -354,7 +354,7 @@ function AdminLayoutContent({
 													<SidebarMenuSubButton
 														asChild
 														isActive={pathname.startsWith("/admin/configuracion/informacion-valores")}
-														className="rounded-lg text-muted-foreground transition-all hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium"
+														className="rounded-lg text-muted-foreground transition-all hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-primary data-[active=true]:font-medium"
 													>
 														<Link href="/admin/configuracion/informacion-valores">
 															<span>Información y Valores</span>
@@ -366,7 +366,7 @@ function AdminLayoutContent({
 													<SidebarMenuSubButton
 														asChild
 														isActive={pathname.startsWith("/admin/configuracion/preferencias-culturales")}
-														className="rounded-lg text-muted-foreground transition-all hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/[.12] data-[active=true]:text-primary data-[active=true]:font-medium"
+														className="rounded-lg text-muted-foreground transition-all hover:bg-muted/90 hover:text-foreground data-[active=true]:bg-primary/12 data-[active=true]:text-primary data-[active=true]:font-medium"
 													>
 														<Link href="/admin/configuracion/preferencias-culturales">
 															<span>Preferencias Culturales</span>
@@ -430,10 +430,11 @@ function AdminLayoutContent({
 
 			<SidebarInset className="bg-background/85">
 				<div className="content-space flex min-h-dvh flex-col gap-3">
-					<header className="sticky top-[calc(0.5rem+var(--space-content))] z-30 flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft backdrop-blur-md">
-						<SidebarTrigger />
-						<Breadcrumb>
-							<BreadcrumbList>
+					<header className="sticky top-[calc(0.5rem+var(--space-content))] z-30 flex h-auto flex-col gap-2 rounded-2xl border border-border/70 bg-card/90 px-3.5 py-2 shadow-soft backdrop-blur-md sm:h-12 sm:flex-row sm:items-center sm:gap-3 sm:py-0">
+						<div className="flex min-w-0 items-center gap-3">
+							<SidebarTrigger className="shrink-0" />
+							<Breadcrumb className="min-w-0 overflow-hidden">
+								<BreadcrumbList className="min-w-0 gap-x-1.5 gap-y-1">
 								<BreadcrumbItem>
 									<BreadcrumbLink href={defaultAdminRoute}>Administración</BreadcrumbLink>
 								</BreadcrumbItem>
@@ -453,10 +454,11 @@ function AdminLayoutContent({
 										</div>
 									)
 								})}
-							</BreadcrumbList>
-						</Breadcrumb>
+									</BreadcrumbList>
+							</Breadcrumb>
+						</div>
 
-						<div className="ml-auto">
+						<div className="ml-auto self-end sm:self-auto">
 							<NotificationsPanel
 								notifications={notifications}
 								unreadCount={unreadCount}

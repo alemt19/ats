@@ -149,10 +149,10 @@ export default function AdminLoginClientPage() {
 	}
 
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-neutral-100 p-4 md:p-6">
-			<Card className="mx-auto w-full max-w-4xl overflow-hidden rounded-2xl border-0 bg-white p-0 shadow-2xl md:flex md:flex-row md:items-stretch gap-0">
+		<main className="flex min-h-screen items-center justify-center bg-background p-4 md:p-6">
+			<Card className="gradient-border mx-auto w-full max-w-4xl overflow-hidden rounded-3xl bg-card/95 p-0 shadow-elevated md:flex md:flex-row md:items-stretch gap-0">
 				<div
-					className="relative hidden overflow-hidden md:block md:h-full md:shrink-0 md:self-stretch"
+					className="relative hidden overflow-hidden bg-muted/20 md:block md:h-full md:shrink-0 md:self-stretch"
 					style={{ minWidth: "395px" }}
 				>
 					<div aria-hidden className="h-full" style={{ aspectRatio: "1000 / 1500" }} />
