@@ -638,7 +638,7 @@ export default function PostulacionesList({
                       {(similarJobsByApplicationId[application.id] ?? []).map((similarJob) => (
                         <div
                           key={similarJob.id}
-                          className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background/60 p-3 md:flex-row md:items-center md:justify-between"
+                          className="flex flex-col gap-2 rounded-xl border border-border/60 bg-background/60 p-3 overflow-auto"
                         >
                           <div className="space-y-1">
                             <p className="text-sm font-semibold text-foreground">
