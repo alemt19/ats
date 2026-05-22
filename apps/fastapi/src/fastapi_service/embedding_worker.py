@@ -216,6 +216,7 @@ class GeminiBatchWorker:
                 attribute_id = int(data.get("attributeId", 0))
 
                 if attribute_id in update_by_id and not item.future.done():
+                    # Marca la promesa del trabajo como resuelta, lo que permite que la función 'handler' continúe y el trabajo se marque como completado en BullMQ.
                     item.future.set_result(True)
             logger.info("Batch completed successfully")
         except Exception as error:
@@ -225,23 +226,42 @@ class GeminiBatchWorker:
                     item.future.set_exception(error)
 
     async def handler(self, job: Any, _job_token: str) -> bool:
+        # 1. Obtenemos el "bucle de eventos" actual de Python para poder manejar tareas asíncronas.
         loop = asyncio.get_running_loop()
+        
+        # 2. Creamos una "promesa" (Future). 
+        # Este objeto representa un resultado que aún no existe, pero que prometemos entregar después.
         job_finished_future: asyncio.Future[bool] = loop.create_future()
 
+        # 3. Usamos un candado (lock) para asegurarnos de que, si llegan varios trabajos a la vez,
+        # no modifiquen la lista (buffer) al mismo tiempo y causen errores.
         async with self.lock:
+            # 4. Metemos el trabajo en una lista de espera (buffer) junto con su "promesa".
+            # Envolvemos el trabajo en un "JobEnvelope" para saber qué promesa resolver después.
             self.queue_buffer.append(JobEnvelope(job=job, future=job_finished_future))
             logger.info("Job buffered | queue_size=%s", len(self.queue_buffer))
 
+            # 5. ESTRATEGIA DE DISPARO: ¿Cuándo procesamos la lista?
+            
+            # CASO A: Si la lista ya llegó al tamaño máximo (ej. 50 tareas), procesamos de inmediato.
             if len(self.queue_buffer) >= self.max_batch_size:
                 asyncio.create_task(self.process_batch())
+                
+            # CASO B: Si aún no se llena, ponemos un temporizador.
             else:
+                # Si ya había un temporizador contando, lo cancelamos para reiniciarlo (debounce).
                 if self.timer:
                     self.timer.cancel()
+                
+                # Programamos que, tras un breve tiempo (wait_time), se procese lo que haya en la lista.
+                # Esto evita que un trabajo se quede esperando para siempre si no llegan más.
                 self.timer = loop.call_later(
                     self.wait_time,
                     lambda: asyncio.create_task(self.process_batch()),
                 )
 
+        # 6. El punto más importante: Aquí el código "se queda pausado".
+        # No termina la función hasta que alguien, en otro lugar, marque 'job_finished_future' como listo.
         return await job_finished_future
 
 

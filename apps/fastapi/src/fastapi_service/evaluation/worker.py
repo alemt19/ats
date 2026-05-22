@@ -777,8 +777,18 @@ class EvaluationWorker:
                     0.0,
                 )
                 continue
+            
+            # 1. Obtenemos el valor máximo de la escala para este campo
+            max_val = max(scale.values())
 
-            score = abs(candidate_numeric - company_numeric) / company_numeric
+            # 2. Obtenemos el rango (distancia máxima posible)
+            max_distance = max_val - 1 
+
+            # 3. Calculamos la distancia real entre 0 y 1, es decir, de la distancia maxima que puede haber entre dos preferencias, se saca el porcentaje que representa la distancia real entre la preferencia del candidato y la empresa
+            distance = abs(candidate_numeric - company_numeric) / max_distance
+
+            # 4. El score es el inverso de la distancia (1 = match, 0 = opuestos), ya que si la distancia es 0 (mismo valor) el score debe ser 1, y si la distancia es máxima el score debe ser 0
+            score = 1.0 - distance
             scores.append(score)
             logger.info(
                 "Culture preference %s | candidate=%s company=%s score=%.3f",
@@ -1024,7 +1034,10 @@ class EvaluationWorker:
         )
 
         try:
+            # Verifica si todos los embeddings de la oferta de trabajo estan listos antes de continuar. Si no, lanza una excepción para reintentar más tarde.
             await asyncio.to_thread(self._assert_job_embeddings_ready, job_id)
+           
+           # 1. Marcar el estado de evaluación como "processing" para evitar que otros workers tomen esta tarea mientras se procesa.
             await asyncio.to_thread(
                 self._set_evaluation_status, application_id, "processing"
             )
