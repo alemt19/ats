@@ -20,6 +20,7 @@ import CrearOfertaForm, {
   type CrearOfertaCatalogs,
   type CrearOfertaFormValues,
 } from "../crear/crear-oferta-form"
+import { buildOfferCandidatesReportPdf } from "./offer-candidates-report"
 import { useSetBreadcrumbTitle } from "react/contexts/breadcrumb-title-context"
 import {
   type AdminOfferCandidatesQueryParams,
@@ -31,6 +32,14 @@ import {
 import { Badge } from "react/components/ui/badge"
 import { Button } from "react/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "react/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "react/components/ui/dialog"
 import { Input } from "react/components/ui/input"
 import { Label } from "react/components/ui/label"
 import {
@@ -68,6 +77,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "react/components/ui/tabs"
 import { cn } from "react/lib/utils"
 
+type CompanyConfigBranding = {
+  name: string
+  logo: string
+}
+
 type OfertaAdminDetalleClientProps = {
   offerId: number
   offer: AdminOfferDetail
@@ -76,6 +90,7 @@ type OfertaAdminDetalleClientProps = {
   candidateStatusOptions: CandidateStatusOption[]
   initialCandidatesQuery: AdminOfferCandidatesQueryParams
   initialCandidatesData: AdminOfferCandidatesResponse
+  companyConfig: CompanyConfigBranding
 }
 
 function offerStatusBadgeVariant(status: string): "outline" | "success" | "destructive" | "secondary" {
@@ -311,6 +326,7 @@ export default function OfertaAdminDetalleClient({
   candidateStatusOptions,
   initialCandidatesQuery,
   initialCandidatesData,
+  companyConfig,
 }: OfertaAdminDetalleClientProps) {
   useSetBreadcrumbTitle(`offer-${offerId}`, offer.title)
   const router = useRouter()
@@ -338,6 +354,11 @@ export default function OfertaAdminDetalleClient({
   )
 
   const [searchInput, setSearchInput] = React.useState(query.search)
+  const [reportDialogOpen, setReportDialogOpen] = React.useState(false)
+  const [reportMode, setReportMode] = React.useState<"preset" | "custom">("preset")
+  const [reportPresetCount, setReportPresetCount] = React.useState<10 | 15 | 20 | "all">(10)
+  const [customReportCount, setCustomReportCount] = React.useState("")
+  const [isGeneratingReport, setIsGeneratingReport] = React.useState(false)
 
   React.useEffect(() => {
     setSearchInput(query.search)
@@ -439,6 +460,62 @@ export default function OfertaAdminDetalleClient({
     initialData: initialCandidatesData,
     placeholderData: (previous) => previous,
   })
+
+  const reportTotalCandidates = offer.candidates_count
+  const presetReportCounts = [10, 15, 20] as const
+
+  const resolveReportCount = () => {
+    if (reportMode === "custom") {
+      const parsedCount = Number(customReportCount)
+      return Number.isFinite(parsedCount) ? parsedCount : NaN
+    }
+
+    if (reportPresetCount === "all") {
+      return reportTotalCandidates
+    }
+
+    return reportPresetCount
+  }
+
+  const openReportDialog = () => {
+    setReportMode("preset")
+    setReportPresetCount(10)
+    setCustomReportCount("")
+    setReportDialogOpen(true)
+  }
+
+  const handleGenerateReport = async () => {
+    const requestedCount = resolveReportCount()
+
+    if (!Number.isFinite(requestedCount) || requestedCount <= 0) {
+      toast.error("Selecciona una cantidad válida")
+      return
+    }
+
+    if (reportMode === "custom" && requestedCount > reportTotalCandidates) {
+      toast.error(`La cantidad máxima es ${reportTotalCandidates}`)
+      return
+    }
+
+    try {
+      setIsGeneratingReport(true)
+      await buildOfferCandidatesReportPdf({
+        offerId,
+        count: requestedCount,
+        company: companyConfig,
+        offer,
+        statusDisplayName,
+        candidateStatusOptions,
+      })
+      toast.success("Reporte PDF generado")
+      setReportDialogOpen(false)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "No se pudo generar el reporte"
+      toast.error(message)
+    } finally {
+      setIsGeneratingReport(false)
+    }
+  }
 
   const refreshMutation = useMutation({
     mutationFn: async () => {
@@ -719,6 +796,16 @@ export default function OfertaAdminDetalleClient({
                   </div>
 
                   <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full border-border/70 bg-background/70"
+                      onClick={openReportDialog}
+                      disabled={reportTotalCandidates === 0}
+                    >
+                      Generar reporte PDF
+                    </Button>
+
                     <Sheet>
                       <SheetTrigger asChild>
                         <Button variant="outline" className="rounded-full border-border/70 bg-background/70 lg:hidden">
@@ -943,6 +1030,88 @@ export default function OfertaAdminDetalleClient({
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Generar reporte PDF</DialogTitle>
+            <DialogDescription>
+              El reporte se generará con las postulaciones mejor puntuadas de la oferta.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Selecciona una cantidad</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {presetReportCounts.map((preset) => (
+                  <Button
+                    key={preset}
+                    type="button"
+                    variant={reportMode === "preset" && reportPresetCount === preset ? "default" : "outline"}
+                    className="rounded-full"
+                    onClick={() => {
+                      setReportMode("preset")
+                      setReportPresetCount(preset)
+                    }}
+                  >
+                    Top {preset}
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  variant={reportMode === "preset" && reportPresetCount === "all" ? "default" : "outline"}
+                  className="rounded-full"
+                  onClick={() => {
+                    setReportMode("preset")
+                    setReportPresetCount("all")
+                  }}
+                >
+                  Todos
+                </Button>
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant={reportMode === "custom" ? "default" : "outline"}
+                  className="rounded-full"
+                  onClick={() => setReportMode("custom")}
+                >
+                  Personalizado
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="custom-report-count">Cantidad personalizada</Label>
+              <Input
+                id="custom-report-count"
+                type="number"
+                min={1}
+                max={reportTotalCandidates}
+                value={customReportCount}
+                onChange={(event) => {
+                  setReportMode("custom")
+                  setCustomReportCount(event.target.value)
+                }}
+                placeholder={`Máximo ${reportTotalCandidates}`}
+              />
+              <p className="text-xs text-muted-foreground">
+                Puedes elegir hasta {reportTotalCandidates} postulaciones.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReportDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button type="button" onClick={handleGenerateReport} disabled={isGeneratingReport}>
+              {isGeneratingReport ? "Generando..." : "Generar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   )
 }

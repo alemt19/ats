@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import OfertaAdminDetalleClient from "./oferta-admin-detalle-client"
 import { getAdminCategoriesServer } from "../../categorias/categories-admin-service"
 import { getCompanyConfigServer } from "../../configuracion/company-config-service"
+import type { AdminCompanyConfigInitialData } from "../../configuracion/company-config-bootstrap"
 import { getAdminOffersCatalogsServer } from "../offers-admin-service"
 import {
   getAdminOfferCandidatesServer,
@@ -204,12 +205,13 @@ export default async function AdminOfertaDetallePage({
       : resolvedSearchParams?.pageSize,
   })
 
-  const [detailResult, formCatalogs, candidateStatusOptions, initialCandidatesData] =
+  const [detailResult, formCatalogs, candidateStatusOptions, initialCandidatesData, companyConfig] =
     await Promise.all([
       getAdminOfferDetailServer(offerId, cookie),
       getOfferFormCatalogsServer(),
       getApplicationStatusOptionsServer(),
       getAdminOfferCandidatesServer(offerId, initialCandidatesQuery, cookie),
+      getCompanyConfigServer(cookie),
     ])
 
   if (!detailResult) {
@@ -225,6 +227,7 @@ export default async function AdminOfertaDetallePage({
       candidateStatusOptions={candidateStatusOptions}
       initialCandidatesQuery={initialCandidatesQuery}
       initialCandidatesData={initialCandidatesData}
+      companyConfig={companyConfig.initialData as Pick<AdminCompanyConfigInitialData, "name" | "logo">}
     />
   )
 }
