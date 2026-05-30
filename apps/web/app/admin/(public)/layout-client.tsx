@@ -9,6 +9,7 @@ import {
 	Users,
 	UserSearch,
 	Tags,
+	FileText,
 	Settings,
 	UserRound,
 	LogOut,
@@ -84,6 +85,11 @@ const adminLinks = [
 		icon: Tags,
 	},
 	{
+		label: "Puestos predefinidos",
+		href: "/admin/descripciones-ofertas",
+		icon: FileText,
+	},
+	{
 		label: "Mi perfil",
 		href: "/admin/mi-perfil",
 		icon: UserRound,
@@ -109,6 +115,10 @@ function getAdminBreadcrumbLabel(pathname: string) {
 
 	if (pathname.startsWith("/admin/categorias")) {
 		return "Categorías"
+	}
+
+	if (pathname.startsWith("/admin/descripciones-ofertas")) {
+		return "Puestos predefinidos"
 	}
 
 	if (pathname.startsWith("/admin/configuracion")) {
@@ -180,6 +190,13 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 		]
 	}
 
+	if (pathname.startsWith("/admin/descripciones-ofertas/crear")) {
+		return [
+			{ label: "Puestos predefinidos", href: "/admin/descripciones-ofertas" },
+			{ label: "Crear" },
+		]
+	}
+
 	const recruiterDetailMatch = pathname.match(/^\/admin\/reclutadores\/([^/]+)/)
 
 	if (recruiterDetailMatch && recruiterDetailMatch[1]) {
@@ -204,6 +221,15 @@ function getAdminBreadcrumbItems(pathname: string, dynamicLabels: Map<string, st
 		return [
 			{ label: "Categorías", href: "/admin/categorias" },
 			{ label: resolve(`category-${categoryDetailMatch[1]}`) },
+		]
+	}
+
+	const genericDescriptionDetailMatch = pathname.match(/^\/admin\/descripciones-ofertas\/([^/]+)/)
+
+	if (genericDescriptionDetailMatch && genericDescriptionDetailMatch[1]) {
+		return [
+			{ label: "Puestos predefinidos", href: "/admin/descripciones-ofertas" },
+			{ label: resolve(`generic-job-description-${genericDescriptionDetailMatch[1]}`) },
 		]
 	}
 

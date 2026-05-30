@@ -29,14 +29,15 @@ type JobParameterOption = {
   display_name: string
 }
 
-type SkillItem = {
-  name: string
-  is_mandatory: boolean
-}
-
 type CategoryOption = {
   id: number
   name: string
+}
+
+type GenericJobDescriptionOption = {
+  id: number
+  position: string
+  description: string
 }
 
 export type CrearOfertaCatalogs = {
@@ -160,6 +161,31 @@ function getStatusBadgeVariant(status: string): "outline" | "success" | "destruc
     default:
       return "outline"
   }
+}
+
+function getGenericDescriptionLabel(option: GenericJobDescriptionOption) {
+  const preview = option.description.trim().replace(/\s+/g, " ").slice(0, 90)
+  return `${option.position} — ${preview}${option.description.trim().length > 90 ? "..." : ""}`
+}
+
+function findGenericDescriptionByPosition(
+  position: string,
+  options: GenericJobDescriptionOption[]
+) {
+  const normalizedPosition = normalizeValue(position)
+  return options.find((option) => normalizeValue(option.position) === normalizedPosition) ?? null
+}
+
+function findGenericDescriptionByDescription(
+  description: string,
+  options: GenericJobDescriptionOption[]
+) {
+  const normalizedDescription = normalizeValue(description)
+  return options.find((option) => normalizeValue(option.description) === normalizedDescription) ?? null
+}
+
+function getGenericDescriptionStateLabel(isGeneric: boolean) {
+  return isGeneric ? "Descripción predefinida" : "Descripción personalizada"
 }
 
 function MultiDatalistField({
@@ -349,13 +375,62 @@ function MultiDatalistField({
   )
 }
 
+function GenericDescriptionPicker({
+  value,
+  options,
+  onChangeValue,
+}: {
+  value: string
+  options: GenericJobDescriptionOption[]
+  onChangeValue: (value: string) => void
+}) {
+  const datalistId = "generic-job-description-options"
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-1.5">
+        <FormLabel>Utilizar Descripción predefinida (opcional)</FormLabel>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Información sobre descripción predefinida"
+              >
+                <Info className="size-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top">
+              Al seleccionar un puesto genérico, se cargará automáticamente su descripción.
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+
+      <Input
+        value={value}
+        list={datalistId}
+        placeholder="Busca o selecciona una plantilla"
+        onChange={(event) => onChangeValue(event.target.value)}
+      />
+
+      <datalist id={datalistId}>
+        {options.map((option) => (
+          <option key={option.id} value={option.position} label={getGenericDescriptionLabel(option)} />
+        ))}
+      </datalist>
+    </div>
+  )
+}
+
 export default function CrearOfertaForm({
   catalogs,
   initialValues,
   mode = "create",
   pageTitle = "Crear oferta de trabajo",
   pageDescription =
-    "Completa los datos principales de la vacante y luego agrega habilidades blandas y técnicas.",
+  "Completa los datos principales de la vacante y luego agrega habilidades blandas y técnicas.",
   showPageHeader = true,
   offerCardTitle = "Datos de la oferta",
   submitLabel = "Crear oferta",
@@ -364,6 +439,7 @@ export default function CrearOfertaForm({
 }: CrearOfertaFormProps) {
   const router = useRouter()
   const { statuses, workplaceTypes, employmentTypes, categories, fixedLocation, cityOptions } = catalogs
+  const [genericJobDescriptions, setGenericJobDescriptions] = React.useState<GenericJobDescriptionOption[]>([])
   const draftStatus = React.useMemo(
     () => statuses.find((option) => option.technical_name === "draft"),
     [statuses]
@@ -425,6 +501,110 @@ export default function CrearOfertaForm({
   const mandatorySoftSkills = form.watch("mandatory_soft_skills")
   const mandatoryTechnicalSkills = form.watch("mandatory_technical_skills")
   const credentials = form.watch("credentials")
+  const isPositionDirty = Boolean(form.formState.dirtyFields.position)
+  const selectedGenericDescription = React.useMemo(
+    () => findGenericDescriptionByPosition(position, genericJobDescriptions),
+    [genericJobDescriptions, position]
+  )
+  const matchingGenericDescription = React.useMemo(
+    () => findGenericDescriptionByDescription(description, genericJobDescriptions),
+    [description, genericJobDescriptions]
+  )
+  const [genericDescriptionDraft, setGenericDescriptionDraft] = React.useState("")
+
+  React.useEffect(() => {
+    const controller = new AbortController()
+
+    const loadGenericDescriptions = async () => {
+      try {
+        const response = await fetch("/api/admin/descripciones-ofertas?page=1&pageSize=100", {
+          signal: controller.signal,
+        })
+
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json().catch(() => null)) as
+          | { items?: Array<GenericJobDescriptionOption> }
+          | null
+
+        setGenericJobDescriptions(Array.isArray(payload?.items) ? payload.items : [])
+      } catch {
+        if (!controller.signal.aborted) {
+          setGenericJobDescriptions([])
+        }
+      }
+    }
+
+    void loadGenericDescriptions()
+
+    return () => controller.abort()
+  }, [])
+
+  React.useEffect(() => {
+    if (selectedGenericDescription) {
+      setGenericDescriptionDraft(selectedGenericDescription.position)
+
+      if (
+        normalizeValue(form.getValues("description")) !==
+        normalizeValue(selectedGenericDescription.description)
+      ) {
+        form.setValue("description", selectedGenericDescription.description, {
+          shouldDirty: true,
+          shouldValidate: true,
+        })
+      }
+
+      return
+    }
+
+    setGenericDescriptionDraft("")
+
+    if (isPositionDirty && normalizeValue(form.getValues("description")) !== "") {
+      form.setValue("description", "", {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    }
+  }, [form, isPositionDirty, selectedGenericDescription])
+
+  React.useEffect(() => {
+    if (matchingGenericDescription) {
+      if (genericDescriptionDraft !== matchingGenericDescription.position) {
+        setGenericDescriptionDraft(matchingGenericDescription.position)
+      }
+
+      return
+    }
+
+    if (genericDescriptionDraft !== "") {
+      setGenericDescriptionDraft("")
+    }
+  }, [genericDescriptionDraft, matchingGenericDescription])
+
+  const handleGenericDescriptionChange = React.useCallback(
+    (nextValue: string) => {
+      setGenericDescriptionDraft(nextValue)
+
+      if (!nextValue.trim()) {
+        form.setValue("description", "", { shouldDirty: true, shouldValidate: true })
+        return
+      }
+
+      const matchedOption = findGenericDescriptionByPosition(nextValue, genericJobDescriptions)
+
+      if (!matchedOption) {
+        return
+      }
+
+      form.setValue("description", matchedOption.description, {
+        shouldDirty: true,
+        shouldValidate: true,
+      })
+    },
+    [form, genericJobDescriptions]
+  )
 
   const technicalWeightValue = parseFloatOrNull(weightTechnical)
   const softWeightValue = parseFloatOrNull(weightSoft)
@@ -497,8 +677,8 @@ export default function CrearOfertaForm({
         mandatoryFieldName,
         exists
           ? currentMandatoryValues.filter(
-              (currentValue) => normalizeValue(currentValue) !== normalizeValue(value)
-            )
+            (currentValue) => normalizeValue(currentValue) !== normalizeValue(value)
+          )
           : [...currentMandatoryValues, value],
         { shouldDirty: true, shouldValidate: true }
       )
@@ -650,10 +830,10 @@ export default function CrearOfertaForm({
 
       const createdOffer =
         responsePayload &&
-        typeof responsePayload === "object" &&
-        "data" in responsePayload &&
-        responsePayload.data &&
-        typeof responsePayload.data === "object"
+          typeof responsePayload === "object" &&
+          "data" in responsePayload &&
+          responsePayload.data &&
+          typeof responsePayload.data === "object"
           ? (responsePayload.data as { id?: number })
           : (responsePayload as { id?: number })
 
@@ -721,8 +901,21 @@ export default function CrearOfertaForm({
                     <FormItem>
                       <FormLabel>Puesto</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ej. Nivel avanzado" {...field} />
+                        <Input
+                          placeholder="Ej. Ingeniero de Computación"
+                          list="generic-job-position-options"
+                          {...field}
+                        />
                       </FormControl>
+                      <datalist id="generic-job-position-options">
+                        {genericJobDescriptions.map((option) => (
+                          <option
+                            key={option.id}
+                            value={option.position}
+                            label={getGenericDescriptionLabel(option)}
+                          />
+                        ))}
+                      </datalist>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -734,14 +927,42 @@ export default function CrearOfertaForm({
                   rules={{ required: "La descripción es obligatoria." }}
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
-                      <FormLabel>Descripción</FormLabel>
+                      <div className="space-y-2">
+                        <div className="flex">
+                          <FormLabel className="flex-7">Descripción</FormLabel>
+                          {genericJobDescriptions.length > 0 ? (
+                            <GenericDescriptionPicker
+                              value={genericDescriptionDraft}
+                              options={genericJobDescriptions}
+                              onChangeValue={handleGenericDescriptionChange}
+                            />
+                          ) : null}
+                        </div>
+                      </div>
                       <FormControl>
                         <Textarea
                           placeholder="Describe brevemente la oferta"
                           className="min-h-28"
                           {...field}
+                          onChange={(event) => {
+                            field.onChange(event)
+
+                            if (!findGenericDescriptionByDescription(event.target.value, genericJobDescriptions)) {
+                              setGenericDescriptionDraft("")
+                            }
+                          }}
                         />
                       </FormControl>
+                      <div className="flex items-center gap-2">
+                        <Badge variant={matchingGenericDescription ? "success" : "outline"}>
+                          {getGenericDescriptionStateLabel(Boolean(matchingGenericDescription))}
+                        </Badge>
+                        <p className="text-xs text-muted-foreground">
+                          {matchingGenericDescription
+                            ? `Coincide con ${matchingGenericDescription.position}`
+                            : "La descripción no está usando una plantilla guardada."}
+                        </p>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -991,174 +1212,174 @@ export default function CrearOfertaForm({
           </Card>
 
           <TooltipProvider>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-1.5">
-                Pesos de evaluación
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="¿Qué son los pesos de evaluación?">
-                      <Info className="size-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="max-w-xs text-sm">
-                    Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus aspectos técnicos. Los tres pesos deben sumar exactamente 100%. Le recomendamos que ajuste los pesos en 40% técnico, 30% habilidades blandas y 30% alineación cultural, para un analisis balanceado.
-                  </TooltipContent>
-                </Tooltip>
-              </CardTitle>
-              <CardDescription>
-                Arrastra cada control para definir la importancia de cada criterio. Deben sumar exactamente 100%.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="weight_technical"
-                  rules={{
-                    required: "El peso técnico es obligatorio.",
-                    validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
-                  }}
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <FormLabel>Técnico</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso técnico">
-                                <Info className="size-3.5" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs text-sm">
-                              Evalúa cuánto domina el candidato los aspectos técnicos requeridos para el puesto.
-                            </TooltipContent>
-                          </Tooltip>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-1.5">
+                  Pesos de evaluación
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="¿Qué son los pesos de evaluación?">
+                        <Info className="size-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="max-w-xs text-sm">
+                      Cada peso define cuánto aporta ese criterio al puntaje final de un candidato. Un candidato con un peso técnico de 50% obtiene la mitad de su puntaje de sus aspectos técnicos. Los tres pesos deben sumar exactamente 100%. Le recomendamos que ajuste los pesos en 40% técnico, 30% habilidades blandas y 30% alineación cultural, para un analisis balanceado.
+                    </TooltipContent>
+                  </Tooltip>
+                </CardTitle>
+                <CardDescription>
+                  Arrastra cada control para definir la importancia de cada criterio. Deben sumar exactamente 100%.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+                  <FormField
+                    control={form.control}
+                    name="weight_technical"
+                    rules={{
+                      required: "El peso técnico es obligatorio.",
+                      validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
+                    }}
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <FormLabel>Técnico</FormLabel>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso técnico">
+                                  <Info className="size-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs text-sm">
+                                Evalúa cuánto domina el candidato los aspectos técnicos requeridos para el puesto.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <span className="text-xl font-semibold tabular-nums">
+                            {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
+                          </span>
                         </div>
-                        <span className="text-xl font-semibold tabular-nums">
-                          {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
-                        </span>
-                      </div>
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
-                          onValueChange={([val = 0]) => field.onChange(String(val / 100))}
-                          className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:border-blue-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormControl>
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
+                            onValueChange={([val = 0]) => field.onChange(String(val / 100))}
+                            className="[&_[data-slot=slider-range]]:bg-blue-500 [&_[data-slot=slider-thumb]]:border-blue-500"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="weight_soft"
-                  rules={{
-                    required: "El peso de habilidades blandas es obligatorio.",
-                    validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
-                  }}
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <FormLabel>Habilidades blandas</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso de habilidades blandas">
-                                <Info className="size-3.5" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs text-sm">
-                              Evalúa cuánto coinciden las habilidades interpersonales del candidato con las requeridas.
-                            </TooltipContent>
-                          </Tooltip>
+                  <FormField
+                    control={form.control}
+                    name="weight_soft"
+                    rules={{
+                      required: "El peso de habilidades blandas es obligatorio.",
+                      validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
+                    }}
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <FormLabel>Habilidades blandas</FormLabel>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso de habilidades blandas">
+                                  <Info className="size-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs text-sm">
+                                Evalúa cuánto coinciden las habilidades interpersonales del candidato con las requeridas.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <span className="text-xl font-semibold tabular-nums">
+                            {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
+                          </span>
                         </div>
-                        <span className="text-xl font-semibold tabular-nums">
-                          {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
-                        </span>
-                      </div>
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
-                          onValueChange={([val = 0]) => field.onChange(String(val / 100))}
-                          className="[&_[data-slot=slider-range]]:bg-amber-500 [&_[data-slot=slider-thumb]]:border-amber-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                        <FormControl>
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
+                            onValueChange={([val = 0]) => field.onChange(String(val / 100))}
+                            className="[&_[data-slot=slider-range]]:bg-amber-500 [&_[data-slot=slider-thumb]]:border-amber-500"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="weight_culture"
-                  rules={{
-                    required: "El peso cultural es obligatorio.",
-                    validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
-                  }}
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <FormLabel>Alineación cultural</FormLabel>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso cultural">
-                                <Info className="size-3.5" />
-                              </button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top" className="max-w-xs text-sm">
-                              Evalúa qué tan alineado está el candidato con la cultura organizacional de la empresa.
-                            </TooltipContent>
-                          </Tooltip>
+                  <FormField
+                    control={form.control}
+                    name="weight_culture"
+                    rules={{
+                      required: "El peso cultural es obligatorio.",
+                      validate: (value) => parseFloatOrNull(value) !== null || "Debe ser un número válido.",
+                    }}
+                    render={({ field }) => (
+                      <FormItem className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <FormLabel>Alineación cultural</FormLabel>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button type="button" className="text-muted-foreground transition-colors hover:text-foreground" aria-label="Qué es el peso cultural">
+                                  <Info className="size-3.5" />
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-xs text-sm">
+                                Evalúa qué tan alineado está el candidato con la cultura organizacional de la empresa.
+                              </TooltipContent>
+                            </Tooltip>
+                          </div>
+                          <span className="text-xl font-semibold tabular-nums">
+                            {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
+                          </span>
                         </div>
-                        <span className="text-xl font-semibold tabular-nums">
-                          {Math.round((parseFloatOrNull(field.value) ?? 0) * 100)}%
-                        </span>
-                      </div>
-                      <FormControl>
-                        <Slider
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
-                          onValueChange={([val = 0]) => field.onChange(String(val / 100))}
-                          className="[&_[data-slot=slider-range]]:bg-emerald-500 [&_[data-slot=slider-thumb]]:border-emerald-500"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">Total</span>
-                  <span className={cn(
-                    "text-sm font-semibold tabular-nums",
-                    isWeightSumValid ? "text-emerald-600" : "text-destructive"
-                  )}>
-                    {Math.round(((technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0)) * 100)}%
-                  </span>
-                  {isWeightSumValid ? <span className="text-xs text-emerald-600">✓</span> : null}
+                        <FormControl>
+                          <Slider
+                            min={0}
+                            max={100}
+                            step={1}
+                            value={[Math.round((parseFloatOrNull(field.value) ?? 0) * 100)]}
+                            onValueChange={([val = 0]) => field.onChange(String(val / 100))}
+                            className="[&_[data-slot=slider-range]]:bg-emerald-500 [&_[data-slot=slider-thumb]]:border-emerald-500"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-                {!isWeightSumValid && (technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0) > 0 ? (
-                  <Button type="button" size="sm" variant="outline" onClick={handleNormalize}
-                    className="h-7 rounded-full px-3 text-xs">
-                    Normalizar a 100%
-                  </Button>
-                ) : null}
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className={cn(
+                      "text-sm font-semibold tabular-nums",
+                      isWeightSumValid ? "text-emerald-600" : "text-destructive"
+                    )}>
+                      {Math.round(((technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0)) * 100)}%
+                    </span>
+                    {isWeightSumValid ? <span className="text-xs text-emerald-600">✓</span> : null}
+                  </div>
+                  {!isWeightSumValid && (technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0) > 0 ? (
+                    <Button type="button" size="sm" variant="outline" onClick={handleNormalize}
+                      className="h-7 rounded-full px-3 text-xs">
+                      Normalizar a 100%
+                    </Button>
+                  ) : null}
+                </div>
+              </CardContent>
+            </Card>
           </TooltipProvider>
 
           <Card>
@@ -1265,7 +1486,7 @@ export default function CrearOfertaForm({
                         selectedValues={credentials}
                         mandatoryValues={[]}
                         onChangeValues={(values) => setMultiFieldValue("credentials", values)}
-                        onToggleMandatory={() => {}}
+                        onToggleMandatory={() => { }}
                         disabled={!isSkillsSectionUnlocked}
                       />
                       <FormMessage />

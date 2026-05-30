@@ -1,0 +1,42 @@
+[
+    {
+        "position": "Ingeniero de Computación",
+        "description": "Cargo técnico especializado en el diseño, desarrollo, pruebas e implementación de sistemas de software complejos y arquitecturas de hardware.\n\nSus funciones principales incluyen la optimización del rendimiento de sistemas operativos, el diseño y gestión de bases de datos relacionales y no relacionales, el aseguramiento de la ciberseguridad y la creación de soluciones tecnológicas escalables que automaticen procesos organizacionales.\n\nAsimismo, es responsable de liderar la integración de APIs, supervisar metodologías de desarrollo ágil y evaluar nuevas tecnologías para mantener la infraestructura digital de la empresa actualizada y eficiente."
+    },
+    {
+        "position": "Ingeniero Industrial",
+        "description": "Puesto enfocado en el análisis, diseño, instalación y optimización de sistemas integrados de personas, materiales, equipos y energía en entornos productivos o de servicios.\n\nEste cargo se encarga de la gestión de la cadena de suministro, el diseño de layouts de planta, el control estadístico de la calidad, la reducción de costos operativos y la implementación de metodologías de mejora continua (como Lean Manufacturing o Six Sigma) para maximizar la productividad.\n\nAdicionalmente, se ocupa de la planificación de la producción, la gestión de inventarios y el diseño de programas de seguridad y salud ocupacional para garantizar operaciones seguras y eficientes."
+    },
+    {
+        "position": "Ingeniero de Telecomunicaciones",
+        "description": "Cargo responsable de la planificación, configuración, mantenimiento, seguridad y supervisión de redes de datos, sistemas de comunicación y conectividad global.\n\nSus funciones abarcan asegurar la alta disponibilidad de la infraestructura de red (LAN/WAN), la gestión de servidores de comunicación, el soporte de segundo y tercer nivel ante incidencias críticas de conectividad, y la integración de tecnologías inalámbricas y de fibra óptica.\n\nTambién se encarga de negociar con proveedores de servicios de telecomunicaciones, gestionar el ancho de banda y diseñar planes de contingencia para garantizar la continuidad del negocio y la interconexión segura de todas las sedes."
+    },
+    {
+        "position": "Ingeniero de Electrónica",
+        "description": "Puesto técnico dedicado a la investigación, diseño, desarrollo, ensamble y mantenimiento de componentes, circuitos impresos (PCBs) y sistemas electrónicos avanzados.\n\nEl cargo implica la programación de sistemas embebidos y microcontroladores, el diagnóstico y reparación de fallas de hardware, la automatización y control de maquinaria industrial (PLC) y el aseguramiento de que todos los dispositivos operen bajo estrictas normativas técnicas internacionales.\n\nDe igual forma, colabora estrechamente con el área de producción para calibrar equipos de medición, instrumentación industrial y optimizar los sistemas de potencia electrónica de la organización."
+    },
+    {
+        "position": "Ingeniero Civil",
+        "description": "Cargo de alta responsabilidad encargado de la gestión, diseño y supervisión técnica de proyectos de infraestructura, edificación y obras civiles.\n\nSus funciones principales comprenden el modelado y cálculo estructural, la estimación detallada de presupuestos y costos de materiales, la redacción de informes técnicos, la supervisión directa del personal en campo y el control de calidad de los materiales de construcción.\n\nAdemás, es el garante del cumplimiento estricto de los cronogramas de entrega (gráficos de Gantt), los estándares de seguridad industrial en obra y el marco regulatorio legal y ambiental vigente para cada proyecto."
+    },
+    {
+        "position": "Ingeniero Mecánico",
+        "description": "Puesto enfocado en el diseño, instalación, operación, evaluación y mantenimiento de sistemas mecánicos, maquinaria pesada y equipos térmicos o hidráulicos.\n\nEste cargo lidera la planificación y ejecución de los programas de mantenimiento preventivo, predictivo y correctivo de los activos de la empresa, analiza la causa raíz de fallas mecánicas y coordina paradas de planta estratégicas.\n\nTambién es responsable de la gestión de fluidos, sistemas de ventilación y refrigeración (HVAC), y de proponer proyectos de eficiencia energética que reduzcan el desgaste de los componentes y el consumo de combustible de la maquinaria."
+    },
+    {
+        "position": "Contador Público",
+        "description": "Cargo financiero y analítico responsable de la gestión, registro, control y auditoría de todas las operaciones económicas y transacciones financieras de la organización.\n\nSus funciones incluyen la oportuna elaboración de estados financieros (Balance General, Estado de Resultados), la preparación y declaración de obligaciones fiscales e impuestos locales, el control de la estructura de costos y la conciliación bancaria.\n\nAsimismo, se encarga de emitir informes de auditoría interna, diseñar proyecciones presupuestarias y asesorar a la alta gerencia en la toma de decisiones estratégicas basadas en el cumplimiento de las normativas contables vigentes (NIIF/NIC)."
+    },
+    {
+        "position": "Abogado",
+        "description": "Puesto de consultoría y representación jurídica encargado de salvaguardar los intereses legales, comerciales y operativos de la organización.\n\nLas responsabilidades del cargo incluyen la redacción, revisión, análisis y negociación de contratos comerciales, civiles y laborales, el asesoramiento preventivo en materia corporativa y el diseño de políticas internas para mitigar riesgos legales.\n\nPor otra parte, se encarga de la gestión de litigios, la protección de la propiedad intelectual y marcas de la empresa, y ejerce la representación oficial ante organismos públicos, ministerios, sindicatos y entidades judiciales."
+    },
+    {
+        "position": "Mercadologo",
+        "description": "Cargo estratégico y creativo orientado a la investigación de mercados, el análisis profundo del comportamiento del consumidor y el desarrollo de ventajas competitivas para la marca.\n\nEl puesto abarca la conceptualización, planificación y ejecución de campañas publicitarias tanto en canales digitales (SEO, SEM, Redes Sociales) como tradicionales (BTL, ATL), el posicionamiento de productos, y la fijación de estrategias de precios.\n\nEs responsable del monitoreo constante de KPIs de marketing, la gestión del presupuesto asignado al área y la medición del retorno de inversión (ROI) para alinear las acciones de comunicación con las metas del equipo de ventas."
+    },
+    {
+        "position": "Administrador de Empresas",
+        "description": "Puesto de gestión global, operativa y estratégica responsable de dirigir y coordinar los recursos humanos, financieros y materiales de la organización o de una unidad de negocio.\n\nEl cargo implica la definición de objetivos corporativos a corto y largo plazo, la optimización de flujos de trabajo interdepartamentales, la toma de decisiones presupuestarias complejas y la supervisión del clima organizacional.\n\nSu rol es fundamental para identificar nuevas oportunidades de negocio, formular planes de contingencia ante crisis del entorno, y analizar indicadores clave de rendimiento (KPIs) para asegurar la máxima rentabilidad y sostenibilidad de la empresa."
+    }
+]

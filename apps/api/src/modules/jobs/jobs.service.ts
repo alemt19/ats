@@ -10,7 +10,7 @@ import { EmbeddingsQueueProducer } from '../../common/queues/embeddings-queue.pr
 import { EvaluationQueueProducer } from '../../common/queues/evaluation-queue.producer';
 import { JobSummaryQueueProducer } from '../../common/queues/job-summary-queue.producer';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AdminOfferCandidatesQueryDto, AdminOffersQueryDto, CreateAdminOfferDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
+import { AdminOfferCandidatesQueryDto, AdminOffersQueryDto, CreateAdminOfferDto, CreateGenericJobDescriptionDto, GenericJobDescriptionsQueryDto, CreateJobDto, UpdateJobDto } from './dto/jobs.dto';
 import { Prisma } from '../../generated/prisma/client';
 import type { job_status_enum } from '../../generated/prisma/enums';
 import { STATUS_ORDER, STATUS_LABELS } from '../applications/status-order';
@@ -21,6 +21,7 @@ type AdminSkillItemInput = {
   name: string;
   is_mandatory?: boolean;
 };
+
 
 type AdminOfferRecord = {
   id: number;
@@ -786,7 +787,7 @@ export class JobsService {
     const admin = await this.getCurrentAdmin(userId);
     const companyId = admin.company_id as number;
 
-    const [categories, jobs, company, attributes] = await Promise.all([
+    const [categories, jobs, company, attributes, genericDescriptions] = await Promise.all([
       this.prisma.job_categories.findMany({
         orderBy: { name: 'asc' },
         select: { name: true },
@@ -813,6 +814,10 @@ export class JobsService {
         },
         orderBy: { name: 'asc' },
         select: { name: true, type: true },
+      }),
+      this.prisma.generic_job_description.findMany({
+        orderBy: [{ position: 'asc' }, { description: 'asc' }],
+        select: { id: true, position: true, description: true },
       }),
     ]);
 
@@ -917,7 +922,128 @@ export class JobsService {
       technical_skills: technicalSkills,
       soft_skills: softSkills,
       credentials,
+      generic_job_descriptions: genericDescriptions.map((item) => ({
+        id: item.id,
+        position: item.position,
+        description: item.description,
+      })),
     };
+  }
+
+  async listAdminGenericJobDescriptions(userId: string, query: GenericJobDescriptionsQueryDto) {
+    await this.getCurrentAdmin(userId);
+
+    const search = query.search.trim();
+    const where: Prisma.generic_job_descriptionWhereInput = search
+      ? {
+          OR: [
+            { position: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {};
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? 10;
+    const skip = (page - 1) * pageSize;
+
+    const [items, total] = await Promise.all([
+      this.prisma.generic_job_description.findMany({
+        where,
+        orderBy: [{ position: 'asc' }, { description: 'asc' }],
+        skip,
+        take: pageSize,
+        select: { id: true, position: true, description: true },
+      }),
+      this.prisma.generic_job_description.count({ where }),
+    ]);
+
+    return {
+      items: items.map((item) => ({
+        id: item.id,
+        position: item.position,
+        description: item.description,
+      })),
+      total,
+      page,
+      pageSize,
+    };
+  }
+
+  async getAdminGenericJobDescription(userId: string, descriptionId: number) {
+    await this.getCurrentAdmin(userId);
+
+    if (!Number.isFinite(descriptionId) || descriptionId <= 0) {
+      return null;
+    }
+
+    const description = await this.prisma.generic_job_description.findUnique({
+      where: { id: descriptionId },
+      select: { id: true, position: true, description: true },
+    });
+
+    return description
+      ? {
+          id: description.id,
+          position: description.position,
+          description: description.description,
+        }
+      : null;
+  }
+
+  async createAdminGenericJobDescription(userId: string, dto: CreateGenericJobDescriptionDto) {
+    await this.getCurrentAdmin(userId);
+
+    const position = dto.position.trim();
+    const description = dto.description.trim();
+
+    if (!position) {
+      throw new BadRequestException('El puesto es obligatorio');
+    }
+
+    if (!description) {
+      throw new BadRequestException('La descripción es obligatoria');
+    }
+
+    return this.prisma.generic_job_description.create({
+      data: {
+        position,
+        description,
+      },
+      select: { id: true, position: true, description: true },
+    });
+  }
+
+  async updateAdminGenericJobDescription(
+    userId: string,
+    descriptionId: number,
+    dto: CreateGenericJobDescriptionDto,
+  ) {
+    await this.getCurrentAdmin(userId);
+
+    if (!Number.isFinite(descriptionId) || descriptionId <= 0) {
+      throw new BadRequestException('La descripción genérica es inválida');
+    }
+
+    const position = dto.position.trim();
+    const description = dto.description.trim();
+
+    if (!position) {
+      throw new BadRequestException('El puesto es obligatorio');
+    }
+
+    if (!description) {
+      throw new BadRequestException('La descripción es obligatoria');
+    }
+
+    return this.prisma.generic_job_description.update({
+      where: { id: descriptionId },
+      data: {
+        position,
+        description,
+        updated_at: new Date(),
+      },
+      select: { id: true, position: true, description: true },
+    });
   }
 
   async updateAdminOffer(userId: string, offerId: number, dto: CreateAdminOfferDto) {

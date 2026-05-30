@@ -48,6 +48,17 @@ const CreateAdminOfferSchema = CreateJobSchema.omit({
 	min_years_required: z.number().int().min(0).optional().nullable(),
 });
 
+const GenericJobDescriptionsQuerySchema = z.object({
+	search: z.string().trim().optional().default(''),
+	page: z.preprocess((val) => (val === undefined ? 1 : Number(val)), z.number().int().min(1)).optional().default(1),
+	pageSize: z.preprocess((val) => (val === undefined ? 10 : Number(val)), z.number().int().min(1).max(100)).optional().default(10),
+});
+
+const CreateGenericJobDescriptionSchema = z.object({
+	position: z.string().trim().min(1).max(255),
+	description: z.string().trim().min(1),
+});
+
 const AdminOffersQuerySchema = z.object({
 	title: z.string().trim().optional(),
 	category: z.string().trim().optional(),
@@ -80,6 +91,8 @@ const AdminOfferCandidatesQuerySchema = z.object({
 
 export class CreateJobDto extends createZodDto(CreateJobSchema) {}
 export class CreateAdminOfferDto extends createZodDto(CreateAdminOfferSchema) {}
+export class GenericJobDescriptionsQueryDto extends createZodDto(GenericJobDescriptionsQuerySchema) {}
+export class CreateGenericJobDescriptionDto extends createZodDto(CreateGenericJobDescriptionSchema) {}
 export class AdminOffersQueryDto extends createZodDto(AdminOffersQuerySchema) {}
 export class AdminOfferCandidatesQueryDto extends createZodDto(AdminOfferCandidatesQuerySchema) {}
 export class UpdateJobDto extends createZodDto(UpdateJobSchema) {}

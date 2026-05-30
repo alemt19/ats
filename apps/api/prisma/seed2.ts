@@ -118,6 +118,11 @@ type ApplicationData = {
 	candidate_id: number;
 };
 
+type GenericJobDescriptionData = {
+	position: string;
+	description: string;
+};
+
 type LoadedData = {
 	company: CompanyData;
 	recruiters: RecruiterData[];
@@ -125,6 +130,7 @@ type LoadedData = {
 	jobs: JobData[];
 	candidates: CandidateData[];
 	applications: ApplicationData[];
+	genericJobDescriptions: GenericJobDescriptionData[];
 };
 
 const ADMIN_EMAIL_LOCAL_SUFFIX = '+ats-admin';
@@ -400,6 +406,9 @@ function loadData(): LoadedData {
 		jobs: readJsonFile<JobData[]>('apps/api/prisma/data/jobs/jobs.json'),
 		candidates: readJsonFile<CandidateData[]>('apps/api/prisma/data/candidates/candidates.json'),
 		applications: readJsonFile<ApplicationData[]>('apps/api/prisma/data/applications/application.json'),
+		genericJobDescriptions: readJsonFile<GenericJobDescriptionData[]>(
+			'apps/api/prisma/data/generic_job_description/generic_job_description.json',
+		),
 	};
 }
 
@@ -902,6 +911,51 @@ async function seedApplications(
 	console.log(`  ✓ Postulaciones: ${count}`);
 }
 
+async function seedGenericJobDescriptions(
+	prisma: PrismaClient,
+	genericJobDescriptions: GenericJobDescriptionData[],
+) {
+	let created = 0;
+	let existing = 0;
+	let skipped = 0;
+
+	for (const item of genericJobDescriptions) {
+		const position = item.position?.trim();
+		const description = item.description?.trim();
+
+		if (!position || !description) {
+			skipped++;
+			continue;
+		}
+
+		const found = await prisma.generic_job_description.findFirst({
+			where: {
+				position,
+				description,
+			},
+			select: { id: true },
+		});
+
+		if (found) {
+			existing++;
+			continue;
+		}
+
+		await prisma.generic_job_description.create({
+			data: {
+				position,
+				description,
+			},
+		});
+
+		created++;
+	}
+
+	console.log(
+		`  ✓ Descripciones genericas: ${genericJobDescriptions.length} procesadas (${created} creadas, ${existing} existentes, ${skipped} omitidas)`,
+	);
+}
+
 async function main() {
 	const { prisma, pool } = await getPrismaClient();
 
@@ -933,6 +987,9 @@ async function main() {
 
 		console.log('7) Postulaciones...');
 		await seedApplications(prisma, data.applications, jobMap, candidateMap);
+
+		console.log('8) Descripciones genericas...');
+		await seedGenericJobDescriptions(prisma, data.genericJobDescriptions);
 
 		console.log('\n✅ seed2 completado\n');
 		console.log('Siguientes pasos recomendados:');
