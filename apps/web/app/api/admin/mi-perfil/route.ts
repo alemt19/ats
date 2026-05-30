@@ -6,6 +6,7 @@ import {
   updateAdminProfileServer,
 } from "../../../admin/(public)/mi-perfil/mi-perfil-service"
 import type { AdminProfilePayload } from "../../../admin/(public)/mi-perfil/mi-perfil-types"
+import { isAtLeastMinimumAge } from "react/lib/birth-date"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -100,6 +101,10 @@ export async function PUT(request: Request) {
 
   if (isInvalidPayload(normalizedPayload)) {
     return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
+  }
+
+  if (!isAtLeastMinimumAge(normalizedPayload.birth_date ?? "")) {
+    return NextResponse.json({ message: "La persona debe ser mayor de edad" }, { status: 400 })
   }
 
   try {

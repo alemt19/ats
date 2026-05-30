@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "react/components/ui/select"
 import { useFontSize } from "react/contexts/font-size-context"
+import { getMaximumBirthDateIso, isAtLeastMinimumAge } from "react/lib/birth-date"
 import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 export type Country = {
@@ -81,15 +82,7 @@ export default function MisDatosForm({
   const V_DNI_MAX = 99_999_999
   const E_DNI_MIN = 80_000_000
 
-  const getLocalTodayIso = () => {
-    const now = new Date()
-    const year = String(now.getFullYear())
-    const month = String(now.getMonth() + 1).padStart(2, "0")
-    const day = String(now.getDate()).padStart(2, "0")
-    return `${year}-${month}-${day}`
-  }
-
-  const todayIso = React.useMemo(() => getLocalTodayIso(), [])
+  const birthDateMaxIso = React.useMemo(() => getMaximumBirthDateIso(), [])
 
   const isValidWebUrl = (value: string) => {
     const normalized = value.trim()
@@ -314,10 +307,10 @@ export default function MisDatosForm({
         message: "La fecha de nacimiento es obligatoria",
       })
       hasFormError = true
-    } else if (trimmedBirthDate > todayIso) {
+    } else if (!isAtLeastMinimumAge(trimmedBirthDate)) {
       form.setError("birth_date", {
         type: "validate",
-        message: "La fecha de nacimiento no puede ser futura",
+        message: "La persona debe ser mayor de edad",
       })
       hasFormError = true
     }
@@ -589,13 +582,13 @@ export default function MisDatosForm({
               rules={{
                 required: "La fecha de nacimiento es obligatoria",
                 validate: (value) =>
-                  value <= todayIso || "La fecha de nacimiento no puede ser futura",
+                  isAtLeastMinimumAge(value) || "La persona debe ser mayor de edad",
               }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm font-medium text-foreground/85">Fecha de nacimiento</FormLabel>
                   <FormControl>
-                    <Input type="date" max={todayIso} {...field} />
+                    <Input type="date" max={birthDateMaxIso} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -20,6 +20,7 @@ import {
 } from "react/components/ui/select"
 import { useFontSize } from "react/contexts/font-size-context"
 import { Textarea } from "react/components/ui/textarea"
+import { getMaximumBirthDateIso, isAtLeastMinimumAge } from "react/lib/birth-date"
 import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 import type {
@@ -68,23 +69,6 @@ function sanitizeNameInput(value: string) {
   return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]/g, "")
 }
 
-function getTodayIso() {
-  const today = new Date()
-  const year = today.getFullYear()
-  const month = String(today.getMonth() + 1).padStart(2, "0")
-  const day = String(today.getDate()).padStart(2, "0")
-
-  return `${year}-${month}-${day}`
-}
-
-function isFutureDate(dateValue: string) {
-  if (!dateValue) {
-    return false
-  }
-
-  return dateValue > getTodayIso()
-}
-
 function extractPhoneNumber(phone: string, prefix: string) {
   const cleanPhone = phone.trim()
   const cleanPrefix = prefix.trim()
@@ -117,6 +101,7 @@ function roleLabel(technicalName: string, catalogs: AdminProfileCatalogsResponse
 export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormProps) {
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
   const { fontSize, changeFontSize } = useFontSize()
+  const birthDateMaxIso = React.useMemo(() => getMaximumBirthDateIso(), [])
 
   const parsedDni = splitDni(initialProfile.dni)
 
@@ -278,8 +263,8 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
       nextErrors.lastname = "El apellido solo puede contener letras"
     }
 
-    if (!nextErrors.birth_date && isFutureDate(values.birth_date.trim())) {
-      nextErrors.birth_date = "La fecha de nacimiento no puede ser futura"
+    if (!nextErrors.birth_date && !isAtLeastMinimumAge(values.birth_date.trim())) {
+      nextErrors.birth_date = "La persona debe ser mayor de edad"
     }
 
     const dniValidation = validateDni(values.dni_prefix, values.dni)
@@ -460,7 +445,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                   id="birth_date"
                   type="date"
                   value={values.birth_date}
-                  max={getTodayIso()}
+                  max={birthDateMaxIso}
                   required
                   onChange={handleInputChange("birth_date")}
                 />

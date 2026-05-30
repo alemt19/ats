@@ -21,6 +21,7 @@ import {
 } from "react/components/ui/select"
 import { Skeleton } from "react/components/ui/skeleton"
 import { Textarea } from "react/components/ui/textarea"
+import { getMaximumBirthDateIso, isAtLeastMinimumAge } from "react/lib/birth-date"
 import { type DniPrefix, buildDni, splitDni, validateDni } from "react/lib/dni"
 
 import {
@@ -77,16 +78,6 @@ const NAME_REGEX = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]+$/
 
 function sanitizeNameInput(value: string) {
   return value.replace(/[^A-Za-zÁÉÍÓÚÜÑáéíóúüñ\s'-]/g, "")
-}
-
-function isFutureDate(dateValue: string) {
-  if (!dateValue) {
-    return false
-  }
-
-  const today = new Date()
-  const todayIso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`
-  return dateValue > todayIso
 }
 
 function toInitials(name: string) {
@@ -198,6 +189,7 @@ function ensureOptionValue(options: string[], value: string) {
 export default function RecruiterForm({ mode, recruiterId, initialRecruiter }: RecruiterFormProps) {
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement | null>(null)
+  const birthDateMaxIso = React.useMemo(() => getMaximumBirthDateIso(), [])
 
   const [avatarPreview, setAvatarPreview] = React.useState<string>("")
   const [profileImageFile, setProfileImageFile] = React.useState<File | null>(null)
@@ -465,8 +457,8 @@ export default function RecruiterForm({ mode, recruiterId, initialRecruiter }: R
       return
     }
 
-    if (isFutureDate(values.birth_date.trim())) {
-      toast.error("La fecha de nacimiento no puede ser futura")
+    if (!isAtLeastMinimumAge(values.birth_date.trim())) {
+      toast.error("La persona debe ser mayor de edad")
       return
     }
 
@@ -688,7 +680,7 @@ export default function RecruiterForm({ mode, recruiterId, initialRecruiter }: R
                   type="date"
                   value={values.birth_date}
                   onChange={handleInputChange("birth_date")}
-                  max={new Date().toISOString().slice(0, 10)}
+                  max={birthDateMaxIso}
                   required
                 />
               </div>

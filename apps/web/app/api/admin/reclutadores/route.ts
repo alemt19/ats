@@ -6,6 +6,7 @@ import {
   getRecruitersServer,
 } from "../../../admin/(public)/reclutadores/recruiters-admin-service"
 import type { RecruiterPayload } from "../../../admin/(public)/reclutadores/recruiters-admin-types"
+import { isAtLeastMinimumAge } from "react/lib/birth-date"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -100,6 +101,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
     }
 
+    if (!isAtLeastMinimumAge(payload.birth_date ?? "")) {
+      return NextResponse.json({ message: "La persona debe ser mayor de edad" }, { status: 400 })
+    }
+
     try {
       const created = await createRecruiterServer(formData, cookie)
       return NextResponse.json(created, { status: 201 })
@@ -116,6 +121,10 @@ export async function POST(request: Request) {
 
   if (isInvalidPayload(payload)) {
     return NextResponse.json({ message: "Completa los campos requeridos" }, { status: 400 })
+  }
+
+  if (!isAtLeastMinimumAge(payload.birth_date ?? "")) {
+    return NextResponse.json({ message: "La persona debe ser mayor de edad" }, { status: 400 })
   }
 
   try {
