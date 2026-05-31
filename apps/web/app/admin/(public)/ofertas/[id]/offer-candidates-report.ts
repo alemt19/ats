@@ -20,6 +20,12 @@ type BuildOfferCandidatesReportPdfParams = {
   offer: AdminOfferDetail
   statusDisplayName: string
   candidateStatusOptions: CandidateStatusOption[]
+  reportFilters: {
+    technical: [number, number]
+    soft: [number, number]
+    culture: [number, number]
+    final: [number, number]
+  }
 }
 
 type CandidateApiResponse = {
@@ -46,6 +52,22 @@ type JobParameterGroup = {
   values: JobParameterOption[]
 }
 
+type ReportFilterRow = {
+  label: string
+  value: string
+}
+
+type ReportCandidateRow = {
+  candidate: string
+  candidateUrl: string
+  dni: string
+  technical: string
+  soft: string
+  culture: string
+  final: string
+  status: string
+}
+
 const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 const REPORT_PAGE_SIZE = 100
 const JOB_PARAMETERS_PATH = "/data/job_parameters.json"
@@ -67,6 +89,36 @@ function formatSalary(value: number) {
   return new Intl.NumberFormat("es-VE", {
     maximumFractionDigits: 0,
   }).format(value)
+}
+
+function formatScoreRange(range: [number, number]) {
+  return `${range[0]}% - ${range[1]}%`
+}
+
+function hasActiveReportFilter(range: [number, number]) {
+  return range[0] !== 0 || range[1] !== 100
+}
+
+function buildReportFilterRows(reportFilters: BuildOfferCandidatesReportPdfParams["reportFilters"]): ReportFilterRow[] {
+  const rows: ReportFilterRow[] = []
+
+  if (hasActiveReportFilter(reportFilters.technical)) {
+    rows.push({ label: "Puntuación técnica", value: formatScoreRange(reportFilters.technical) })
+  }
+
+  if (hasActiveReportFilter(reportFilters.soft)) {
+    rows.push({ label: "Puntuación blanda", value: formatScoreRange(reportFilters.soft) })
+  }
+
+  if (hasActiveReportFilter(reportFilters.culture)) {
+    rows.push({ label: "Alineación cultural", value: formatScoreRange(reportFilters.culture) })
+  }
+
+  if (hasActiveReportFilter(reportFilters.final)) {
+    rows.push({ label: "Puntuación final", value: formatScoreRange(reportFilters.final) })
+  }
+
+  return rows
 }
 
 async function loadJobParameters() {
@@ -165,7 +217,10 @@ function extractReadableValue<T extends { name: string; is_mandatory?: boolean }
     .join(", ")
 }
 
-async function fetchAllCandidates(offerId: number) {
+async function fetchAllCandidates(
+  offerId: number,
+  reportFilters: BuildOfferCandidatesReportPdfParams["reportFilters"]
+) {
   const allCandidates: AdminOfferCandidate[] = []
   let total = 0
   let page = 1
@@ -173,14 +228,14 @@ async function fetchAllCandidates(offerId: number) {
   while (allCandidates.length < total || page === 1) {
     const searchParams = new URLSearchParams({
       search: "",
-      technical_min: "0",
-      technical_max: "100",
-      soft_min: "0",
-      soft_max: "100",
-      culture_min: "0",
-      culture_max: "100",
-      final_min: "0",
-      final_max: "100",
+      technical_min: String(reportFilters.technical[0]),
+      technical_max: String(reportFilters.technical[1]),
+      soft_min: String(reportFilters.soft[0]),
+      soft_max: String(reportFilters.soft[1]),
+      culture_min: String(reportFilters.culture[0]),
+      culture_max: String(reportFilters.culture[1]),
+      final_min: String(reportFilters.final[0]),
+      final_max: String(reportFilters.final[1]),
       status: "all",
       page: String(page),
       pageSize: String(REPORT_PAGE_SIZE),
@@ -233,6 +288,10 @@ function buildSkillLine(items: Array<{ name: string; is_mandatory?: boolean }> |
   return extractReadableValue(items)
 }
 
+function buildCandidateDetailUrl(offerId: number, applicationId: string) {
+  return `${window.location.origin}/admin/ofertas/${offerId}/candidatos/${applicationId}`
+}
+
 export async function buildOfferCandidatesReportPdf({
   offerId,
   count,
@@ -240,11 +299,12 @@ export async function buildOfferCandidatesReportPdf({
   offer,
   statusDisplayName,
   candidateStatusOptions,
+  reportFilters,
 }: BuildOfferCandidatesReportPdfParams) {
   const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")])
   const autoTable = autoTableModule.default
 
-  const allCandidates = await fetchAllCandidates(offerId)
+  const allCandidates = await fetchAllCandidates(offerId, reportFilters)
   const topCandidates = [...allCandidates]
     .sort((left, right) => {
       if (right.final_score !== left.final_score) {
@@ -274,6 +334,16 @@ export async function buildOfferCandidatesReportPdf({
     }))
   )
   const dniByCandidateId = new Map(candidateDetails.map((entry) => [entry.candidateId, entry.dni]))
+  const reportCandidateRows: ReportCandidateRow[] = topCandidates.map((candidate) => ({
+    candidate: `${candidate.first_name} ${candidate.last_name}`.trim(),
+    candidateUrl: buildCandidateDetailUrl(offerId, candidate.application_id),
+    dni: dniByCandidateId.get(candidate.candidate_id) || "-",
+    technical: formatPercent(candidate.technical_score),
+    soft: formatPercent(candidate.soft_score),
+    culture: formatPercent(candidate.culture_score),
+    final: formatPercent(candidate.final_score),
+    status: statusLabel(candidate.status, candidateStatusOptions),
+  }))
   const workplaceTypeLabel = await getJobParameterDisplayName(
     offer.workplace_type,
     offer.workplace_type,
@@ -395,13 +465,60 @@ export async function buildOfferCandidatesReportPdf({
   })
 
   const afterSummaryY = (doc as typeof doc & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? cursorY
-  const tableStartY = afterSummaryY + 10
+
+  const reportFilterRows = buildReportFilterRows(reportFilters)
+  let tableStartY = afterSummaryY + 10
+
+  if (reportFilterRows.length) {
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(13)
+    doc.text("Filtros aplicados al reporte", marginX, tableStartY)
+
+    autoTable(doc, {
+      startY: tableStartY + 4,
+      theme: "grid",
+      margin: { left: marginX, right: marginX },
+      styles: {
+        font: "helvetica",
+        fontSize: 9,
+        cellPadding: 2.5,
+        valign: "middle",
+      },
+      headStyles: {
+        fillColor: [242, 244, 248],
+        textColor: [30, 41, 59],
+        fontStyle: "bold",
+      },
+      body: reportFilterRows,
+      columns: [
+        { header: "Filtro", dataKey: "label" },
+        { header: "Rango", dataKey: "value" },
+      ],
+      didParseCell: (hookData) => {
+        if (hookData.section === "body") {
+          const rowIndex = hookData.row.index
+          if (hookData.column.index === 0) {
+            hookData.cell.text = [reportFilterRows[rowIndex]?.label ?? ""]
+          } else if (hookData.column.index === 1) {
+            hookData.cell.text = [reportFilterRows[rowIndex]?.value ?? ""]
+          }
+        }
+      },
+    })
+
+    const afterFiltersY =
+      (doc as typeof doc & { lastAutoTable?: { finalY?: number } }).lastAutoTable?.finalY ?? tableStartY
+    tableStartY = afterFiltersY + 10
+  }
 
   doc.setFont("helvetica", "bold")
   doc.setFontSize(13)
   doc.text(`Top ${topCandidates.length} postulaciones`, marginX, tableStartY)
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.text("Los nombres de candidato son enlaces al detalle de la postulación.", marginX, tableStartY + 5)
   autoTable(doc, {
-    startY: tableStartY + 4,
+    startY: tableStartY + 8,
     theme: "striped",
     margin: { left: marginX, right: marginX },
     styles: {
@@ -424,15 +541,32 @@ export async function buildOfferCandidatesReportPdf({
       { header: "Final", dataKey: "final" },
       { header: "Estado", dataKey: "status" },
     ],
-    body: topCandidates.map((candidate) => ({
-      candidate: `${candidate.first_name} ${candidate.last_name}`.trim(),
-      dni: dniByCandidateId.get(candidate.candidate_id) || "-",
-      technical: formatPercent(candidate.technical_score),
-      soft: formatPercent(candidate.soft_score),
-      culture: formatPercent(candidate.culture_score),
-      final: formatPercent(candidate.final_score),
-      status: statusLabel(candidate.status, candidateStatusOptions),
-    })),
+    body: reportCandidateRows,
+    didParseCell: (hookData) => {
+      if (hookData.section === "body") {
+        const rowIndex = hookData.row.index
+
+        if (hookData.column.index === 0) {
+          hookData.cell.text = [reportCandidateRows[rowIndex]?.candidate ?? ""]
+          hookData.cell.styles.textColor = [37, 99, 235]
+          hookData.cell.styles.fontStyle = "bold"
+        } else if (hookData.column.index === 1) {
+          hookData.cell.text = [reportCandidateRows[rowIndex]?.dni ?? ""]
+        }
+      }
+    },
+    didDrawCell: (hookData) => {
+      if (hookData.section === "body" && hookData.column.index === 0) {
+        const rowIndex = hookData.row.index
+        const candidateUrl = reportCandidateRows[rowIndex]?.candidateUrl
+
+        if (candidateUrl) {
+          doc.link(hookData.cell.x, hookData.cell.y, hookData.cell.width, hookData.cell.height, {
+            url: candidateUrl,
+          })
+        }
+      }
+    },
   })
 
   doc.save(`postulaciones-${offerId}-${Date.now()}.pdf`)

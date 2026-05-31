@@ -182,6 +182,116 @@ function getProgressColorClass(value: number) {
   return "[&_[data-slot=progress-indicator]]:bg-green-500"
 }
 
+type ScoreRange = [number, number]
+
+type ReportScoreFilters = {
+  technical: ScoreRange
+  soft: ScoreRange
+  culture: ScoreRange
+  final: ScoreRange
+}
+
+function buildReportScoreFiltersFromQuery(query: AdminOfferCandidatesQueryParams): ReportScoreFilters {
+  return {
+    technical: [query.technical_min, query.technical_max],
+    soft: [query.soft_min, query.soft_max],
+    culture: [query.culture_min, query.culture_max],
+    final: [query.final_min, query.final_max],
+  }
+}
+
+function formatScoreRange(range: ScoreRange) {
+  return `${range[0]}% - ${range[1]}%`
+}
+
+function ScoreRangeControls({
+  technicalRange,
+  softRange,
+  cultureRange,
+  finalRange,
+  onTechnicalRangeChange,
+  onSoftRangeChange,
+  onCultureRangeChange,
+  onFinalRangeChange,
+}: {
+  technicalRange: ScoreRange
+  softRange: ScoreRange
+  cultureRange: ScoreRange
+  finalRange: ScoreRange
+  onTechnicalRangeChange: (range: ScoreRange) => void
+  onSoftRangeChange: (range: ScoreRange) => void
+  onCultureRangeChange: (range: ScoreRange) => void
+  onFinalRangeChange: (range: ScoreRange) => void
+}) {
+  return (
+    <div className="space-y-5">
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Puntuación técnica</Label>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={technicalRange}
+          onValueChange={(value) => onTechnicalRangeChange([value[0] ?? 0, value[1] ?? 100])}
+          onValueCommit={(value) => onTechnicalRangeChange([value[0] ?? 0, value[1] ?? 100])}
+        />
+        <div className="text-muted-foreground flex justify-between text-xs">
+          <span>{technicalRange[0]}%</span>
+          <span>{technicalRange[1]}%</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Puntuación de habilidades blandas</Label>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={softRange}
+          onValueChange={(value) => onSoftRangeChange([value[0] ?? 0, value[1] ?? 100])}
+          onValueCommit={(value) => onSoftRangeChange([value[0] ?? 0, value[1] ?? 100])}
+        />
+        <div className="text-muted-foreground flex justify-between text-xs">
+          <span>{softRange[0]}%</span>
+          <span>{softRange[1]}%</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Puntuación de alineación cultural</Label>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={cultureRange}
+          onValueChange={(value) => onCultureRangeChange([value[0] ?? 0, value[1] ?? 100])}
+          onValueCommit={(value) => onCultureRangeChange([value[0] ?? 0, value[1] ?? 100])}
+        />
+        <div className="text-muted-foreground flex justify-between text-xs">
+          <span>{cultureRange[0]}%</span>
+          <span>{cultureRange[1]}%</span>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label className="text-xs text-muted-foreground">Puntuación final</Label>
+        <Slider
+          min={0}
+          max={100}
+          step={1}
+          value={finalRange}
+          onValueChange={(value) => onFinalRangeChange([value[0] ?? 0, value[1] ?? 100])}
+          onValueCommit={(value) => onFinalRangeChange([value[0] ?? 0, value[1] ?? 100])}
+        />
+        <div className="text-muted-foreground flex justify-between text-xs">
+          <span>{finalRange[0]}%</span>
+          <span>{finalRange[1]}%</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ScoreFilterPanel({
   query,
   statusOptions,
@@ -201,16 +311,16 @@ function ScoreFilterPanel({
   onStatusChange: (value: string) => void
   onClear: () => void
 }) {
-  const [technicalRange, setTechnicalRange] = React.useState<[number, number]>([
+  const [technicalRange, setTechnicalRange] = React.useState<ScoreRange>([
     query.technical_min,
     query.technical_max,
   ])
-  const [softRange, setSoftRange] = React.useState<[number, number]>([query.soft_min, query.soft_max])
-  const [cultureRange, setCultureRange] = React.useState<[number, number]>([
+  const [softRange, setSoftRange] = React.useState<ScoreRange>([query.soft_min, query.soft_max])
+  const [cultureRange, setCultureRange] = React.useState<ScoreRange>([
     query.culture_min,
     query.culture_max,
   ])
-  const [finalRange, setFinalRange] = React.useState<[number, number]>([query.final_min, query.final_max])
+  const [finalRange, setFinalRange] = React.useState<ScoreRange>([query.final_min, query.final_max])
 
   React.useEffect(() => {
     setTechnicalRange([query.technical_min, query.technical_max])
@@ -230,69 +340,28 @@ function ScoreFilterPanel({
 
   return (
     <div className="space-y-5">
-      <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación técnica</Label>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={technicalRange}
-          onValueChange={(value) => setTechnicalRange([value[0] ?? 0, value[1] ?? 100])}
-          onValueCommit={(value) => onTechnicalRangeChange([value[0] ?? 0, value[1] ?? 100])}
-        />
-        <div className="text-muted-foreground flex justify-between text-xs">
-          <span>{technicalRange[0]}%</span>
-          <span>{technicalRange[1]}%</span>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación de habilidades blandas</Label>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={softRange}
-          onValueChange={(value) => setSoftRange([value[0] ?? 0, value[1] ?? 100])}
-          onValueCommit={(value) => onSoftRangeChange([value[0] ?? 0, value[1] ?? 100])}
-        />
-        <div className="text-muted-foreground flex justify-between text-xs">
-          <span>{softRange[0]}%</span>
-          <span>{softRange[1]}%</span>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación de alineación cultural</Label>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={cultureRange}
-          onValueChange={(value) => setCultureRange([value[0] ?? 0, value[1] ?? 100])}
-          onValueCommit={(value) => onCultureRangeChange([value[0] ?? 0, value[1] ?? 100])}
-        />
-        <div className="text-muted-foreground flex justify-between text-xs">
-          <span>{cultureRange[0]}%</span>
-          <span>{cultureRange[1]}%</span>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación final</Label>
-        <Slider
-          min={0}
-          max={100}
-          step={1}
-          value={finalRange}
-          onValueChange={(value) => setFinalRange([value[0] ?? 0, value[1] ?? 100])}
-          onValueCommit={(value) => onFinalRangeChange([value[0] ?? 0, value[1] ?? 100])}
-        />
-        <div className="text-muted-foreground flex justify-between text-xs">
-          <span>{finalRange[0]}%</span>
-          <span>{finalRange[1]}%</span>
-        </div>
-      </div>
+      <ScoreRangeControls
+        technicalRange={technicalRange}
+        softRange={softRange}
+        cultureRange={cultureRange}
+        finalRange={finalRange}
+        onTechnicalRangeChange={(range) => {
+          setTechnicalRange(range)
+          onTechnicalRangeChange(range)
+        }}
+        onSoftRangeChange={(range) => {
+          setSoftRange(range)
+          onSoftRangeChange(range)
+        }}
+        onCultureRangeChange={(range) => {
+          setCultureRange(range)
+          onCultureRangeChange(range)
+        }}
+        onFinalRangeChange={(range) => {
+          setFinalRange(range)
+          onFinalRangeChange(range)
+        }}
+      />
 
       <div className="space-y-2">
         <Label className="text-xs text-muted-foreground">Estado</Label>
@@ -358,6 +427,9 @@ export default function OfertaAdminDetalleClient({
   const [reportMode, setReportMode] = React.useState<"preset" | "custom">("preset")
   const [reportPresetCount, setReportPresetCount] = React.useState<10 | 15 | 20 | "all">(10)
   const [customReportCount, setCustomReportCount] = React.useState("")
+  const [reportFilters, setReportFilters] = React.useState<ReportScoreFilters>(() =>
+    buildReportScoreFiltersFromQuery(query)
+  )
   const [isGeneratingReport, setIsGeneratingReport] = React.useState(false)
 
   React.useEffect(() => {
@@ -481,6 +553,7 @@ export default function OfertaAdminDetalleClient({
     setReportMode("preset")
     setReportPresetCount(10)
     setCustomReportCount("")
+    setReportFilters(buildReportScoreFiltersFromQuery(query))
     setReportDialogOpen(true)
   }
 
@@ -506,6 +579,7 @@ export default function OfertaAdminDetalleClient({
         offer,
         statusDisplayName,
         candidateStatusOptions,
+        reportFilters,
       })
       toast.success("Reporte PDF generado")
       setReportDialogOpen(false)
@@ -1081,7 +1155,6 @@ export default function OfertaAdminDetalleClient({
                 </Button>
               </div>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="custom-report-count">Cantidad personalizada</Label>
               <Input
@@ -1100,6 +1173,31 @@ export default function OfertaAdminDetalleClient({
                 Puedes elegir hasta {reportTotalCandidates} postulaciones.
               </p>
             </div>
+            <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium">Filtros de puntuación para el reporte</p>
+                <p className="text-xs text-muted-foreground">
+                  El top seleccionado se calculará solo entre los candidatos que entren en estos rangos.
+                </p>
+              </div>
+
+              <ScoreRangeControls
+                technicalRange={reportFilters.technical}
+                softRange={reportFilters.soft}
+                cultureRange={reportFilters.culture}
+                finalRange={reportFilters.final}
+                onTechnicalRangeChange={(range) =>
+                  setReportFilters((current) => ({ ...current, technical: range }))
+                }
+                onSoftRangeChange={(range) => setReportFilters((current) => ({ ...current, soft: range }))}
+                onCultureRangeChange={(range) =>
+                  setReportFilters((current) => ({ ...current, culture: range }))
+                }
+                onFinalRangeChange={(range) => setReportFilters((current) => ({ ...current, final: range }))}
+              />
+            </div>
+
+
           </div>
 
           <DialogFooter>
