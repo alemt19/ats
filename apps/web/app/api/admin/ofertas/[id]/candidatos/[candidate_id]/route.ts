@@ -77,3 +77,35 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   return NextResponse.json(backendPayload)
 }
+
+export async function GET(request: Request, context: RouteContext) {
+  const { id, candidate_id: candidateId } = await context.params
+  const offerId = Number(id)
+  const applicationId = Number(candidateId)
+
+  if (!Number.isFinite(offerId) || !Number.isFinite(applicationId)) {
+    return NextResponse.json({ message: "Identificadores inválidos" }, { status: 400 })
+  }
+
+  const cookie = request.headers.get("cookie") ?? ""
+
+  const response = await fetch(
+    `${backendApiUrl}/api/admin/ofertas/${offerId}/candidatos/${applicationId}`,
+    {
+      method: "GET",
+      headers: {
+        ...(cookie ? { cookie } : {}),
+      },
+      cache: "no-store",
+    }
+  )
+
+  const backendPayload = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    const message = parseBackendMessage(backendPayload) ?? "No se pudo obtener el detalle de la postulación"
+    return NextResponse.json({ message }, { status: response.status })
+  }
+
+  return NextResponse.json(backendPayload)
+}
