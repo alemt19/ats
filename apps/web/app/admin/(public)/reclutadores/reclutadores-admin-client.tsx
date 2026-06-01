@@ -207,11 +207,11 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
             <Table>
               <TableHeader className="bg-muted/60 text-foreground/80">
                 <TableRow className="border-b border-border/70">
-                  <TableHead className="text-xs font-medium text-foreground/70">Nombre</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Correo</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Cédula</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Rol</TableHead>
-                  <TableHead className="w-12 text-center text-xs font-medium text-foreground/70">Ver</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Nombre</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Correo</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Cédula</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Rol</TableHead>
+                  <TableHead className="w-12 text-center text-sm font-medium text-foreground/70">Ver</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

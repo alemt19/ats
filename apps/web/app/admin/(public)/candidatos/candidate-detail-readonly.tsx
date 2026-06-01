@@ -430,7 +430,7 @@ export default function CandidateDetailReadonly({
                   <div key={`${experience.company_name}-${experience.position}-${index}`} className="rounded-xl border border-border/70 bg-background/70 p-4">
                     <p className="font-medium">{experience.position}</p>
                     <p className="text-sm text-muted-foreground">{experience.company_name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {formatExperienceDate(experience.start_date)} - {formatExperienceDate(experience.end_date)}
                     </p>
                   </div>
@@ -561,7 +561,7 @@ export default function CandidateDetailReadonly({
                     >
                       <div className="space-y-1">
                         <p className="font-medium">{application.offer_title}</p>
-                        <p className="text-muted-foreground text-xs">
+                        <p className="text-muted-foreground text-sm">
                           Postulación #{application.application_id}
                         </p>
                       </div>

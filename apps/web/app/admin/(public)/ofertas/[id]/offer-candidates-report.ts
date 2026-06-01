@@ -374,11 +374,11 @@ export async function buildOfferCandidatesReportPdf({
   }
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(16)
+  doc.setFontSize(20)
   doc.text(company.name || "Empresa", companyLogoDataUrl ? marginX + 32 : marginX, 18)
 
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(10)
+  doc.setFontSize(14)
   doc.text(`Reporte generado: ${dateLabel}`, companyLogoDataUrl ? marginX + 32 : marginX, 24)
 
   cursorY = 34
@@ -387,12 +387,12 @@ export async function buildOfferCandidatesReportPdf({
   cursorY += 8
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(15)
+  doc.setFontSize(20)
   doc.text("Reporte de postulaciones", marginX, cursorY)
   cursorY += 8
 
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(10)
+  doc.setFontSize(14)
   doc.text(`Oferta: ${offer.title}`, marginX, cursorY)
   cursorY += 6
 
@@ -438,8 +438,8 @@ export async function buildOfferCandidatesReportPdf({
     margin: { left: marginX, right: marginX },
     styles: {
       font: "helvetica",
-      fontSize: 9,
-      cellPadding: 2.5,
+      fontSize: 13,
+      cellPadding: 3,
       valign: "middle",
     },
     headStyles: {
@@ -471,19 +471,19 @@ export async function buildOfferCandidatesReportPdf({
 
   if (reportFilterRows.length) {
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(13)
+    doc.setFontSize(17)
     doc.text("Filtros aplicados al reporte", marginX, tableStartY)
 
     autoTable(doc, {
       startY: tableStartY + 4,
       theme: "grid",
       margin: { left: marginX, right: marginX },
-      styles: {
-        font: "helvetica",
-        fontSize: 9,
-        cellPadding: 2.5,
-        valign: "middle",
-      },
+        styles: {
+          font: "helvetica",
+          fontSize: 13,
+          cellPadding: 3,
+          valign: "middle",
+        },
       headStyles: {
         fillColor: [242, 244, 248],
         textColor: [30, 41, 59],
@@ -512,10 +512,10 @@ export async function buildOfferCandidatesReportPdf({
   }
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(13)
+  doc.setFontSize(17)
   doc.text(`Top ${topCandidates.length} postulaciones`, marginX, tableStartY)
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(9)
+  doc.setFontSize(13)
   doc.text("Los nombres de candidato son enlaces al detalle de la postulación.", marginX, tableStartY + 5)
   autoTable(doc, {
     startY: tableStartY + 8,
@@ -523,8 +523,8 @@ export async function buildOfferCandidatesReportPdf({
     margin: { left: marginX, right: marginX },
     styles: {
       font: "helvetica",
-      fontSize: 8,
-      cellPadding: 2.2,
+      fontSize: 12,
+      cellPadding: 3,
       valign: "middle",
     },
     headStyles: {

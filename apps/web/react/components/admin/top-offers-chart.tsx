@@ -53,6 +53,7 @@ export default function TopOffersChart({ data, maxCandidates }: TopOffersChartPr
           axisLine={false}
           width={32}
           domain={[0, Math.max(5, Math.ceil(maxCandidates * 1.2))]}
+          tick={{ fontSize: 15 }}
         />
         <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
         <Bar dataKey="candidates" fill="var(--color-candidates)" radius={6} />

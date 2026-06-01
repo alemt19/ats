@@ -604,7 +604,7 @@ export default function PostulacionesList({
               </CardContent>
 
               <CardFooter className="items-center justify-between gap-3 pt-2">
-                <Badge
+                <Badge className="text-sm"
                   variant={getStatusBadgeVariant(application.status)}
                 >
                   {statusLabelMap.get(application.status) ?? application.status}

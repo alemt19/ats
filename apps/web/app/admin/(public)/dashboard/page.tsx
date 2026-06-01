@@ -243,10 +243,10 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <Link href="/admin/candidatos" className="sm:col-span-2 xl:col-span-2 group">
+            <div className="sm:col-span-2 xl:col-span-2 group">
                 <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
                     <CardHeader className="gap-2 pb-2">
-                        <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                        <CardDescription className="flex items-center gap-1.5 text-sm text-foreground/60">
                             Revisiones pendientes
                             <InfoTooltip text="Postulaciones donde la IA completó su evaluación pero el reclutador aún no ha realizado ninguna acción." />
                         </CardDescription>
@@ -265,19 +265,19 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                                 )}>
                                     {data.actionStrip.pendingReview}
                                 </CardTitle>
-                                <p className="text-xs text-foreground/60">
+                                <p className="text-sm text-foreground/60">
                                     postulacion{data.actionStrip.pendingReview !== 1 ? "es" : ""} evaluadas por IA esperando revisión
                                 </p>
                             </>
                         )}
                     </CardHeader>
                 </Card>
-            </Link>
+            </div>
 
-            <Link href="/admin/ofertas?status=published" className="group">
+            <div className="group">
                 <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
                     <CardHeader className="gap-2 pb-2">
-                        <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                        <CardDescription className="flex items-center gap-1.5 text-sm text-foreground/60">
                             Ofertas en riesgo
                             <InfoTooltip text="Ofertas publicadas que llevan más de 14 días sin recibir ninguna postulación." />
                         </CardDescription>
@@ -287,7 +287,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                         )}>
                             {data.actionStrip.atRiskOffers}
                         </CardTitle>
-                        <p className="text-xs text-foreground/60">
+                        <p className="text-sm text-foreground/60">
                             {data.actionStrip.atRiskOffers === 0
                                 ? "sin riesgo actualmente"
                                 : `oferta${data.actionStrip.atRiskOffers !== 1 ? "s" : ""} publicada${data.actionStrip.atRiskOffers !== 1 ? "s" : ""} sin candidatos`
@@ -295,11 +295,11 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                         </p>
                     </CardHeader>
                 </Card>
-            </Link>
+            </div>
 
             <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
                 <CardHeader className="gap-2 pb-2">
-                    <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                    <CardDescription className="flex items-center gap-1.5 text-sm text-foreground/60">
                         Tiempo de respuesta
                         <InfoTooltip text="Promedio de días desde que un candidato postula hasta la primera acción del equipo sobre su aplicación." />
                     </CardDescription>
@@ -307,7 +307,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
                         {responseDisplay ?? "—"}
                     </CardTitle>
                     {responseLabel && (
-                        <p className={`text-xs font-medium ${responseLabel.cls}`}>{responseLabel.text}</p>
+                        <p className={`text-sm font-medium ${responseLabel.cls}`}>{responseLabel.text}</p>
                     )}
                 </CardHeader>
             </Card>
@@ -315,14 +315,14 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <Link href="/admin/ofertas?status=published" className="sm:col-span-2 xl:col-span-1 group">
                 <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
                     <CardHeader className="gap-2 pb-2">
-                        <CardDescription className="flex items-center gap-1.5 text-xs text-foreground/60">
+                        <CardDescription className="flex items-center gap-1.5 text-sm text-foreground/60">
                             Ofertas activas
                             <InfoTooltip text="Número de ofertas de trabajo publicadas actualmente." />
                         </CardDescription>
                         <CardTitle className="text-3xl font-semibold">
                             {data.metrics.activeOffers}
                         </CardTitle>
-                        <p className="text-xs text-foreground/60">
+                        <p className="text-sm text-foreground/60">
                             oferta{data.metrics.activeOffers !== 1 ? "s" : ""} publicada{data.metrics.activeOffers !== 1 ? "s" : ""} en curso
                         </p>
                     </CardHeader>
@@ -333,7 +333,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
         <div className="flex flex-col gap-4 border-t border-border/40 pt-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="shrink-0">
                 <p className="text-sm font-semibold text-foreground/90">Análisis del período</p>
-                <p className="text-xs text-foreground/50">Los datos de esta sección responden al rango de fechas seleccionado</p>
+                <p className="text-sm text-foreground/50">Los datos de esta sección responden al rango de fechas seleccionado</p>
             </div>
             <div className="min-w-0">
                 <DashboardDateFilters initialFrom={from} initialTo={to} variant="inline" />
@@ -353,7 +353,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
                 <CardHeader>
                     <CardTitle>Mejor aplicación de la semana</CardTitle>
-                    <CardDescription className="text-xs text-foreground/60">
+                    <CardDescription className="text-sm text-foreground/60">
                         Candidato con mayor puntuación en los últimos 7 días
                     </CardDescription>
                 </CardHeader>
@@ -375,7 +375,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft">
                 <CardHeader>
                     <CardTitle>Satisfacción del proceso de selección</CardTitle>
-                    <CardDescription className="text-xs text-foreground/60">
+                    <CardDescription className="text-sm text-foreground/60">
                         Promedio de calificaciones post-contratación recopiladas de empleadores y candidatos
                     </CardDescription>
                 </CardHeader>

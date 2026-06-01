@@ -165,7 +165,7 @@ export default function CredencialesExperienciasForm({
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-sm font-medium text-foreground/85">Experiencia #{index + 1}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-sm text-muted-foreground">
                             Completa los campos y respeta el orden cronológico.
                           </p>
                         </div>

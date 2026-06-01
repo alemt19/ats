@@ -36,7 +36,7 @@ export default function CandidateProgressChart({ data }: CandidateProgressChartP
     }))
 
     return (
-        <ChartContainer config={chartConfig} className="h-48 w-full">
+        <ChartContainer config={chartConfig} className="h-48 w-full text-sm">
             <BarChart
                 data={chartData}
                 layout="vertical"
@@ -50,7 +50,7 @@ export default function CandidateProgressChart({ data }: CandidateProgressChartP
                     axisLine={false}
                     tickMargin={8}
                     width={110}
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 15 }}
                 />
                 <ChartTooltip
                     cursor={false}

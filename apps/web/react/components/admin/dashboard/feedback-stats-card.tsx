@@ -20,7 +20,7 @@ function FeedbackStatRow({ label, value }: { label: string; value: number | null
     const pct = hasValue ? Math.round((value! / 5) * 100) : 0
     return (
         <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-sm">
                 <span className="text-foreground/70">{label}</span>
                 <span className="font-medium tabular-nums text-foreground/50">{hasValue ? `${pct}%` : "N/A"}</span>
             </div>
@@ -49,7 +49,7 @@ export default function FeedbackStatsCard({ feedbackStats }: { feedbackStats: Fe
                     </span>
                     <div>
                         <p className="text-sm font-semibold">Empleadores</p>
-                        <p className="text-xs text-foreground/60">
+                        <p className="text-sm text-foreground/60">
                             {feedbackStats.employer ? `${feedbackStats.employer.count} evaluaciones` : "Sin evaluaciones aún"}
                         </p>
                     </div>
@@ -68,7 +68,7 @@ export default function FeedbackStatsCard({ feedbackStats }: { feedbackStats: Fe
                     </span>
                     <div>
                         <p className="text-sm font-semibold">Candidatos</p>
-                        <p className="text-xs text-foreground/60">
+                        <p className="text-sm text-foreground/60">
                             {feedbackStats.candidate ? `${feedbackStats.candidate.count} evaluaciones` : "Sin evaluaciones aún"}
                         </p>
                     </div>
