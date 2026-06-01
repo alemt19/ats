@@ -111,26 +111,26 @@ _CULTURE_FIELDS = [
 
 
 @lru_cache(maxsize=1)
-def _load_candidate_culture_preference_catalog() -> list[dict[str, Any]]:
+def _load_company_culture_preference_catalog() -> list[dict[str, Any]]:
     catalog_path = (
         Path(__file__).resolve().parents[5]
         / "apps"
         / "web"
         / "public"
         / "data"
-        / "culture_preference_candidate.json"
+        / "culture_preference_company.json"
     )
 
     try:
         return json.loads(catalog_path.read_text(encoding="utf-8"))
     except FileNotFoundError:
         logger.warning(
-            "Candidate culture preference catalog not found at %s",
+            "Company culture preference catalog not found at %s",
             catalog_path,
         )
     except json.JSONDecodeError:
         logger.exception(
-            "Candidate culture preference catalog is not valid JSON: %s",
+            "Company culture preference catalog is not valid JSON: %s",
             catalog_path,
         )
 
@@ -649,7 +649,7 @@ class EvaluationWorker:
             candidate_context=candidate_context,
             company_context=company_context,
             job_context=job_context,
-            culture_preference_catalog=_load_candidate_culture_preference_catalog(),
+            culture_preference_catalog=_load_company_culture_preference_catalog(),
         )
 
         response = self.client.models.generate_content(

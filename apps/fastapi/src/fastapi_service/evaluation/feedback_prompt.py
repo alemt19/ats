@@ -17,8 +17,9 @@ def _filter_culture_catalog(
     both sides are null or indifferent, and drops option descriptions that are
     not chosen by either party — reducing prompt size significantly.
 
-    Note: preferences are already externalized (collaboration_style with two l's),
-    which matches the catalog technical_name keys directly.
+    The returned structure is human-readable only: it uses display_name fields
+    and omits technical_name so the prompt can talk about cultural preferences
+    without exposing internal keys.
     """
     relevant: list[dict[str, Any]] = []
 
@@ -39,12 +40,23 @@ def _filter_culture_catalog(
         ]
 
         if filtered_values:
+            value_display_names = {
+                str(value.get("technical_name")): str(value.get("display_name", "")).strip()
+                for value in category.get("values", [])
+            }
+
             relevant.append({
-                "technical_name": category["technical_name"],
                 "display_name": category["display_name"],
-                "candidate_value": cand_val,
-                "company_value": comp_val,
-                "value_descriptions": filtered_values,
+                "description": category.get("description", ""),
+                "candidate_value": value_display_names.get(cand_val, cand_val),
+                "company_value": value_display_names.get(comp_val, comp_val),
+                "value_descriptions": [
+                    {
+                        "display_name": value.get("display_name", ""),
+                        "description": value.get("description", ""),
+                    }
+                    for value in filtered_values
+                ],
             })
 
     return relevant
@@ -111,6 +123,8 @@ Reglas estrictas de salida:
   unico titulo generico. Los titulos deben ser utiles para el lector final.
 - Evita juicios personales absolutos. Prioriza evidencia observable del contexto provisto.
 - Si incluyes alertas, acompanalas de una accion concreta de mejora o validacion.
+- Cuando menciones preferencias culturales, usa solo nombres legibles como los
+    display_name. No muestres technical_name ni claves internas.
 
 Ejemplo del formato esperado:
 {{
@@ -132,6 +146,6 @@ Contexto de la empresa:
 Contexto de la vacante:
 {_pretty_json(job_context_trimmed)}
 
-Preferencias culturales relevantes (candidato vs empresa):
+Preferencias culturales relevantes (usa nombres legibles, no tecnicos):
 {_pretty_json(filtered_catalog)}
 """.strip()
