@@ -28,6 +28,72 @@ import {
 import { trackUxEvent } from "react/lib/analytics-events"
 import { usePostulacionesFilters } from "./postulaciones-shell"
 
+const obsceneTerms = [
+  "hijo de puta",
+  "hija de puta",
+  "hijos de puta",
+  "hijas de puta",
+  "cabron",
+  "cabrona",
+  "cabrones",
+  "cabronas",
+  "mierda",
+  "puta",
+  "puto",
+  "joder",
+  "coño",
+  "gilipollas",
+  "imbécil",
+  "idiota",
+  "estúpido",
+  "pendejo",
+  "pendeja",
+  "pendejos",
+  "pendejas",
+  "zorra",
+  "zorro",
+  "zorras",
+  "zorros",
+  "puta madre",
+  "hijo de la gran puta",
+  "hija de la gran puta",
+  "hijos de la gran puta",
+  "hijas de la gran puta",
+  "maldito",
+  "maldita",
+  "malditos",
+  "malditas",
+  "cabrón",
+  "cabróna",
+  "cabróns",
+  "cabrónas",
+  "puto amo",
+  "puta ama",
+  "putos amos",
+  "putas amas",
+  "polla",
+  "fuck",
+  "bitch",
+  "asshole",
+  "dick",
+  "pussy",
+  "slut",
+  "whore",
+  "nigger",
+  "faggot"
+]
+
+function censorObsceneWords(text: string) {
+  let sanitizedText = text
+
+  for (const term of obsceneTerms) {
+    const pattern = new RegExp(`\\b${term.replaceAll(" ", "\\s+")}\\b`, "gi")
+    sanitizedText = sanitizedText.replace(pattern, (match) => "*".repeat(match.length))
+  }
+
+  return sanitizedText
+}
+
 export type ApplicationStatus = string
 
 export type ApplicationStatusCatalogItem = {
@@ -241,7 +307,7 @@ function CandidateFeedbackSection({ applicationId, initialSubmitted }: Candidate
       <Textarea
         placeholder="Comentarios opcionales..."
         value={comments}
-        onChange={(e) => setComments(e.target.value)}
+        onChange={(e) => setComments(censorObsceneWords(e.target.value))}
         maxLength={1000}
         rows={2}
         className="text-sm"
