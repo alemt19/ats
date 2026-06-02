@@ -550,7 +550,7 @@ export default function CandidateApplicationDetailClient({
           <Badge variant={getStatusBadgeVariant(applicationStatus)}>{statusDisplay}</Badge>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
           <div className="space-y-4">
             <Card>
               <CardContent className="space-y-4 pt-6">
@@ -682,7 +682,7 @@ export default function CandidateApplicationDetailClient({
                     />
                     <div className="flex flex-wrap gap-2">
                       {candidate.technical_skills.map((skill) => (
-                        <Badge key={skill} variant="secondary">
+                        <Badge className="text-sm" key={skill} variant="secondary">
                           {skill}
                         </Badge>
                       ))}
@@ -697,7 +697,7 @@ export default function CandidateApplicationDetailClient({
                     <Progress value={candidate.soft_score} className={getProgressColorClass(candidate.soft_score)} />
                     <div className="flex flex-wrap gap-2">
                       {candidate.soft_skills.map((skill) => (
-                        <Badge key={skill} variant="secondary">
+                        <Badge className="text-sm" key={skill} variant="secondary">
                           {skill}
                         </Badge>
                       ))}
@@ -723,7 +723,7 @@ export default function CandidateApplicationDetailClient({
                     <p className="text-sm font-medium">Valores</p>
                     <div className="flex flex-wrap gap-2">
                       {candidate.values.map((value) => (
-                        <Badge key={value} variant="outline">
+                        <Badge className="text-sm" key={value} variant="outline">
                           {value}
                         </Badge>
                       ))}
@@ -736,7 +736,7 @@ export default function CandidateApplicationDetailClient({
                       {mappedPreferences.map((preference) => (
                         <Tooltip key={preference.key}>
                           <TooltipTrigger asChild>
-                            <Badge variant="outline" className="cursor-help">
+                            <Badge variant="outline" className="cursor-help text-sm">
                               {preference.categoryName}: {preference.displayName}
                             </Badge>
                           </TooltipTrigger>
@@ -772,7 +772,7 @@ export default function CandidateApplicationDetailClient({
                     {candidateCredentials.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {candidateCredentials.map((credential) => (
-                          <Badge key={credential} variant="secondary">
+                          <Badge className="text-sm" key={credential} variant="secondary">
                             {credential}
                           </Badge>
                         ))}
@@ -917,7 +917,7 @@ export default function CandidateApplicationDetailClient({
             </Card>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 xl:col-start-2">
             {(feedback.employer || feedback.candidate) && (
               <Card>
                 <CardHeader>
