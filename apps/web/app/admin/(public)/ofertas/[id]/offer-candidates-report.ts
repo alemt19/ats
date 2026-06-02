@@ -320,7 +320,7 @@ async function fetchCandidateAiFeedback(offerId: number, applicationId: string) 
       return ""
     }
     
-    return entries.map(([title, content]) => `${title}: ${content}`).join("\n")
+    return entries.map(([title, content]) => `${title}: ${content}`).join("\n\n")
   } catch {
     return ""
   }
