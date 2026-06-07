@@ -5,7 +5,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
-import { hashPassword } from 'better-auth/crypto';
+import { hash as bcryptHash } from 'bcryptjs';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import { createClient } from '@supabase/supabase-js';
@@ -377,7 +377,7 @@ async function upsertUserWithAccount(
 		create: { email, name, role, emailVerified: true },
 	});
 
-	const hashedPassword = await hashPassword(password);
+	const hashedPassword = await bcryptHash(password, 10);
 	await prisma.account.upsert({
 		where: { providerId_accountId: { providerId: 'credential', accountId: user.id } },
 		update: {

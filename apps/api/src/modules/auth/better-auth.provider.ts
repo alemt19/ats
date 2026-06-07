@@ -2,6 +2,7 @@
 
 import { Provider } from '@nestjs/common';
 import { betterAuth } from 'better-auth';
+import { hash as bcryptHash, compare as bcryptCompare } from 'bcryptjs';
 import { toNodeHandler } from 'better-auth/node';
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -90,6 +91,11 @@ export const BetterAuthProvider: Provider = {
 			emailAndPassword: {
 				enabled: true,
 				requireEmailVerification: true,
+				password: {
+					hash: (password: string) => bcryptHash(password, 10),
+					verify: ({ hash, password }: { hash: string; password: string }) =>
+						bcryptCompare(password, hash),
+				},
 				resetPasswordTokenExpiresIn: 60 * 60,
 				sendResetPassword: async ({ user, token }: any) => {
 					if (!user?.email) {
