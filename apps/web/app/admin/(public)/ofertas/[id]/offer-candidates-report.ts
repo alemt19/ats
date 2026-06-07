@@ -35,6 +35,10 @@ type CandidateApiResponse = {
   }
 }
 
+type CandidateApplicationDetailResponse = {
+  ai_feedback?: Record<string, string> | null
+}
+
 type PaginatedCandidatesResponse = {
   items?: AdminOfferCandidate[]
   total?: number
@@ -58,6 +62,7 @@ type ReportFilterRow = {
 }
 
 type ReportCandidateRow = {
+  kind: "candidate"
   candidate: string
   candidateUrl: string
   dni: string
@@ -67,6 +72,14 @@ type ReportCandidateRow = {
   final: string
   status: string
 }
+
+type ReportFeedbackRow = {
+  kind: "feedback"
+  candidate: string
+  aiFeedback: string
+}
+
+type ReportTableRow = ReportCandidateRow | ReportFeedbackRow
 
 const BACKEND_BASE_URL = process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? "http://localhost:4000"
 const REPORT_PAGE_SIZE = 100
@@ -284,6 +297,35 @@ async function fetchCandidateDni(candidateId: string) {
   }
 }
 
+async function fetchCandidateAiFeedback(offerId: number, applicationId: string) {
+  const numericApplicationId = Number(applicationId)
+
+  if (!Number.isFinite(numericApplicationId) || numericApplicationId <= 0) {
+    return ""
+  }
+
+  try {
+    const response = await fetch(`/api/admin/ofertas/${offerId}/candidatos/${numericApplicationId}`)
+
+    if (!response.ok) {
+      return ""
+    }
+
+    const payload = (await response.json().catch(() => null)) as CandidateApplicationDetailResponse | null
+    const entries = Object.entries(payload.data.ai_feedback ?? {}).filter(
+      ([title, content]) => title.trim().length > 0 && content.trim().length > 0
+    )
+
+    if (entries.length === 0) {
+      return ""
+    }
+    
+    return entries.map(([title, content]) => `${title}: ${content}`).join("\n\n")
+  } catch {
+    return ""
+  }
+}
+
 function buildSkillLine(items: Array<{ name: string; is_mandatory?: boolean }> | undefined) {
   return extractReadableValue(items)
 }
@@ -330,20 +372,43 @@ export async function buildOfferCandidatesReportPdf({
   const candidateDetails = await Promise.all(
     topCandidates.map(async (candidate) => ({
       candidateId: candidate.candidate_id,
+      applicationId: candidate.application_id,
       dni: await fetchCandidateDni(candidate.candidate_id),
+      aiFeedback: await fetchCandidateAiFeedback(offerId, candidate.application_id),
     }))
   )
-  const dniByCandidateId = new Map(candidateDetails.map((entry) => [entry.candidateId, entry.dni]))
-  const reportCandidateRows: ReportCandidateRow[] = topCandidates.map((candidate) => ({
-    candidate: `${candidate.first_name} ${candidate.last_name}`.trim(),
-    candidateUrl: buildCandidateDetailUrl(offerId, candidate.application_id),
-    dni: dniByCandidateId.get(candidate.candidate_id) || "-",
-    technical: formatPercent(candidate.technical_score),
-    soft: formatPercent(candidate.soft_score),
-    culture: formatPercent(candidate.culture_score),
-    final: formatPercent(candidate.final_score),
-    status: statusLabel(candidate.status, candidateStatusOptions),
-  }))
+  const detailByApplicationId = new Map(
+    candidateDetails.map((entry) => [entry.applicationId, { dni: entry.dni, aiFeedback: entry.aiFeedback }])
+  )
+  const reportCandidateRows: ReportTableRow[] = topCandidates.flatMap((candidate) => {
+    const candidateName = `${candidate.first_name} ${candidate.last_name}`.trim()
+    const candidateDetail = detailByApplicationId.get(candidate.application_id)
+    const aiFeedback = candidateDetail?.aiFeedback ?? ""
+
+    const rows: ReportTableRow[] = [
+      {
+        kind: "candidate",
+        candidate: candidateName,
+        candidateUrl: buildCandidateDetailUrl(offerId, candidate.application_id),
+        dni: candidateDetail?.dni || "-",
+        technical: formatPercent(candidate.technical_score),
+        soft: formatPercent(candidate.soft_score),
+        culture: formatPercent(candidate.culture_score),
+        final: formatPercent(candidate.final_score),
+        status: statusLabel(candidate.status, candidateStatusOptions),
+      },
+    ]
+
+    if (aiFeedback.trim().length > 0) {
+      rows.push({
+        kind: "feedback",
+        candidate: candidateName,
+        aiFeedback,
+      })
+    }
+
+    return rows
+  })
   const workplaceTypeLabel = await getJobParameterDisplayName(
     offer.workplace_type,
     offer.workplace_type,
@@ -374,11 +439,11 @@ export async function buildOfferCandidatesReportPdf({
   }
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(16)
+  doc.setFontSize(20)
   doc.text(company.name || "Empresa", companyLogoDataUrl ? marginX + 32 : marginX, 18)
 
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(10)
+  doc.setFontSize(14)
   doc.text(`Reporte generado: ${dateLabel}`, companyLogoDataUrl ? marginX + 32 : marginX, 24)
 
   cursorY = 34
@@ -387,12 +452,12 @@ export async function buildOfferCandidatesReportPdf({
   cursorY += 8
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(15)
+  doc.setFontSize(20)
   doc.text("Reporte de postulaciones", marginX, cursorY)
   cursorY += 8
 
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(10)
+  doc.setFontSize(14)
   doc.text(`Oferta: ${offer.title}`, marginX, cursorY)
   cursorY += 6
 
@@ -438,8 +503,8 @@ export async function buildOfferCandidatesReportPdf({
     margin: { left: marginX, right: marginX },
     styles: {
       font: "helvetica",
-      fontSize: 9,
-      cellPadding: 2.5,
+      fontSize: 13,
+      cellPadding: 3,
       valign: "middle",
     },
     headStyles: {
@@ -471,19 +536,19 @@ export async function buildOfferCandidatesReportPdf({
 
   if (reportFilterRows.length) {
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(13)
+    doc.setFontSize(17)
     doc.text("Filtros aplicados al reporte", marginX, tableStartY)
 
     autoTable(doc, {
       startY: tableStartY + 4,
       theme: "grid",
       margin: { left: marginX, right: marginX },
-      styles: {
-        font: "helvetica",
-        fontSize: 9,
-        cellPadding: 2.5,
-        valign: "middle",
-      },
+        styles: {
+          font: "helvetica",
+          fontSize: 13,
+          cellPadding: 3,
+          valign: "middle",
+        },
       headStyles: {
         fillColor: [242, 244, 248],
         textColor: [30, 41, 59],
@@ -512,10 +577,10 @@ export async function buildOfferCandidatesReportPdf({
   }
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(13)
+  doc.setFontSize(17)
   doc.text(`Top ${topCandidates.length} postulaciones`, marginX, tableStartY)
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(9)
+  doc.setFontSize(13)
   doc.text("Los nombres de candidato son enlaces al detalle de la postulación.", marginX, tableStartY + 5)
   autoTable(doc, {
     startY: tableStartY + 8,
@@ -523,8 +588,8 @@ export async function buildOfferCandidatesReportPdf({
     margin: { left: marginX, right: marginX },
     styles: {
       font: "helvetica",
-      fontSize: 8,
-      cellPadding: 2.2,
+      fontSize: 12,
+      cellPadding: 3,
       valign: "middle",
     },
     headStyles: {
@@ -544,25 +609,44 @@ export async function buildOfferCandidatesReportPdf({
     body: reportCandidateRows,
     didParseCell: (hookData) => {
       if (hookData.section === "body") {
-        const rowIndex = hookData.row.index
+        const row = hookData.row.raw as ReportTableRow | undefined
 
-        if (hookData.column.index === 0) {
-          hookData.cell.text = [reportCandidateRows[rowIndex]?.candidate ?? ""]
-          hookData.cell.styles.textColor = [37, 99, 235]
-          hookData.cell.styles.fontStyle = "bold"
-        } else if (hookData.column.index === 1) {
-          hookData.cell.text = [reportCandidateRows[rowIndex]?.dni ?? ""]
+        if (row?.kind === "candidate") {
+          if (hookData.column.index === 0) {
+            hookData.cell.text = [row.candidate]
+            hookData.cell.styles.textColor = [37, 99, 235]
+            hookData.cell.styles.fontStyle = "bold"
+          } else if (hookData.column.index === 1) {
+            hookData.cell.text = [row.dni]
+          }
+          return
+        }
+
+        if (row?.kind === "feedback") {
+          if (hookData.column.index === 0) {
+            hookData.cell.colSpan = 7
+            hookData.cell.styles.fillColor = [248, 250, 252]
+            hookData.cell.styles.textColor = [51, 65, 85]
+            hookData.cell.styles.fontStyle = "normal"
+            hookData.cell.styles.cellPadding = 4
+            hookData.cell.text = doc.splitTextToSize(`Feedback IA\n${row.aiFeedback}`, contentWidth - 10)
+          } else {
+            hookData.cell.text = []
+          }
         }
       }
     },
     didDrawCell: (hookData) => {
-      if (hookData.section === "body" && hookData.column.index === 0) {
-        const rowIndex = hookData.row.index
-        const candidateUrl = reportCandidateRows[rowIndex]?.candidateUrl
+      if (hookData.section !== "body") {
+        return
+      }
 
-        if (candidateUrl) {
+      const row = hookData.row.raw as ReportTableRow | undefined
+
+      if (row?.kind === "candidate" && hookData.column.index === 0) {
+        if (row.candidateUrl) {
           doc.link(hookData.cell.x, hookData.cell.y, hookData.cell.width, hookData.cell.height, {
-            url: candidateUrl,
+            url: row.candidateUrl,
           })
         }
       }

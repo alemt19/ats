@@ -193,7 +193,7 @@ function FiltersPanel({
   return (
     <div className={cn("grid gap-3", compact ? "grid-cols-2 xl:grid-cols-5" : "grid-cols-1 sm:grid-cols-2")}>
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Categoría</Label>
+        <Label className="text-sm text-muted-foreground">Categoría</Label>
         <Select value={query.category} onValueChange={onCategoryChange}>
           <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Categoría" />
@@ -210,7 +210,7 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Modalidad</Label>
+        <Label className="text-sm text-muted-foreground">Modalidad</Label>
         <Select value={query.workplace_type} onValueChange={onWorkplaceTypeChange}>
           <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Modalidad" />
@@ -227,7 +227,7 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Tipo de empleo</Label>
+        <Label className="text-sm text-muted-foreground">Tipo de empleo</Label>
         <Select value={query.employment_type} onValueChange={onEmploymentTypeChange}>
           <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Tipo de empleo" />
@@ -244,7 +244,7 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Ciudad</Label>
+        <Label className="text-sm text-muted-foreground">Ciudad</Label>
         <Popover open={cityOpen} onOpenChange={setCityOpen}>
           <PopoverTrigger asChild>
             <Button variant="outline" className="w-full justify-between border-border/70 bg-background/70 hover:bg-muted/80">
@@ -294,7 +294,7 @@ function FiltersPanel({
       </div>
 
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Estado</Label>
+        <Label className="text-sm text-muted-foreground">Estado</Label>
         <Select value={query.status} onValueChange={onStatusChange}>
           <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Estado" />
@@ -552,12 +552,12 @@ export default function OfertasAdminClient({
             <Table>
               <TableHeader className="bg-muted/60 text-foreground/80">
                 <TableRow className="border-b border-border/70">
-                  <TableHead className="text-xs font-medium text-foreground/70">Título del cargo</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Ubicación</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Candidatos</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Fecha de creación</TableHead>
-                  <TableHead className="text-xs font-medium text-foreground/70">Estado</TableHead>
-                  <TableHead className="w-12 text-center text-xs font-medium text-foreground/70">Ver</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Título del cargo</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Ubicación</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Candidatos</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Fecha de creación</TableHead>
+                  <TableHead className="text-sm font-medium text-foreground/70">Estado</TableHead>
+                  <TableHead className="w-12 text-center text-sm font-medium text-foreground/70">Ver</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

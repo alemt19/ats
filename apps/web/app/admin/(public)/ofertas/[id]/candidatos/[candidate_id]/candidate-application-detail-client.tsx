@@ -21,6 +21,14 @@ import {
 import { StarRating } from "react/components/ui/star-rating"
 import { Textarea } from "react/components/ui/textarea"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "react/components/ui/tooltip"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogClose,
+} from "react/components/ui/dialog"
 import { EmployerFeedbackModal } from "./employer-feedback-modal"
 
 export type ApplicationStatusOption = {
@@ -276,6 +284,8 @@ export default function CandidateApplicationDetailClient({
   const [feedback, setFeedback] = React.useState<ApplicationFeedback>(initialFeedback)
   const cvPreviewType = React.useMemo(() => getCvType(candidate.cv_url), [candidate.cv_url])
   const docxContainerRef = React.useRef<HTMLDivElement | null>(null)
+  const modalDocxRef = React.useRef<HTMLDivElement | null>(null)
+  const [showCvDialog, setShowCvDialog] = React.useState(false)
 
   React.useEffect(() => {
     if (cvPreviewType !== "docx" || !candidate.cv_url || !docxContainerRef.current) {
@@ -300,8 +310,19 @@ export default function CandidateApplicationDetailClient({
           return
         }
 
+        // render into small preview container
         docxContainerRef.current.innerHTML = ""
         await renderAsync(blob, docxContainerRef.current)
+
+        // if modal container exists (user opened viewer), render there too
+        if (!isCancelled && modalDocxRef.current) {
+          try {
+            modalDocxRef.current.innerHTML = ""
+            await renderAsync(blob, modalDocxRef.current)
+          } catch {
+            // ignore modal render errors
+          }
+        }
       } catch {
         if (!isCancelled && docxContainerRef.current) {
           docxContainerRef.current.innerHTML =
@@ -316,6 +337,39 @@ export default function CandidateApplicationDetailClient({
       isCancelled = true
     }
   }, [candidate.cv_url, cvPreviewType])
+
+  // If the modal is opened after initial render, ensure we render the docx into the modal container
+  React.useEffect(() => {
+    if (!showCvDialog || cvPreviewType !== "docx" || !candidate.cv_url || !modalDocxRef.current) {
+      return
+    }
+
+    let isCancelled = false
+
+    const renderInModal = async () => {
+      try {
+        const { renderAsync } = await import("docx-preview")
+        const response = await fetch(candidate.cv_url!)
+        const blob = await response.blob()
+
+        if (isCancelled || !modalDocxRef.current) return
+
+        modalDocxRef.current.innerHTML = ""
+        await renderAsync(blob, modalDocxRef.current)
+      } catch {
+        if (!isCancelled && modalDocxRef.current) {
+          modalDocxRef.current.innerHTML =
+            '<p class="text-sm text-muted-foreground">No se pudo renderizar el archivo .docx.</p>'
+        }
+      }
+    }
+
+    renderInModal()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [showCvDialog, cvPreviewType, candidate.cv_url])
 
   const mappedPreferences = React.useMemo(
     () =>
@@ -496,7 +550,7 @@ export default function CandidateApplicationDetailClient({
           <Badge variant={getStatusBadgeVariant(applicationStatus)}>{statusDisplay}</Badge>
         </header>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)_360px]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
           <div className="space-y-4">
             <Card>
               <CardContent className="space-y-4 pt-6">
@@ -599,7 +653,7 @@ export default function CandidateApplicationDetailClient({
                   </SelectContent>
                 </Select>
                 {isUpdatingStatus ? (
-                  <p className="text-muted-foreground mt-2 flex items-center gap-2 text-xs">
+                  <p className="text-muted-foreground mt-2 flex items-center gap-2 text-sm">
                     <Loader2 className="size-3 animate-spin" />
                     Actualizando estado...
                   </p>
@@ -628,7 +682,7 @@ export default function CandidateApplicationDetailClient({
                     />
                     <div className="flex flex-wrap gap-2">
                       {candidate.technical_skills.map((skill) => (
-                        <Badge key={skill} variant="secondary">
+                        <Badge className="text-sm" key={skill} variant="secondary">
                           {skill}
                         </Badge>
                       ))}
@@ -643,7 +697,7 @@ export default function CandidateApplicationDetailClient({
                     <Progress value={candidate.soft_score} className={getProgressColorClass(candidate.soft_score)} />
                     <div className="flex flex-wrap gap-2">
                       {candidate.soft_skills.map((skill) => (
-                        <Badge key={skill} variant="secondary">
+                        <Badge className="text-sm" key={skill} variant="secondary">
                           {skill}
                         </Badge>
                       ))}
@@ -669,7 +723,7 @@ export default function CandidateApplicationDetailClient({
                     <p className="text-sm font-medium">Valores</p>
                     <div className="flex flex-wrap gap-2">
                       {candidate.values.map((value) => (
-                        <Badge key={value} variant="outline">
+                        <Badge className="text-sm" key={value} variant="outline">
                           {value}
                         </Badge>
                       ))}
@@ -682,7 +736,7 @@ export default function CandidateApplicationDetailClient({
                       {mappedPreferences.map((preference) => (
                         <Tooltip key={preference.key}>
                           <TooltipTrigger asChild>
-                            <Badge variant="outline" className="cursor-help">
+                            <Badge variant="outline" className="cursor-help text-sm">
                               {preference.categoryName}: {preference.displayName}
                             </Badge>
                           </TooltipTrigger>
@@ -718,7 +772,7 @@ export default function CandidateApplicationDetailClient({
                     {candidateCredentials.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {candidateCredentials.map((credential) => (
-                          <Badge key={credential} variant="secondary">
+                          <Badge className="text-sm" key={credential} variant="secondary">
                             {credential}
                           </Badge>
                         ))}
@@ -736,7 +790,7 @@ export default function CandidateApplicationDetailClient({
                           <div key={`${experience.company_name}-${experience.position}-${index}`} className="rounded-lg border border-border/70 bg-background/70 p-3">
                             <p className="font-medium">{experience.position}</p>
                             <p className="text-sm text-muted-foreground">{experience.company_name}</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                               {formatExperienceDate(experience.start_date)} - {formatExperienceDate(experience.end_date)}
                             </p>
                           </div>
@@ -776,7 +830,19 @@ export default function CandidateApplicationDetailClient({
               </CardHeader>
               <CardContent className="space-y-6">
                 <section className="space-y-3">
-                  <h3 className="font-medium">Curriculum Vitae</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-medium">Curriculum Vitae</h3>
+                    <div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCvDialog(true)}
+                        disabled={!candidate.cv_url}
+                      >
+                        Ver
+                      </Button>
+                    </div>
+                  </div>
                   <div className="overflow-hidden rounded-lg border">
                     {!cvPreviewType ? (
                       <div className="text-muted-foreground flex min-h-85 items-center justify-center px-4 text-center text-sm">
@@ -800,6 +866,40 @@ export default function CandidateApplicationDetailClient({
                   </div>
                 </section>
 
+                {/* CV Viewer Dialog */}
+                <Dialog open={showCvDialog} onOpenChange={setShowCvDialog}>
+                  <DialogContent className="sm:max-w-4xl max-w-full max-h-8/9 overflow-auto">
+                    <DialogHeader>
+                      <DialogTitle>Vista previa del CV</DialogTitle>
+                      <DialogDescription>
+                        Visualiza el curriculum en tamaño completo. Cierra la ventana para regresar.
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="mt-4">
+                      {cvPreviewType === "pdf" && candidate.cv_url ? (
+                        <iframe title="CV completo" src={candidate.cv_url} className="w-full min-h-[80vh]" />
+                      ) : null}
+
+                      {cvPreviewType === "docx" && candidate.cv_url ? (
+                        <div className="w-full min-h-[80vh] overflow-auto p-4">
+                          <div ref={modalDocxRef} />
+                        </div>
+                      ) : null}
+
+                      {!cvPreviewType && (
+                        <div className="text-sm text-muted-foreground">No hay CV disponible para visualizar.</div>
+                      )}
+                    </div>
+
+                    <div className="mt-4 flex justify-end">
+                      <DialogClose asChild>
+                        <Button>Cerrar</Button>
+                      </DialogClose>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
                 <section className="space-y-4">
                   <h3 className="font-medium">Preguntas Conductuales</h3>
 
@@ -817,7 +917,7 @@ export default function CandidateApplicationDetailClient({
             </Card>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 xl:col-start-2">
             {(feedback.employer || feedback.candidate) && (
               <Card>
                 <CardHeader>
@@ -881,7 +981,7 @@ export default function CandidateApplicationDetailClient({
                         <div className="min-w-0 space-y-1">
                           <div className="flex flex-wrap items-center gap-2 text-sm">
                             <p className="font-medium">{note.recruiter_name}</p>
-                            <p className="text-muted-foreground text-xs">{formatRelativeDate(note.created_at)}</p>
+                            <p className="text-muted-foreground text-sm">{formatRelativeDate(note.created_at)}</p>
                           </div>
                           <p className="text-muted-foreground text-sm">{note.text}</p>
                         </div>

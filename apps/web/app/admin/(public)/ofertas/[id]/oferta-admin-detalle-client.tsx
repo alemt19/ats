@@ -226,7 +226,7 @@ function ScoreRangeControls({
   return (
     <div className="space-y-5">
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación técnica</Label>
+        <Label className="text-sm text-muted-foreground">Puntuación técnica</Label>
         <Slider
           min={0}
           max={100}
@@ -235,14 +235,14 @@ function ScoreRangeControls({
           onValueChange={(value) => onTechnicalRangeChange([value[0] ?? 0, value[1] ?? 100])}
           onValueCommit={(value) => onTechnicalRangeChange([value[0] ?? 0, value[1] ?? 100])}
         />
-        <div className="text-muted-foreground flex justify-between text-xs">
+        <div className="text-muted-foreground flex justify-between text-sm">
           <span>{technicalRange[0]}%</span>
           <span>{technicalRange[1]}%</span>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación de habilidades blandas</Label>
+        <Label className="text-sm text-muted-foreground">Puntuación de habilidades blandas</Label>
         <Slider
           min={0}
           max={100}
@@ -251,14 +251,14 @@ function ScoreRangeControls({
           onValueChange={(value) => onSoftRangeChange([value[0] ?? 0, value[1] ?? 100])}
           onValueCommit={(value) => onSoftRangeChange([value[0] ?? 0, value[1] ?? 100])}
         />
-        <div className="text-muted-foreground flex justify-between text-xs">
+        <div className="text-muted-foreground flex justify-between text-sm">
           <span>{softRange[0]}%</span>
           <span>{softRange[1]}%</span>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación de alineación cultural</Label>
+        <Label className="text-sm text-muted-foreground">Puntuación de alineación cultural</Label>
         <Slider
           min={0}
           max={100}
@@ -267,14 +267,14 @@ function ScoreRangeControls({
           onValueChange={(value) => onCultureRangeChange([value[0] ?? 0, value[1] ?? 100])}
           onValueCommit={(value) => onCultureRangeChange([value[0] ?? 0, value[1] ?? 100])}
         />
-        <div className="text-muted-foreground flex justify-between text-xs">
+        <div className="text-muted-foreground flex justify-between text-sm">
           <span>{cultureRange[0]}%</span>
           <span>{cultureRange[1]}%</span>
         </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Puntuación final</Label>
+        <Label className="text-sm text-muted-foreground">Puntuación final</Label>
         <Slider
           min={0}
           max={100}
@@ -283,7 +283,7 @@ function ScoreRangeControls({
           onValueChange={(value) => onFinalRangeChange([value[0] ?? 0, value[1] ?? 100])}
           onValueCommit={(value) => onFinalRangeChange([value[0] ?? 0, value[1] ?? 100])}
         />
-        <div className="text-muted-foreground flex justify-between text-xs">
+        <div className="text-muted-foreground flex justify-between text-sm">
           <span>{finalRange[0]}%</span>
           <span>{finalRange[1]}%</span>
         </div>
@@ -364,7 +364,7 @@ function ScoreFilterPanel({
       />
 
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Estado</Label>
+        <Label className="text-sm text-muted-foreground">Estado</Label>
         <Select value={query.status} onValueChange={onStatusChange}>
           <SelectTrigger className="w-full border-border/70 bg-background/70">
             <SelectValue placeholder="Selecciona estado" />
@@ -712,7 +712,7 @@ export default function OfertaAdminDetalleClient({
                 <Badge
                   key={String(chip)}
                   variant="secondary"
-                  className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium"
+                  className="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-sm font-medium"
                 >
                   {chip}
                 </Badge>
@@ -812,11 +812,11 @@ export default function OfertaAdminDetalleClient({
         </TabsContent>
 
         <TabsContent value="candidatos" className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
+          <div className="grid gap-4 lg:grid-cols-[310px_1fr]">
             <Card className="gradient-border sticky top-6 hidden h-fit rounded-2xl border border-border/70 bg-card/90 shadow-soft lg:block">
               <CardHeader className="space-y-1">
                 <CardTitle className="text-base">Filtros avanzados</CardTitle>
-                <p className="text-muted-foreground text-xs">Ajusta rangos y estado de candidatos.</p>
+                <p className="text-muted-foreground text-sm">Ajusta rangos y estado de candidatos.</p>
               </CardHeader>
               <CardContent>
                 <ScoreFilterPanel
@@ -949,13 +949,13 @@ export default function OfertaAdminDetalleClient({
                     <Table>
                       <TableHeader className="bg-muted/40">
                         <TableRow>
-                          <TableHead className="text-xs font-semibold text-muted-foreground">Candidato</TableHead>
-                          <TableHead className="text-xs font-semibold text-muted-foreground">Puntuación técnica</TableHead>
-                          <TableHead className="text-xs font-semibold text-muted-foreground">Puntuación blanda</TableHead>
-                          <TableHead className="text-xs font-semibold text-muted-foreground">Alineación cultural</TableHead>
-                          <TableHead className="text-xs font-semibold text-muted-foreground">Puntuación final</TableHead>
-                          <TableHead className="text-xs font-semibold text-muted-foreground">Estado</TableHead>
-                          <TableHead className="w-20 text-right text-xs font-semibold text-muted-foreground">Acciones</TableHead>
+                          <TableHead className="text-sm font-semibold text-muted-foreground">Candidato</TableHead>
+                          <TableHead className="text-sm font-semibold text-muted-foreground">Puntuación técnica</TableHead>
+                          <TableHead className="text-sm font-semibold text-muted-foreground">Puntuación blanda</TableHead>
+                          <TableHead className="text-sm font-semibold text-muted-foreground">Alineación cultural</TableHead>
+                          <TableHead className="text-sm font-semibold text-muted-foreground">Puntuación final</TableHead>
+                          <TableHead className="text-sm font-semibold text-muted-foreground">Estado</TableHead>
+                          <TableHead className="w-20 text-right text-sm font-semibold text-muted-foreground">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1106,7 +1106,7 @@ export default function OfertaAdminDetalleClient({
       </Tabs>
 
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg max-h-8/9 overflow-auto">
           <DialogHeader>
             <DialogTitle>Generar reporte PDF</DialogTitle>
             <DialogDescription>
@@ -1169,14 +1169,14 @@ export default function OfertaAdminDetalleClient({
                 }}
                 placeholder={`Máximo ${reportTotalCandidates}`}
               />
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Puedes elegir hasta {reportTotalCandidates} postulaciones.
               </p>
             </div>
             <div className="space-y-3 rounded-2xl border border-border/60 bg-muted/20 p-4">
               <div className="space-y-1">
                 <p className="text-sm font-medium">Filtros de puntuación para el reporte</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   El top seleccionado se calculará solo entre los candidatos que entren en estos rangos.
                 </p>
               </div>

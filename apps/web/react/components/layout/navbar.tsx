@@ -208,7 +208,7 @@ export default function Navbar({ companyName, logoSrc }: NavbarProps) {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{user.name ?? "Usuario"}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
+                    <p className="text-sm leading-none text-muted-foreground truncate">
                       {user.email || "usuario@ejemplo.com"}
                     </p>
                   </div>

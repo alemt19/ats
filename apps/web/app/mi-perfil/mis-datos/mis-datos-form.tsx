@@ -503,7 +503,7 @@ export default function MisDatosForm({
           <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
             <div className="space-y-1">
               <p className="text-sm font-medium text-foreground/85">Tamaño de letra</p>
-              <p className="text-xs text-foreground/60">Se aplica en toda la aplicación.</p>
+              <p className="text-sm text-foreground/60">Se aplica en toda la aplicación.</p>
             </div>
             <div className="mt-3 max-w-xs">
               <Select

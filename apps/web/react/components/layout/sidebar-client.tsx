@@ -139,7 +139,7 @@ export default function SidebarClient({ children }: SidebarClientProps) {
                             </Avatar>
                             <div className="min-w-0">
                                 <p className="truncate text-sm font-medium">{userName}</p>
-                                <p className="truncate text-xs text-muted-foreground">{userEmail}</p>
+                                <p className="truncate text-sm text-muted-foreground">{userEmail}</p>
                             </div>
                         </div>
                     )}

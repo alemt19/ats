@@ -26,12 +26,12 @@ export default function Footer({ companyName = "Ats", logoSrc }: FooterProps) {
                         <span className="text-base font-semibold tracking-tight">{companyName}</span>
                     </Link>
 
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-base text-muted-foreground">
                         Conectando el talento venezolano con su futuro.
                     </p>
                 </div>
                 <Separator className="my-2" />
-                <p className="text-xs text-muted-foreground text-center">
+                <p className="text-sm text-muted-foreground text-center">
                     &copy; {new Date().getFullYear()} {companyName}. Todos los derechos reservados.
                 </p>
             </div>

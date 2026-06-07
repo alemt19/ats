@@ -333,10 +333,10 @@ function MultiDatalistField({
       {suggestionItems.length > 0 ? (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground">Sugerencias para {label}</p>
+            <p className="text-sm text-muted-foreground">Sugerencias para {label}</p>
             <Button
               type="button"
-              size="xs"
+              size="sm"
               variant="outline"
               disabled={disabled}
               onClick={onAddAllSuggestions}
@@ -954,10 +954,10 @@ export default function CrearOfertaForm({
                         />
                       </FormControl>
                       <div className="flex items-center gap-2">
-                        <Badge variant={matchingGenericDescription ? "success" : "outline"}>
+                        <Badge className="text-sm" variant={matchingGenericDescription ? "success" : "outline"}>
                           {getGenericDescriptionStateLabel(Boolean(matchingGenericDescription))}
                         </Badge>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {matchingGenericDescription
                             ? `Coincide con ${matchingGenericDescription.position}`
                             : "La descripción no está usando una plantilla guardada."}
@@ -1362,18 +1362,18 @@ export default function CrearOfertaForm({
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground">Total</span>
+                    <span className="text-sm text-muted-foreground">Total</span>
                     <span className={cn(
                       "text-sm font-semibold tabular-nums",
                       isWeightSumValid ? "text-emerald-600" : "text-destructive"
                     )}>
                       {Math.round(((technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0)) * 100)}%
                     </span>
-                    {isWeightSumValid ? <span className="text-xs text-emerald-600">✓</span> : null}
+                    {isWeightSumValid ? <span className="text-sm text-emerald-600">✓</span> : null}
                   </div>
                   {!isWeightSumValid && (technicalWeightValue ?? 0) + (softWeightValue ?? 0) + (cultureWeightValue ?? 0) > 0 ? (
                     <Button type="button" size="sm" variant="outline" onClick={handleNormalize}
-                      className="h-7 rounded-full px-3 text-xs">
+                      className="h-7 rounded-full px-3 text-sm">
                       Normalizar a 100%
                     </Button>
                   ) : null}

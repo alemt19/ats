@@ -11,9 +11,9 @@ type FontSizeContextValue = {
 }
 
 const FONT_SIZE_TO_ROOT_PX: Record<FontSize, string> = {
-  small: "16px",
-  medium: "18px",
-  large: "20px",
+  small: "15px",
+  medium: "17px",
+  large: "19px",
 }
 
 const FontSizeContext = React.createContext<FontSizeContextValue | undefined>(undefined)

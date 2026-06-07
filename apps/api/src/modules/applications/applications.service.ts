@@ -5,12 +5,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { EvaluationQueueProducer } from '../../common/queues/evaluation-queue.producer';
 import { CreateApplicationDto, UpdateApplicationDto, CreateApplicationFeedbackDto } from './dto/applications.dto';
 import { Prisma } from '../../generated/prisma/client';
+import { MailerService } from '@nestjs-modules/mailer';
 
 @Injectable()
 export class ApplicationsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly evaluationQueue: EvaluationQueueProducer,
+    private readonly mailer: MailerService,
   ) {}
 
   private normalizeApplicationStatus(status: unknown): string | null {
@@ -362,14 +364,15 @@ export class ApplicationsService {
       select: {
         id: true,
         candidates: { select: { user_id: true } },
-        jobs: { select: { id: true, title: true } },
+        jobs: { select: { id: true, title: true, companies: { select: { name: true } } } },
       },
     });
 
     const candidateUserId = application?.candidates?.user_id;
     if (!candidateUserId) return;
 
-    const jobTitle = application.jobs?.title?.trim() || 'la oferta';
+  const jobTitle = application.jobs?.title?.trim() || 'la oferta';
+  const companyName = application.jobs?.companies?.name?.trim() || '';
 
     try {
       await this.prisma.notifications.create({
@@ -387,11 +390,36 @@ export class ApplicationsService {
         },
       });
     } catch (error) {
+      // If a duplicate notification exists, ignore and continue to attempt sending the email.
       if (error && typeof error === 'object' && 'code' in error && (error as { code?: string }).code === 'P2002') {
-        return;
+        // ignore duplicate
+      } else {
+        throw error;
       }
+    }
 
-      throw error;
+    // Attempt to send an email to the candidate. Best-effort: log failures but do not block status update.
+    try {
+      const candidate = await this.prisma.user.findUnique({
+        where: { id: candidateUserId },
+        select: { email: true, name: true },
+      });
+
+      if (candidate?.email) {
+        const subject = 'Has sido contratado';
+  const companyPart = companyName ? ` en <strong>${companyName}</strong>` : '';
+  const html = `<p>Hola ${candidate.name ?? ''},</p><p>¡Felicitaciones! Tu postulación a <strong>${jobTitle}</strong>${companyPart} ha sido aceptada. Nos comunicaremos contigo con los siguientes pasos.</p><p>Saludos,</p><p>Equipo</p>`;
+
+        await this.mailer.sendMail({
+          to: candidate.email,
+          subject,
+          html,
+        });
+      }
+    } catch (err) {
+      // Log the email send failure and continue without failing the status transition.
+      // eslint-disable-next-line no-console
+      console.error('[ApplicationsService] Failed to send hired email:', err);
     }
   }
 
