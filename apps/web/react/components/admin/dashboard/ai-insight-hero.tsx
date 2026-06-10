@@ -53,7 +53,7 @@ export default function AiInsightHero({
 
       {/* Card principal con gradient-border */}
       <div className="gradient-border rounded-2xl bg-card/90 shadow-soft">
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-6 md:p-6">
           {/* Layout 2/3 + 1/3 */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* B1: Calibration plot — ocupa 2/3 */}

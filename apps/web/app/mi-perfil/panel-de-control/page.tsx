@@ -196,14 +196,14 @@ export default async function PanelDeControlPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 [&>*]:min-w-0 md:grid-cols-2 xl:grid-cols-4">
         <Card className="rounded-2xl border-border/70 bg-card/90">
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1.5">
               <span>Total de postulaciones</span>
               <InfoTooltip text="Cantidad total de postulaciones registradas en tu cuenta." />
             </CardDescription>
-            <CardTitle className="text-3xl">{totalApplications}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">{totalApplications}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -213,7 +213,7 @@ export default async function PanelDeControlPage() {
               <span>Aplicaciones evaluadas</span>
               <InfoTooltip text="Postulaciones que ya tienen un resultado de evaluación calculado." />
             </CardDescription>
-            <CardTitle className="text-3xl">{evaluatedApplications}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">{evaluatedApplications}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -223,7 +223,7 @@ export default async function PanelDeControlPage() {
               <span>Promedio de compatibilidad</span>
               <InfoTooltip text="Promedio de la puntuación general de tus postulaciones evaluadas, expresado en porcentaje." />
             </CardDescription>
-            <CardTitle className="text-3xl">{formatPercent(overallAverage)}</CardTitle>
+            <CardTitle className="text-2xl md:text-3xl">{formatPercent(overallAverage)}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -239,7 +239,7 @@ export default async function PanelDeControlPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-3">
+      <div className="grid gap-6 [&>*]:min-w-0 xl:grid-cols-3">
         <Card className="rounded-2xl border-border/70 bg-card/90 xl:col-span-2">
           <CardHeader>
             <CardTitle>Estado de las postulaciones</CardTitle>

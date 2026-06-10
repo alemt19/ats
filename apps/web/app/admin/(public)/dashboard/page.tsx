@@ -238,11 +238,11 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
     return (
         <div className="space-y-8">
         <div>
-            <h1 className="text-3xl font-semibold tracking-tight">Panel de control de reclutamiento</h1>
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Panel de control de reclutamiento</h1>
             <p className="text-sm text-foreground/70">Resumen operativo.</p>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <div className="grid gap-4 [&>*]:min-w-0 sm:grid-cols-2 xl:grid-cols-5">
             <div className="sm:col-span-2 xl:col-span-2 group">
                 <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft h-full transition-shadow group-hover:shadow-md">
                     <CardHeader className="gap-2 pb-2">
@@ -340,7 +340,7 @@ export default async function AdminDashboardPage({ searchParams }: DashboardPage
             </div>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 [&>*]:min-w-0 lg:grid-cols-3">
             <Card className="gradient-border rounded-2xl bg-card/90 shadow-soft lg:col-span-2">
                 <CardHeader>
                     <CardTitle>Progreso de candidatos</CardTitle>

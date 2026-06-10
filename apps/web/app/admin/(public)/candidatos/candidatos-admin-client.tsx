@@ -59,10 +59,10 @@ function TableRowsSkeleton({ rows = 6 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-4 w-44" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-4 w-56" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-4 w-24" />
           </TableCell>
           <TableCell className="text-center">
@@ -164,7 +164,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Gestión de candidatos</h1>
+        <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Gestión de candidatos</h1>
         <p className="text-sm text-muted-foreground">Revisa perfiles registrados y su información clave.</p>
       </div>
 
@@ -189,7 +189,7 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
             >
               <TabsList
                 variant="default"
-                className="gap-1 rounded-full border border-border/70 bg-muted/50 p-1 shadow-soft"
+                className="flex-wrap gap-1 rounded-full border border-border/70 bg-muted/50 px-1 py-0 shadow-soft group-data-[orientation=horizontal]/tabs:h-auto"
               >
                 <TabsTrigger
                   value="normal"
@@ -216,8 +216,8 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
               <TableHeader className="bg-muted/60 text-foreground/80">
                 <TableRow className="border-b border-border/70">
                   <TableHead className="text-sm font-medium text-foreground/70">Nombre</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Correo</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Cédula</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Correo</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Cédula</TableHead>
                   <TableHead className="w-12 text-center text-sm font-medium text-foreground/70">Ver</TableHead>
                 </TableRow>
               </TableHeader>
@@ -230,9 +230,9 @@ export default function CandidatosAdminClient({ initialQuery, initialData }: Can
                       key={candidate.id}
                       className="transition-colors hover:bg-muted/35 data-[state=selected]:bg-muted/45"
                     >
-                      <TableCell className="font-medium">{`${candidate.name} ${candidate.lastname}`}</TableCell>
-                      <TableCell>{candidate.email}</TableCell>
-                      <TableCell>{formatDniDisplay(candidate.dni)}</TableCell>
+                      <TableCell className="font-medium min-w-0 truncate">{`${candidate.name} ${candidate.lastname}`}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{candidate.email}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{formatDniDisplay(candidate.dni)}</TableCell>
                       <TableCell className="w-12 text-center">
                         <div className="flex items-center justify-center">
                           <Button variant="ghost" size="icon" asChild className="rounded-full">

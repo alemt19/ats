@@ -78,10 +78,20 @@ export default function StatusMonthlyChart({ yearlyData, years, initialYear }: P
         </select>
       </div>
 
-      <ChartContainer config={chartConfig} className="h-64 w-full">
+      <ChartContainer config={chartConfig} className="h-56 w-full md:h-64">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
           <CartesianGrid vertical={false} />
-          <XAxis dataKey="name" tickLine={false} axisLine={false} interval={0} />
+          <XAxis
+            dataKey="name"
+            tickLine={false}
+            axisLine={false}
+            interval={0}
+            angle={-45}
+            textAnchor="end"
+            height={44}
+            tickMargin={4}
+            tick={{ fontSize: 11 }}
+          />
           <YAxis
             tickLine={false}
             axisLine={false}

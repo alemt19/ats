@@ -130,18 +130,20 @@ function ConfirmPasswordForm() {
 					<form className="space-y-5" onSubmit={onSubmit}>
 						<div className="space-y-2">
 							<Label>Código OTP</Label>
-							<InputOTP
-								maxLength={OTP_LENGTH}
-								value={otpCode}
-								onChange={(value) => setOtpCode(value)}
-								containerClassName="justify-center"
-							>
-								<InputOTPGroup>
-									{Array.from({ length: OTP_LENGTH }).map((_, index) => (
-										<InputOTPSlot key={index} index={index} />
-									))}
-								</InputOTPGroup>
-							</InputOTP>
+							<div className="overflow-x-auto">
+								<InputOTP
+									maxLength={OTP_LENGTH}
+									value={otpCode}
+									onChange={(value) => setOtpCode(value)}
+									containerClassName="justify-center"
+								>
+									<InputOTPGroup>
+										{Array.from({ length: OTP_LENGTH }).map((_, index) => (
+											<InputOTPSlot key={index} index={index} />
+										))}
+									</InputOTPGroup>
+								</InputOTP>
+							</div>
 						</div>
 
 						<div className="space-y-2">

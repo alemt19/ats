@@ -456,12 +456,12 @@ function AdminLayoutContent({
 
 			<SidebarInset className="bg-background/85">
 				<div className="content-space flex min-h-dvh flex-col gap-3">
-					<header className="sticky top-[calc(0.5rem+var(--space-content))] z-30 flex h-auto flex-col gap-2 rounded-2xl border border-border/70 bg-card/90 px-3.5 py-2 shadow-soft backdrop-blur-md sm:h-12 sm:flex-row sm:items-center sm:gap-3 sm:py-0">
-						<div className="flex min-w-0 items-center gap-3">
+					<header className="sticky top-[calc(0.5rem+var(--space-content))] z-30 flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft backdrop-blur-md">
+						<div className="flex min-w-0 flex-1 items-center gap-3">
 							<SidebarTrigger className="shrink-0" />
 							<Breadcrumb className="min-w-0 overflow-hidden">
-								<BreadcrumbList className="min-w-0 gap-x-1.5 gap-y-1">
-								<BreadcrumbItem>
+								<BreadcrumbList className="min-w-0 flex-nowrap gap-x-1.5 gap-y-1">
+								<BreadcrumbItem className="hidden shrink-0 sm:inline-flex">
 									<BreadcrumbLink href={defaultAdminRoute}>Administración</BreadcrumbLink>
 								</BreadcrumbItem>
 								{breadcrumbItems.map((item, index) => {
@@ -469,12 +469,12 @@ function AdminLayoutContent({
 
 									return (
 										<div key={`${item.label}-${index}`} className="contents">
-											<BreadcrumbSeparator />
-											<BreadcrumbItem>
+											<BreadcrumbSeparator className="hidden shrink-0 sm:block" />
+											<BreadcrumbItem className={isLast ? "min-w-0" : "hidden shrink-0 sm:inline-flex"}>
 												{!isLast && item.href ? (
 													<BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink>
 												) : (
-													<BreadcrumbPage>{item.label}</BreadcrumbPage>
+													<BreadcrumbPage className="truncate">{item.label}</BreadcrumbPage>
 												)}
 											</BreadcrumbItem>
 										</div>
@@ -484,7 +484,7 @@ function AdminLayoutContent({
 							</Breadcrumb>
 						</div>
 
-						<div className="ml-auto self-end sm:self-auto">
+						<div className="ml-auto shrink-0">
 							<NotificationsPanel
 								notifications={notifications}
 								unreadCount={unreadCount}

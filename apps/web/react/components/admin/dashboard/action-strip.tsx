@@ -13,7 +13,7 @@ export default function ActionStrip({ pendingReview, atRiskOffers }: ActionStrip
       {/* A1: Postulaciones esperando revisión */}
       <Link href="/admin/aplicaciones" className="group">
         <Card className="h-full rounded-2xl border border-border/40 bg-card/80 shadow-soft transition-all duration-200 group-hover:border-primary/30 group-hover:shadow-elevated">
-          <CardContent className="flex flex-col gap-3 p-8">
+          <CardContent className="flex flex-col gap-3 p-4 md:p-8">
             <div className="flex items-center justify-between">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10">
                 <Clock className="size-4 text-primary" aria-hidden />
@@ -42,7 +42,7 @@ export default function ActionStrip({ pendingReview, atRiskOffers }: ActionStrip
       {/* A2: Ofertas en riesgo */}
       <Link href="/admin/ofertas" className="group">
         <Card className="h-full rounded-2xl border border-border/40 bg-card/80 shadow-soft transition-all duration-200 group-hover:border-destructive/30 group-hover:shadow-elevated">
-          <CardContent className="flex flex-col gap-3 p-8">
+          <CardContent className="flex flex-col gap-3 p-4 md:p-8">
             <div className="flex items-center justify-between">
               <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/10">
                 <AlertCircle className="size-4 text-destructive" aria-hidden />

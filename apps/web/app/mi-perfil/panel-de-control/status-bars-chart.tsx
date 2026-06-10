@@ -29,7 +29,7 @@ export default function StatusBarsChart({ data }: StatusBarsChartProps) {
   const maxTotal = Math.max(1, ...data.map((item) => item.total))
 
   return (
-    <ChartContainer config={chartConfig} className="h-72 w-full">
+    <ChartContainer config={chartConfig} className="h-56 w-full md:h-72">
       <BarChart data={data} margin={{ top: 16, right: 12, left: 12, bottom: 8 }}>
         <CartesianGrid vertical={false} />
         <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} interval={0} />

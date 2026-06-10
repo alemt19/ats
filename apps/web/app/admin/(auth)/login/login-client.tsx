@@ -186,7 +186,7 @@ export default function AdminLoginClientPage() {
 
 				<div className="min-w-0 flex-1 p-6 sm:p-8">
 					<CardHeader className="px-0 pt-0">
-						<CardTitle className="text-3xl font-bold">Bienvenido</CardTitle>
+						<CardTitle className="text-2xl font-bold md:text-3xl">Bienvenido</CardTitle>
 						<CardDescription className="text-base mb-5">
 							Accede a tu cuenta para administrar la plataforma.
 						</CardDescription>

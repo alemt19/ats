@@ -544,7 +544,7 @@ export default function CandidateApplicationDetailClient({
       <section className="mx-auto w-full max-w-350 p-4 md:p-6">
         <header className="mb-4 flex flex-wrap items-start justify-between gap-3 rounded-xl border bg-card p-4">
           <div>
-            <h1 className="text-3xl font-semibold tracking-tight">{fullName}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">{fullName}</h1>
             <p className="text-muted-foreground text-sm">Postulante para {candidate.offer_title}</p>
           </div>
           <Badge variant={getStatusBadgeVariant(applicationStatus)}>{statusDisplay}</Badge>

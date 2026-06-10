@@ -149,7 +149,7 @@ export default function PipelineFunnel({
 
       {/* Hired + Rejected side by side */}
       {(hired || rejected) && (
-        <div className="grid grid-cols-2 gap-3 mt-1">
+        <div className="grid grid-cols-1 gap-3 mt-1 md:grid-cols-2">
           {hired ? (
             <FunnelBar stage={hired} pct={pct(hired.count)} />
           ) : (

@@ -515,7 +515,7 @@ export default function PostulacionesList({
     <div className="space-y-6">
       <div className="flex flex-wrap gap-2">
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="min-w-45 border-border/70 bg-background/70">
+          <SelectTrigger className="w-full min-w-0 sm:w-auto sm:min-w-45 border-border/70 bg-background/70">
             <SelectValue placeholder="Categoría" />
           </SelectTrigger>
           <SelectContent>
@@ -528,7 +528,7 @@ export default function PostulacionesList({
         </Select>
 
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="min-w-45 border-border/70 bg-background/70">
+          <SelectTrigger className="w-full min-w-0 sm:w-auto sm:min-w-45 border-border/70 bg-background/70">
             <SelectValue placeholder="Estado" />
           </SelectTrigger>
           <SelectContent>
@@ -603,15 +603,15 @@ export default function PostulacionesList({
                 </div>
               </CardContent>
 
-              <CardFooter className="items-center justify-between gap-3 pt-2">
+              <CardFooter className="flex-col items-start gap-3 pt-2 md:flex-row md:items-center md:justify-between">
                 <Badge className="text-sm"
                   variant={getStatusBadgeVariant(application.status)}
                 >
                   {statusLabelMap.get(application.status) ?? application.status}
                 </Badge>
 
-                <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col items-start gap-1 md:items-end">
+                  <div className="flex flex-wrap items-center gap-2">
                     <Button
                       size="sm"
                       variant="outline"

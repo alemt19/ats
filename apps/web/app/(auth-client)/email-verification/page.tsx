@@ -77,7 +77,7 @@ function EmailVerificationForm() {
 
 				<CardContent>
 					<form className="space-y-6" onSubmit={handleVerify}>
-						<div className="flex justify-center">
+						<div className="flex justify-center overflow-x-auto">
 							<InputOTP
 								maxLength={OTP_LENGTH}
 								value={otpCode}

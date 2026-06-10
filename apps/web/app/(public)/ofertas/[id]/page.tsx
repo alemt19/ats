@@ -884,14 +884,14 @@ export default async function OfertaDetallePage({ params, searchParams }: Oferta
 						<>
 							<Separator />
 							<div className="space-y-3">
-								<div className="flex items-center justify-between gap-3">
+								<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 									<div>
 										<h3 className="text-lg font-semibold">Ofertas similares para ti</h3>
 										<p className="text-sm text-muted-foreground">
 											Recomendaciones basadas en la oferta a la que ya postulaste y tu evaluación actual.
 										</p>
 									</div>
-									<Button asChild size="sm" variant="outline" className="rounded-full">
+									<Button asChild size="sm" variant="outline" className="w-fit rounded-full">
 										<Link href={similarJobsHref}>Ver todas en mis postulaciones</Link>
 									</Button>
 								</div>

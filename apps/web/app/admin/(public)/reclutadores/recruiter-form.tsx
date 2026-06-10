@@ -529,7 +529,7 @@ export default function RecruiterForm({ mode, recruiterId, initialRecruiter }: R
   return (
     <section className="mx-auto w-full max-w-4xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
           {mode === "create" ? "Crear reclutador" : "Editar reclutador"}
         </h1>
         <p className="text-muted-foreground text-sm">

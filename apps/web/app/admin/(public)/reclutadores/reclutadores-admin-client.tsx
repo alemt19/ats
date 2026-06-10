@@ -59,13 +59,13 @@ function TableRowsSkeleton({ rows = 6 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-4 w-44" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-4 w-56" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-4 w-24" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-6 w-32" />
           </TableCell>
           <TableCell className="text-center">
@@ -176,7 +176,7 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Gestión de reclutadores</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Gestión de reclutadores</h1>
           <p className="text-sm text-muted-foreground">Gestiona cuentas y permisos del equipo.</p>
         </div>
         <Button asChild className="rounded-full sm:w-auto">
@@ -208,9 +208,9 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
               <TableHeader className="bg-muted/60 text-foreground/80">
                 <TableRow className="border-b border-border/70">
                   <TableHead className="text-sm font-medium text-foreground/70">Nombre</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Correo</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Cédula</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Rol</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Correo</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Cédula</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Rol</TableHead>
                   <TableHead className="w-12 text-center text-sm font-medium text-foreground/70">Ver</TableHead>
                 </TableRow>
               </TableHeader>
@@ -224,9 +224,9 @@ export default function ReclutadoresAdminClient({ initialQuery, initialData }: R
                       className="transition-colors hover:bg-muted/35 data-[state=selected]:bg-muted/45"
                     >
                       <TableCell className="font-medium">{`${recruiter.name} ${recruiter.lastname}`}</TableCell>
-                      <TableCell>{recruiter.email}</TableCell>
-                      <TableCell>{formatDniDisplay(recruiter.dni)}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell">{recruiter.email}</TableCell>
+                      <TableCell className="hidden sm:table-cell">{formatDniDisplay(recruiter.dni)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant={recruiter.role === "head_of_recruiters" ? "default" : "secondary"}>
                           {getRoleLabel(recruiter.role)}
                         </Badge>

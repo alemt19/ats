@@ -49,8 +49,8 @@ export default function CandidateProgressChart({ data }: CandidateProgressChartP
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    width={110}
-                    tick={{ fontSize: 15 }}
+                    width={132}
+                    tick={{ fontSize: 12 }}
                 />
                 <ChartTooltip
                     cursor={false}

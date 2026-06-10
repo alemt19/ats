@@ -147,16 +147,16 @@ function TableRowsSkeleton({ rows = 6 }: { rows?: number }) {
               <Skeleton className="h-3 w-28" />
             </div>
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-4 w-36" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-4 w-10" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden md:table-cell">
             <Skeleton className="h-4 w-24" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-6 w-16" />
           </TableCell>
           <TableCell className="text-center">
@@ -465,10 +465,10 @@ export default function OfertasAdminClient({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Gestión de ofertas de empleo</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Gestión de ofertas de empleo</h1>
           <p className="text-sm text-muted-foreground">Revisa, filtra y publica nuevas oportunidades.</p>
         </div>
-        <Button asChild className="rounded-full sm:w-auto">
+        <Button asChild className="w-full rounded-full sm:w-auto">
           <Link href="/admin/ofertas/crear">
             <Plus className="mr-2 size-4" />
             Crear Nueva Oferta
@@ -553,10 +553,10 @@ export default function OfertasAdminClient({
               <TableHeader className="bg-muted/60 text-foreground/80">
                 <TableRow className="border-b border-border/70">
                   <TableHead className="text-sm font-medium text-foreground/70">Título del cargo</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Ubicación</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Candidatos</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Fecha de creación</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Estado</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Ubicación</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Candidatos</TableHead>
+                  <TableHead className="hidden md:table-cell text-sm font-medium text-foreground/70">Fecha de creación</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Estado</TableHead>
                   <TableHead className="w-12 text-center text-sm font-medium text-foreground/70">Ver</TableHead>
                 </TableRow>
               </TableHeader>
@@ -572,12 +572,12 @@ export default function OfertasAdminClient({
                       <TableCell>
                         <div className="font-medium">{offer.title}</div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
+                      <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {offer.city}, {offer.state}
                       </TableCell>
-                      <TableCell className="text-primary font-medium">{offer.candidateCount}</TableCell>
-                      <TableCell className="text-muted-foreground">{formatDate(offer.createdAt)}</TableCell>
-                      <TableCell>
+                      <TableCell className="hidden sm:table-cell text-primary font-medium">{offer.candidateCount}</TableCell>
+                      <TableCell className="hidden md:table-cell text-muted-foreground">{formatDate(offer.createdAt)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">
                         <Badge variant={statusBadgeVariant(offer.status)}>{statusLabel(offer.status)}</Badge>
                       </TableCell>
                       <TableCell className="w-12 text-center">

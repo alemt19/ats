@@ -13,7 +13,7 @@ export default function OfertaAdminDetalleLoading() {
       </div>
 
       <div className="space-y-6">
-        <div className="flex gap-6 border-b pb-2">
+        <div className="flex flex-wrap gap-3 border-b pb-2 sm:gap-6">
           <Skeleton className="h-8 w-40" />
           <Skeleton className="h-8 w-48" />
         </div>
@@ -65,9 +65,9 @@ export default function OfertaAdminDetalleLoading() {
                   <Skeleton key={`table-row-${index}`} className="h-12 w-full" />
                 ))}
               </div>
-              <div className="flex items-center justify-between border-t pt-4">
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
                 <Skeleton className="h-4 w-60" />
-                <Skeleton className="h-9 w-72" />
+                <Skeleton className="h-9 w-full sm:w-72" />
               </div>
             </CardContent>
           </Card>

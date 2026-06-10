@@ -143,7 +143,7 @@ export function EmployerFeedbackModal({
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-full sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Calificar experiencia de contratación</DialogTitle>
           <DialogDescription>
@@ -182,7 +182,7 @@ export function EmployerFeedbackModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex-col-reverse gap-2 sm:flex-row">
           <Button variant="ghost" onClick={onClose} disabled={isSaving}>
             Omitir
           </Button>

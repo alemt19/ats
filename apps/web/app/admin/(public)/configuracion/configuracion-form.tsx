@@ -208,6 +208,7 @@ function MultiDatalistField({
           value={draft}
           placeholder={placeholder}
           disabled={disabled}
+          className="min-w-0"
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={(event) => {
             if (event.key === "Enter") {
@@ -216,7 +217,7 @@ function MultiDatalistField({
             }
           }}
         />
-        <Button type="button" variant="outline" onClick={addValue} disabled={disabled}>
+        <Button type="button" variant="outline" onClick={addValue} disabled={disabled} className="shrink-0">
           Agregar
         </Button>
       </div>

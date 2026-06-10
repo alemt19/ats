@@ -57,24 +57,26 @@ export default function LayoutClient({ children, notifications, unreadCount }: L
         <SidebarClient>
             <div className="content-space flex min-h-dvh flex-col gap-3">
                 <header className="sticky top-[calc(0.5rem+var(--space-content))] z-30 flex h-12 items-center gap-3 rounded-2xl border border-border/70 bg-card/90 px-3.5 shadow-soft backdrop-blur-md">
-                    <SidebarTrigger />
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/">Inicio</BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator />
-                            <BreadcrumbItem>
-                                <BreadcrumbLink href="/mi-perfil">Mi perfil</BreadcrumbLink>
-                            </BreadcrumbItem>
-                            <BreadcrumbSeparator />
-                            <BreadcrumbItem>
-                                <BreadcrumbPage>{currentPage}</BreadcrumbPage>
-                            </BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <SidebarTrigger className="shrink-0" />
+                        <Breadcrumb className="min-w-0 overflow-hidden">
+                            <BreadcrumbList className="min-w-0 flex-nowrap gap-x-1.5 gap-y-1">
+                                <BreadcrumbItem className="hidden shrink-0 sm:inline-flex">
+                                    <BreadcrumbLink href="/">Inicio</BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="hidden shrink-0 sm:block" />
+                                <BreadcrumbItem className="hidden shrink-0 sm:inline-flex">
+                                    <BreadcrumbLink href="/mi-perfil">Mi perfil</BreadcrumbLink>
+                                </BreadcrumbItem>
+                                <BreadcrumbSeparator className="hidden shrink-0 sm:block" />
+                                <BreadcrumbItem className="min-w-0">
+                                    <BreadcrumbPage className="truncate">{currentPage}</BreadcrumbPage>
+                                </BreadcrumbItem>
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                    </div>
 
-                    <div className="ml-auto">
+                    <div className="ml-auto shrink-0">
                         <NotificationsPanel
                             notifications={notifications}
                             unreadCount={unreadCount}

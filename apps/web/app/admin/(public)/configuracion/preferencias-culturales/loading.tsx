@@ -6,7 +6,7 @@ export default function PreferenciasCulturalesLoading() {
 		<section className="mx-auto w-full max-w-5xl space-y-6">
 			<div className="space-y-2">
 				<Skeleton className="h-8 w-80" />
-				<Skeleton className="h-4 w-[30rem]" />
+				<Skeleton className="h-4 w-full md:w-[30rem]" />
 			</div>
 
 			<Card>

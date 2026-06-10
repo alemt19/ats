@@ -332,7 +332,7 @@ function MultiDatalistField({
 
       {suggestionItems.length > 0 ? (
         <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm text-muted-foreground">Sugerencias para {label}</p>
             <Button
               type="button"
@@ -928,8 +928,8 @@ export default function CrearOfertaForm({
                   render={({ field }) => (
                     <FormItem className="md:col-span-2">
                       <div className="space-y-2">
-                        <div className="flex">
-                          <FormLabel className="flex-7">Descripción</FormLabel>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                          <FormLabel className="sm:flex-7">Descripción</FormLabel>
                           {genericJobDescriptions.length > 0 ? (
                             <GenericDescriptionPicker
                               value={genericDescriptionDraft}
@@ -1360,7 +1360,7 @@ export default function CrearOfertaForm({
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">Total</span>
                     <span className={cn(

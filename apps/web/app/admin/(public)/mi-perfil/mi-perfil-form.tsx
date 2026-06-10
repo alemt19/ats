@@ -313,7 +313,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
   return (
     <section className="mx-auto w-full max-w-4xl space-y-8">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Mi perfil</h1>
+        <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Mi perfil</h1>
         <p className="text-muted-foreground text-sm">Actualiza los datos de tu perfil administrativo.</p>
       </div>
 
@@ -324,7 +324,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-background/80 p-4">
+            <div className="flex flex-col items-start gap-4 rounded-2xl border border-border/70 bg-background/80 p-4 sm:flex-row sm:items-center">
               <Avatar className="size-16">
                 <AvatarImage src={avatarPreview} alt={fullName} />
                 <AvatarFallback>{toInitials(fullName)}</AvatarFallback>
@@ -338,7 +338,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="ml-2"
+                  className="ml-0 sm:ml-2"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Camera className="mr-2 size-4" />
@@ -373,7 +373,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                 <p className="text-sm font-medium text-foreground/85">Tamaño de letra</p>
                 <p className="text-sm text-foreground/60">Se aplica en toda la aplicación.</p>
               </div>
-              <div className="mt-3 max-w-xs">
+              <div className="mt-3 w-full max-w-xs">
                 <Select
                   value={fontSize}
                   onValueChange={(value) => {
@@ -465,7 +465,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                       }))
                     }}
                   >
-                    <SelectTrigger className="w-20">
+                    <SelectTrigger className="w-20 shrink-0">
                       <SelectValue placeholder="Prefijo" />
                     </SelectTrigger>
                     <SelectContent>
@@ -478,6 +478,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     value={values.dni}
                     inputMode="numeric"
                     required
+                    className="min-w-0"
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")
                       setValues((previous) => ({
@@ -497,7 +498,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-sm font-medium text-foreground/85">Teléfono *</Label>
                 <div className="flex gap-2">
-                  <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24 bg-muted/40 text-muted-foreground/80" placeholder="+000" />
+                  <Input id="phone_prefix" value={values.phone_prefix} readOnly className="w-24 shrink-0 bg-muted/40 text-muted-foreground/80" placeholder="+000" />
                   <Input
                     id="phone"
                     value={values.phone}
@@ -505,6 +506,7 @@ export default function MiPerfilForm({ initialProfile, catalogs }: MiPerfilFormP
                     minLength={10}
                     maxLength={10}
                     required
+                    className="min-w-0"
                     placeholder="Número"
                     onChange={(event) => {
                       const digitsOnly = event.target.value.replace(/\D/g, "")

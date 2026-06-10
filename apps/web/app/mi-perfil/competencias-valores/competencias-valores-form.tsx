@@ -778,12 +778,12 @@ export default function CompetenciasValoresForm({
                   <iframe
                     src={cvPreviewUrl}
                     title="Vista previa del CV"
-                    className="h-150 w-full"
+                    className="h-96 w-full md:h-150"
                   />
                 ) : null}
 
                 {cvPreviewType === "docx" ? (
-                  <div className="h-150 overflow-auto bg-background p-4">
+                  <div className="h-96 overflow-auto bg-background p-4 md:h-150">
                     <div ref={docxContainerRef} />
                   </div>
                 ) : null}

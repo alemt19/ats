@@ -204,8 +204,8 @@ export default function CandidateDetailReadonly({
           <AvatarFallback>{toInitials(fullName)}</AvatarFallback>
         </Avatar>
 
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">{fullName}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl lg:text-4xl break-words">{fullName}</h1>
           <p className="text-muted-foreground mt-1 text-sm">Perfil de candidato</p>
         </div>
       </header>
@@ -213,7 +213,7 @@ export default function CandidateDetailReadonly({
       <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-4">
         <TabsList
           variant="default"
-          className="self-center gap-1.5 rounded-full border border-border/70 bg-muted/50 p-1.5 shadow-soft"
+          className="flex-wrap self-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-1 py-0 shadow-soft group-data-[orientation=horizontal]/tabs:h-auto"
         >
           <TabsTrigger
             value="datos"
@@ -311,11 +311,11 @@ export default function CandidateDetailReadonly({
                 ) : null}
 
                 {cvPreviewType === "pdf" && candidate.cv_url ? (
-                  <iframe src={candidate.cv_url} title="Vista previa del CV" className="h-150 w-full" />
+                  <iframe src={candidate.cv_url} title="Vista previa del CV" className="h-96 w-full md:h-150" />
                 ) : null}
 
                 {cvPreviewType === "docx" ? (
-                  <div className="h-150 overflow-auto bg-background p-4">
+                  <div className="h-96 md:h-150 overflow-auto bg-background p-4">
                     <div ref={docxContainerRef} />
                   </div>
                 ) : null}

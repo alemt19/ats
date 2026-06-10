@@ -117,7 +117,7 @@ export default function NotificationsPanel({
 	)
 
 	return (
-		<DropdownMenu>
+		<DropdownMenu modal={false}>
 			<DropdownMenuTrigger asChild>
 				<Button
 					variant="outline"

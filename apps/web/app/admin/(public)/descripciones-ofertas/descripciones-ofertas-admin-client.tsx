@@ -57,7 +57,7 @@ function TableRowsSkeleton({ rows = 6 }: { rows?: number }) {
           <TableCell>
             <Skeleton className="h-4 w-44" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <div className="space-y-1.5">
               <Skeleton className="h-4 w-56" />
               <Skeleton className="h-3 w-72" />
@@ -162,7 +162,7 @@ export default function DescripcionesOfertasAdminClient({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight">Puestos predefinidos</h1>
+          <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">Puestos predefinidos</h1>
           <p className="text-sm text-muted-foreground">
             Administra plantillas reutilizables para acelerar la creación de vacantes.
           </p>
@@ -196,7 +196,7 @@ export default function DescripcionesOfertasAdminClient({
               <TableHeader className="bg-muted/60 text-foreground/80">
                 <TableRow className="border-b border-border/70">
                   <TableHead className="text-sm font-medium text-foreground/70">Puesto</TableHead>
-                  <TableHead className="text-sm font-medium text-foreground/70">Descripción</TableHead>
+                  <TableHead className="hidden sm:table-cell text-sm font-medium text-foreground/70">Descripción</TableHead>
                   <TableHead className="w-12 text-center text-sm font-medium text-foreground/70">Ver</TableHead>
                 </TableRow>
               </TableHeader>
@@ -209,8 +209,8 @@ export default function DescripcionesOfertasAdminClient({
                       key={description.id}
                       className="transition-colors hover:bg-muted/35 data-[state=selected]:bg-muted/45"
                     >
-                      <TableCell className="font-medium">{description.position}</TableCell>
-                      <TableCell className="text-muted-foreground max-w-3xl">
+                      <TableCell className="font-medium min-w-0">{description.position}</TableCell>
+                      <TableCell className="hidden sm:table-cell text-muted-foreground max-w-3xl">
                         <p className="line-clamp-2">{description.description}</p>
                       </TableCell>
                       <TableCell className="w-12 text-center">

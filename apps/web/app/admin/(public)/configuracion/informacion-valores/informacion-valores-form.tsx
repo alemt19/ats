@@ -217,6 +217,7 @@ function MultiDatalistField({
 					value={draft}
 					placeholder={placeholder}
 					disabled={disabled}
+					className="min-w-0"
 					onChange={(event) => setDraft(event.target.value)}
 					onKeyDown={(event) => {
 						if (event.key === "Enter") {
@@ -225,7 +226,7 @@ function MultiDatalistField({
 						}
 					}}
 				/>
-				<Button type="button" variant="outline" className="rounded-full border-border/70 bg-background/70 hover:bg-muted/80" onClick={addValue} disabled={disabled}>
+				<Button type="button" variant="outline" className="shrink-0 rounded-full border-border/70 bg-background/70 hover:bg-muted/80" onClick={addValue} disabled={disabled}>
 					Agregar
 				</Button>
 			</div>
@@ -463,7 +464,7 @@ export default function InformacionValoresForm({
 						</CardHeader>
 
 						<CardContent className="space-y-4">
-							<div className="flex items-center gap-4 rounded-2xl border border-border/70 bg-background/80 p-4">
+							<div className="flex flex-col items-start gap-4 rounded-2xl border border-border/70 bg-background/80 p-4 sm:flex-row sm:items-center">
 								<Avatar className="size-16">
 									<AvatarImage src={logoPreview} alt={form.watch("name") || "Logo empresa"} />
 									<AvatarFallback>

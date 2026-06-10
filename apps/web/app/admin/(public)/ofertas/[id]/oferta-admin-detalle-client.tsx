@@ -146,19 +146,19 @@ function CandidateRowsSkeleton({ rows = 6 }: { rows?: number }) {
               <Skeleton className="h-3 w-24" />
             </div>
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-2 w-32" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-2 w-32" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden md:table-cell">
             <Skeleton className="h-2 w-32" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-6 w-24" />
           </TableCell>
-          <TableCell>
+          <TableCell className="hidden sm:table-cell">
             <Skeleton className="h-2 w-32" />
           </TableCell>
           <TableCell className="text-right">
@@ -694,7 +694,7 @@ export default function OfertaAdminDetalleClient({
 
   return (
     <section className="mx-auto w-full space-y-6">
-      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-linear-to-br from-card/95 via-card/90 to-muted/40 p-6 shadow-soft">
+      <div className="relative overflow-hidden rounded-3xl border border-border/70 bg-linear-to-br from-card/95 via-card/90 to-muted/40 p-4 shadow-soft md:p-6">
         <div className="absolute -right-10 -top-10 hidden size-40 rounded-full bg-primary/10 blur-3xl md:block" />
         <div className="relative min-w-0 space-y-3">
           <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-sm">
@@ -725,7 +725,7 @@ export default function OfertaAdminDetalleClient({
       <Tabs defaultValue="detalles" className="space-y-6">
         <TabsList
           variant="default"
-          className="mx-auto w-fit max-w-full justify-center gap-1.5 rounded-full border border-border/70 bg-muted/50 p-1.5 shadow-soft"
+          className="mx-auto w-fit max-w-full flex-wrap justify-center gap-1.5 rounded-full border border-border/70 bg-muted/50 px-1 py-0 shadow-soft group-data-[orientation=horizontal]/tabs:h-auto"
         >
           <TabsTrigger
             value="detalles"
@@ -869,7 +869,7 @@ export default function OfertaAdminDetalleClient({
                     />
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
                       variant="outline"
@@ -945,16 +945,16 @@ export default function OfertaAdminDetalleClient({
 
               <CardContent className="space-y-4 pt-4">
                 <div className="w-full overflow-x-auto">
-                  <div className="min-w-280 overflow-hidden rounded-2xl border border-border/70 bg-background/80 shadow-sm">
+                  <div className="overflow-hidden rounded-2xl border border-border/70 bg-background/80 shadow-sm">
                     <Table>
                       <TableHeader className="bg-muted/40">
                         <TableRow>
                           <TableHead className="text-sm font-semibold text-muted-foreground">Candidato</TableHead>
-                          <TableHead className="text-sm font-semibold text-muted-foreground">Puntuación técnica</TableHead>
-                          <TableHead className="text-sm font-semibold text-muted-foreground">Puntuación blanda</TableHead>
-                          <TableHead className="text-sm font-semibold text-muted-foreground">Alineación cultural</TableHead>
-                          <TableHead className="text-sm font-semibold text-muted-foreground">Puntuación final</TableHead>
-                          <TableHead className="text-sm font-semibold text-muted-foreground">Estado</TableHead>
+                          <TableHead className="hidden sm:table-cell text-sm font-semibold text-muted-foreground">Puntuación técnica</TableHead>
+                          <TableHead className="hidden sm:table-cell text-sm font-semibold text-muted-foreground">Puntuación blanda</TableHead>
+                          <TableHead className="hidden md:table-cell text-sm font-semibold text-muted-foreground">Alineación cultural</TableHead>
+                          <TableHead className="hidden sm:table-cell text-sm font-semibold text-muted-foreground">Puntuación final</TableHead>
+                          <TableHead className="hidden sm:table-cell text-sm font-semibold text-muted-foreground">Estado</TableHead>
                           <TableHead className="w-20 text-right text-sm font-semibold text-muted-foreground">Acciones</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -971,35 +971,35 @@ export default function OfertaAdminDetalleClient({
                                 <TableCell>
                                   <div className="font-medium">{fullName}</div>
                                 </TableCell>
-                                <TableCell className="space-y-1.5">
+                                <TableCell className="hidden sm:table-cell space-y-1.5">
                                   <Progress
                                     value={candidate.technical_score}
                                     className={cn("h-2 w-36", getProgressColorClass(candidate.technical_score))}
                                   />
                                   <p className="text-muted-foreground text-xs">{candidate.technical_score}%</p>
                                 </TableCell>
-                                <TableCell className="space-y-1.5">
+                                <TableCell className="hidden sm:table-cell space-y-1.5">
                                   <Progress
                                     value={candidate.soft_score}
                                     className={cn("h-2 w-36", getProgressColorClass(candidate.soft_score))}
                                   />
                                   <p className="text-muted-foreground text-xs">{candidate.soft_score}%</p>
                                 </TableCell>
-                                <TableCell className="space-y-1.5">
+                                <TableCell className="hidden md:table-cell space-y-1.5">
                                   <Progress
                                     value={candidate.culture_score}
                                     className={cn("h-2 w-36", getProgressColorClass(candidate.culture_score))}
                                   />
                                   <p className="text-muted-foreground text-xs">{candidate.culture_score}%</p>
                                 </TableCell>
-                                <TableCell className="space-y-1.5">
+                                <TableCell className="hidden sm:table-cell space-y-1.5">
                                   <Progress
                                     value={candidate.final_score}
                                     className={cn("h-2 w-36", getProgressColorClass(candidate.final_score))}
                                   />
                                   <p className="text-muted-foreground text-xs">{candidate.final_score}%</p>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="hidden sm:table-cell">
                                   <Badge variant={candidateStatusBadgeVariant(candidate.status)}>
                                     {statusLabel}
                                   </Badge>
@@ -1106,7 +1106,7 @@ export default function OfertaAdminDetalleClient({
       </Tabs>
 
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-8/9 overflow-auto">
+        <DialogContent className="max-w-full sm:max-w-lg max-h-[90dvh] overflow-auto">
           <DialogHeader>
             <DialogTitle>Generar reporte PDF</DialogTitle>
             <DialogDescription>
