@@ -221,7 +221,7 @@ export default function PreferenciasCulturalesForm({
 														</Tooltip>
 													</CardTitle>
 													<CardDescription>
-														Elige la opción que mejor se alinee con la cultura de la empresa.
+														Elige la opción que mejor se adapte con la cultura de la empresa.
 													</CardDescription>
 												</CardHeader>
 												<CardContent>
