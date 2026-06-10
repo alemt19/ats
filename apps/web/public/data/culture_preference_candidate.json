@@ -44,7 +44,7 @@
       {
         "technical_name": "highly_collaborative",
         "display_name": "Altamente Colaborativo",
-        "description": "La mayoria del trabajo se hace en equipo, con reuniones frecuentes y dependencia mutua."
+        "description": "La mayoría del trabajo se hace en equipo, con reuniones frecuentes y dependencia mutua."
       },
       {
         "technical_name": "indifferent",
@@ -98,7 +98,7 @@
       {
         "technical_name": "total_freedom",
         "display_name": "Total libertad",
-        "description": "La persona decide completamente como abordar su trabajo: que métodos usar, que herramientas emplear y como organizar sus tareas. Solo importa que el valor prometido sea entregado."
+        "description": "La persona decide completamente cómo abordar su trabajo: qué métodos usar, qué herramientas emplear y cómo organizar sus tareas. Solo importa que el valor prometido sea entregado."
       },
       {
         "technical_name": "indifferent",

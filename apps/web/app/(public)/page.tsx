@@ -81,7 +81,7 @@ export default function PublicPage() {
                 El talento correcto, en el momento correcto
               </h1>
               <p className="max-w-xl text-base sm:text-lg">
-                Disenamos una experiencia de postulacion clara, veloz y humana para que cada decision profesional tenga mas contexto y menos friccion.
+                Diseñamos una experiencia de postulación clara, veloz y humana para que cada decisión profesional tenga más contexto y menos fricción.
               </p>
             </div>
 
@@ -103,7 +103,7 @@ export default function PublicPage() {
                 variant="outline"
                 className="rounded-full border-foreground/28 bg-card/80 px-8 text-foreground transition-colors duration-[240ms] hover:border-primary/40 hover:bg-muted/90 hover:text-foreground"
               >
-                <Link href="#como-funciona">Ver flujo de seleccion</Link>
+                <Link href="#como-funciona">Ver flujo de selección</Link>
               </Button>
             </div>
 
@@ -113,7 +113,7 @@ export default function PublicPage() {
                 <p className="mt-1 text-lg font-semibold">-42%</p>
               </div>
               <div className="rounded-2xl border border-border/70 bg-card/75 p-3 backdrop-blur-sm interactive-lift hover:interactive-lift-hover">
-                <p className="text-[0.72rem] uppercase tracking-[0.08em] text-muted-foreground">Precision</p>
+                <p className="text-[0.72rem] uppercase tracking-[0.08em] text-muted-foreground">Precisión</p>
                 <p className="mt-1 text-lg font-semibold">+68%</p>
               </div>
               <div className="col-span-2 rounded-2xl border border-border/70 bg-card/75 p-3 backdrop-blur-sm interactive-lift hover:interactive-lift-hover sm:col-span-1">
@@ -127,7 +127,7 @@ export default function PublicPage() {
             <CardHeader className="space-y-4 pb-2">
               <Badge className="w-fit rounded-full bg-accent text-accent-foreground">Centro de control</Badge>
               <CardTitle className="text-3xl leading-tight sm:text-4xl">
-                Candidaturas con senal real, no solo palabras clave
+                Candidaturas con señal real, no solo palabras clave
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-5">
@@ -138,11 +138,11 @@ export default function PublicPage() {
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/80 p-3">
                   <ShieldCheck aria-hidden="true" className="size-5 text-accent" />
-                  <p className="text-sm text-foreground/90">Proceso mas justo con criterios visibles para cada postulacion.</p>
+                  <p className="text-sm text-foreground/90">Proceso más justo con criterios visibles para cada postulación.</p>
                 </div>
                 <div className="flex items-center gap-3 rounded-2xl border border-border/80 bg-background/80 p-3">
                   <CheckCircle2 aria-hidden="true" className="size-5 text-primary" />
-                  <p className="text-sm text-foreground/90">Retroalimentación util para mejorar tu proximo paso profesional.</p>
+                  <p className="text-sm text-foreground/90">Retroalimentación útil para mejorar tu próximo paso profesional.</p>
                 </div>
               </div>
 
@@ -275,7 +275,7 @@ export default function PublicPage() {
                 <AspectRatio ratio={4 / 3} className="overflow-hidden rounded-2xl">
                   <img
                     src="/images/connection.jpg"
-                    alt="Conexion entre talento y empresas"
+                    alt="Conexión entre talento y empresas"
                     width={1200}
                     height={900}
                     loading="lazy"

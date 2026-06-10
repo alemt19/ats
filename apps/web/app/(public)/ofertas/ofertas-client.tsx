@@ -98,7 +98,7 @@ function getApplicationStatusLabel(statusTechnicalName: string | null | undefine
     case "in_review":
     case "review":
     case "reviewing":
-      return "En revision"
+      return "En revisión"
     case "shortlisted":
       return "Preseleccionado"
     case "interview":

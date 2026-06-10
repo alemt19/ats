@@ -221,7 +221,7 @@ export default async function PanelDeControlPage() {
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-1.5">
               <span>Promedio de compatibilidad</span>
-              <InfoTooltip text="Promedio de la puntuacion general de tus postulaciones evaluadas, expresado en porcentaje." />
+              <InfoTooltip text="Promedio de la puntuación general de tus postulaciones evaluadas, expresado en porcentaje." />
             </CardDescription>
             <CardTitle className="text-3xl">{formatPercent(overallAverage)}</CardTitle>
           </CardHeader>
